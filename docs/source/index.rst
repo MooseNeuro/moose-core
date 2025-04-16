@@ -1,33 +1,42 @@
-.. MOOSE documentation master file, created by
-   sphinx-quickstart on Tue Jan 31 14:57:39 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+MOOSE Documentation
+==============================
+
+
+.. image:: images/MooseFlow.png
+   :align: center
+   :alt: MOOSE Documentation Navigation Flow
+   :width: 400px
+
+
+Choose your experience level:
+
+.. raw:: html
+
+    <div class="experience-level-links">
+        <div class="level-box">
+            <a href="beginner.html" class="level-link">
+                <h3>Beginner</h3>
+                <p>Learn MOOSE basics with tutorials, cookbooks, and examples</p>
+            </a>
+        </div>
+        <div class="level-box">
+            <a href="intermediate.html" class="level-link">
+                <h3>Intermediate</h3>
+                <p>In-depth guides and API references</p>
+            </a>
+        </div>
+        <div class="level-box">
+            <a href="advanced.html" class="level-link">
+                <h3>Advanced</h3>
+                <p>Complete API references and developer documentation</p>
+            </a>
+        </div>
+    </div>
+
 .. toctree::
    :maxdepth: 2
+   :hidden:
 
-   /introduction/index_introduction
-   /install/index_install
-   /user/py/quickstart/index_qs
-   /user/py/cookbook/index_ckbk
-   /user/py/rdesigneur/index_rd
-   /user/py/tutorials/index_tut
-   /user/py/graphics/index_graphics
-   /user/py/references/index_ref
-   /doxygen/doxy
-
-.. toctree::
-   :maxdepth: 1
-   :titlesonly:
-
-.. toctree::
-
-   release_notes/index
-   changes/index
-   known_issues/index
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   beginner
+   intermediate
+   advanced
