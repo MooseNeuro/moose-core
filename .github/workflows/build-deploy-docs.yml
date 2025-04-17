@@ -34,6 +34,9 @@ jobs:
       working-directory: ./docs
       run: |
         make html
+
+    - name: Disable Jekyll on GitHub Pages
+      run: touch docs/_build/html/.nojekyll    
         
     - name: Archive documentation
       uses: actions/upload-artifact@v3
