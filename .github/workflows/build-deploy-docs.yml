@@ -1,4 +1,4 @@
-name: Build and Deploy Documentation
+name: Build Documentation
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:  # Allows manual triggering from the GitHub UI
 
 jobs:
-  build-and-deploy-docs:
+  build-docs:
     runs-on: ubuntu-latest
     
     steps:
@@ -34,33 +34,29 @@ jobs:
       working-directory: ./docs
       run: |
         make html
-
-    - name: Disable Jekyll on GitHub Pages
-      run: touch docs/_build/html/.nojekyll    
-
-    - name: Debug – list built docs
+        
+    - name: Create .nojekyll file
       run: |
-        echo "Generated docs:"
-        ls -l docs/_build/html || true
-
-    - name: Check if documentation was built
+        touch docs/_build/html/.nojekyll
+        
+    - name: Copy built docs to docs folder
       run: |
-        if [ ! -d "docs/_build/html" ]; then
-          echo "Build failed: docs/_build/html not found."
-          exit 1
-        fi
-    
-    - name: Archive documentation
-      uses: actions/upload-artifact@v3
-      with:
-        name: documentation
-        path: docs/_build/html/
-    
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/development'
+        # Create target directory if it doesn't exist
+        mkdir -p docs/html
+        # Copy the built documentation to the docs/html directory
+        cp -R docs/_build/html/* docs/html/
+        # Add .nojekyll file to prevent Jekyll processing
+        touch docs/html/.nojekyll
+        
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add docs/html/
+        git commit -m "Update documentation" || echo "No changes to commit"
+        
+    - name: Push changes
+      uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs/_build/html
-        publish_branch: gh-pages
-        force_orphan: true
+        branch: ${{ github.ref }}
