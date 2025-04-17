@@ -37,7 +37,19 @@ jobs:
 
     - name: Disable Jekyll on GitHub Pages
       run: touch docs/_build/html/.nojekyll    
-        
+
+    - name: Debug – list built docs
+      run: |
+        echo "Generated docs:"
+        ls -l docs/_build/html || true
+
+    - name: Check if documentation was built
+      run: |
+        if [ ! -d "docs/_build/html" ]; then
+          echo "Build failed: docs/_build/html not found."
+          exit 1
+        fi
+    
     - name: Archive documentation
       uses: actions/upload-artifact@v3
       with:
