@@ -39,24 +39,11 @@ jobs:
       run: |
         touch docs/_build/html/.nojekyll
         
-    - name: Copy built docs to docs folder
-      run: |
-        # Create target directory if it doesn't exist
-        mkdir -p docs/html
-        # Copy the built documentation to the docs/html directory
-        cp -R docs/_build/html/* docs/html/
-        # Add .nojekyll file to prevent Jekyll processing
-        touch docs/html/.nojekyll
-        
-    - name: Commit changes
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add docs/html/
-        git commit -m "Update documentation" || echo "No changes to commit"
-        
-    - name: Push changes
-      uses: ad-m/github-push-action@master
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: ${{ github.ref }}
+        folder: docs/_build/html
+        branch: gh-pages
+        clean: true
+        clean-exclude: |
+          .nojekyll
