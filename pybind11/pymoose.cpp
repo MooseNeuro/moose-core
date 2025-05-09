@@ -306,9 +306,10 @@ PYBIND11_MODULE(_moose, m)
 
         .def("getType",
              [](ObjId &oid) { return oid.element()->cinfo()->name(); })
+        // Thu May  8 09:27:42 IST 2025 Neutral already has a path field which correctly formats the path with fieldIndex included. - Subha
+        // .def_property_readonly("path",  
 
-        .def_property_readonly("path",
-                               [](const ObjId &oid) { return oid.id.path(); })
+        //                        [](const ObjId &oid) { return oid.path(); })
 
         /**
          *  Override __eq__ etc.

@@ -277,9 +277,14 @@ py::object mooseGetCwe()
 
 void mooseSetCwe(const py::object& arg)
 {
-    if(py::isinstance<py::str>(arg))
+    if(py::isinstance<py::str>(arg)){
         return getShellPtr()->setCwe(ObjId(arg.cast<string>()));
-    return getShellPtr()->setCwe(arg.cast<ObjId>());
+    }
+    else if(py::isinstance<MooseVec>(arg)) {
+	return getShellPtr()->setCwe(arg.cast<MooseVec>().obj());
+    } else {
+        return getShellPtr()->setCwe(arg.cast<ObjId>());
+    }
 }
 
 map<string, string> mooseGetFieldDict(const string& className,

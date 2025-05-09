@@ -69,11 +69,12 @@ const OpFunc* SetGet::checkSet( const string& field, ObjId& tgt, FuncId& fid )
 bool SetGet::strGet( const ObjId& tgt, const string& field, string& ret )
 {
     const Finfo* f = tgt.element()->cinfo()->findFinfo( field );
-    if ( !f )
-    {
-        cout << Shell::myNode() << ": Error: SetGet::strGet: Field " <<
-             field << " not found on Element " << tgt.element()->getName() <<
-             endl;
+    if(!f) {
+	
+#ifndef NDEBUG
+        cout << Shell::myNode() << ": Error: SetGet::strGet: Field " << field
+             << " not found on Element " << tgt.element()->getName() << endl;
+#endif
         return 0;
     }
     return f->strGet( tgt.eref(), field, ret );

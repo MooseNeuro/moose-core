@@ -254,8 +254,10 @@ def connect(src, srcfield, dest, destfield, msgtype="Single"):
     Or,
     >>> pulsegen.connect('output', spikegen, 'Vm')
     """
-    src = _moose.element(src)
-    dest = _moose.element(dest)
+    if isinstance(src, str):
+        src = element(src)
+    if isinstance(dest, str):
+        dest = element(dest)
     msg = src.connect(srcfield, dest, destfield, msgtype)
     if msg.name == '/':
         raise RuntimeError(
@@ -302,7 +304,7 @@ def element(arg):
 
 
 def exists(path):
-    """Returns True if an object with given path already exists."""
+    """Returns `True` if an object with given path already exists."""
     return _moose.exists(path)
 
 
@@ -316,9 +318,20 @@ def getCwe():
     return _moose.getCwe()
 
 
-def getField(classname, fieldname):
-    """Get specified field of specified class."""
-    return _moose.getField(classname, fieldname)
+def getField(el, fieldname):
+    """Get field `fieldname` of element `el`.
+
+    Parameters
+    ----------
+    el: melement
+        object to retrieve field of.
+    fieldname: str
+        name of the field to be retrieved
+    Returns
+    -------
+    field value or a Finfo depending on the type of the field
+    """
+    return _moose.getField(el, fieldname)
 
 
 def getFieldDict(classname, finfoType=""):
@@ -451,7 +464,10 @@ def setCwe(arg):
 
 
 def ce(arg):
-    """Alias for setCwe"""
+    """Set the current element to `arg`
+    
+    This is an alias for ``setCwe``
+    """
     _moose.setCwe(arg)
 
 
@@ -560,9 +576,9 @@ def copy(src, dest, name="", n=1, toGlobal=False, copyExtMsg=False):
         newly copied vec
     """
     if isinstance(src, str):
-        src = _moose.element(src)
+        src = element(src)
     if isinstance(dest, str):
-        dest = _moose.element(dest)
+        dest = element(dest)
     if not name:
         name = src.name
     return _moose.copy(src.id, dest, name, n, toGlobal, copyExtMsg)
@@ -624,8 +640,7 @@ def pwe():
 
     Returns
     ------
-    melement
-        current MOOSE element
+    None
 
     Example
     -------
@@ -633,8 +648,7 @@ def pwe():
     '/'
     """
     pwe_ = _moose.getCwe()
-    print(pwe_.path)
-    return pwe_
+    print(f'{pwe_.path}')
 
 
 def le(el=None):
@@ -650,12 +664,11 @@ def le(el=None):
 
     Returns
     -------
-    List[str]
-        path of all children
+    None
     """
     el = _moose.getCwe() if el is None else el
     if isinstance(el, str):
-        el = _moose.element(el)
+        el = element(el)
     elif isinstance(el, _moose.vec):
         el = el[0]
     _moose.le(el)
@@ -679,13 +692,10 @@ def showfields(el, field="*", showtype=False):
 
     Returns
     -------
-    string
+    None
 
     """
-    if isinstance(el, str):
-        if not _moose.exists(el):
-            raise ValueError(f"no such element: {el}")
-        el = _moose.element(el)
+    el = element(el)
     result = []
     if field == "*":
         value_field_dict = _moose.getFieldDict(el.className, "valueFinfo")
@@ -731,10 +741,7 @@ def showfield(el, field="*", showtype=False):
 
 def sysfields(el, showtype=False):
     """This function shows system fields which are suppressed by `showfields`."""
-    if isinstance(el, str):
-        if not _moose.exists(el):
-            raise ValueError(f"no such element: {el}")
-        el = _moose.element(el)
+    el = element(el)
     result = []
     value_field_dict = _moose.getFieldDict(el.className, "valueFinfo")
     max_type_len = max(len(dtype) for dtype in value_field_dict.values())
@@ -774,7 +781,7 @@ def listmsg(arg, direction=ALLMSG):
         of `arg`.
 
     """
-    obj = _moose.element(arg)
+    obj = element(arg)
     assert obj
     return _moose.listmsg(obj, direction)
 
@@ -795,7 +802,7 @@ def showmsg(el, direction=ALLMSG):
     None
 
     """
-    print(_moose.showmsg(_moose.element(el), direction))
+    print(_moose.showmsg(element(el), direction))
 
 
 def neighbors(el, field='*', msgtype='', direction=ALLMSG):
@@ -825,7 +832,7 @@ def neighbors(el, field='*', msgtype='', direction=ALLMSG):
     return [
         __to_melement(x)
         for x in _moose.neighbors(
-            _moose.element(el), field, msgtype, direction
+            element(el), field, msgtype, direction
         )
     ]
 
@@ -1006,43 +1013,43 @@ def mergeChemModel(modelpath, dest):
     return model_utils.mooseMergeChemModel(modelpath, dest)
 
 
-def isinstance_(element, classobj):
-    """Returns True if `element` is an instance of `classobj` or its
+def isinstance_(el, classobj):
+    """Returns True if `el` is an instance of `classobj` or its
     subclass.
 
     Like Python's builtin `isinstance` method, this returns `True` if
-    `element` is an instance of `classobj` or one of its subclasses.
+    `el` is an instance of `classobj` or one of its subclasses.
 
     Parameters
     ----------
-    element : moose.melement
+    el : moose.melement
         moose object
     classobj : class
         moose class
 
     Returns
     -------
-    True if `classobj` is a MOOSE-baseclass of `element`, False otherwise.
+    True if `classobj` is a MOOSE-baseclass of `el`, False otherwise.
 
     Raises
     ------
     TypeError if `classobj` is not a MOOSE class, or
-    `element` is not a MOOSE object
+    `el` is not a MOOSE object
 
 
     """
-    base_cinfo = _moose.element(f'/classes/{classobj.__name__}')
+    base_cinfo = element(f'/classes/{classobj.__name__}')
     if base_cinfo.name == '/':
         raise TypeError('Not a MOOSE class', classobj)
 
     try:
-        obj_cinfo = _moose.element(f'/classes/{element.className}')
+        obj_cinfo = element(f'/classes/{el.className}')
     except (
         AttributeError
     ):  # Not a MOOSE element - doesn't have className attribute
-        raise TypeError('Not a MOOSE object', element)
+        raise TypeError('Not a MOOSE object', el)
     while obj_cinfo.baseClass != 'none':
         if obj_cinfo.name == base_cinfo.name:
             return True
-        obj_cinfo = _moose.element(f'/classes/{obj_cinfo.baseClass}')
+        obj_cinfo = element(f'/classes/{obj_cinfo.baseClass}')
     return False

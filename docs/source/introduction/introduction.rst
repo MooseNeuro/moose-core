@@ -31,5 +31,25 @@ Python, graphical displays with Matplotlib, PyQt, and OpenGL, and support for
 many model formats. These include SBML, NeuroML, GENESIS kkit and cell.p
 formats, HDF5 and NSDF for data writing.
 
+How to navigate this documentation?
+-----------------------------------
+This documentation is organized into three parts:
+
+1. Beginner
+2. Intermediate
+3. Advanced
+
+Depending on your familiarity with programming and computational
+modeling you may want to pick the part that fits you best.
+
+Much of this documentation refers to `moose-examples` which is
+available as a separate repository: `moose-examples
+<https://github.com/MooseNeuro/moose-examples>`_. Please download the
+example scripts to try them out alongside the documentation.
+
+We also created a set of jupyter notebooks with step by step tutorials
+along with executable code: `moose-notebooks
+<https://github.com/MooseNeuro/moose-notebooks>`_.
+
 .. toctree::
    :maxdepth: 1
