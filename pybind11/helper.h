@@ -105,7 +105,10 @@ inline ObjId mooseCreateFromPath(const string type, const string& p,
             cwe += '/';
         path = cwe + path;
     }
-
+    // In the weird case where user specified path ends with '/'
+    if (path.length() > 1 && path.back() == '/') {
+        path = path.substr(0, path.length() - 1);
+    }
     // Split into dirname and basename component.
     auto pp = moose::splitPath(path);
     string name(pp.second);
@@ -252,7 +255,7 @@ msgType should specify the class of message: "Single", "OneToOne",
 "OneToAll", "Diagonal", and "Sparse", of "" for all types of
 messages. Default is "".
 
-   
+
  */
 vector<ObjId> mooseNeighbors(const ObjId& obj, const string& fieldName, const string& msgType="", int direction=2);
 

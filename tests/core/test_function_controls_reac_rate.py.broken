@@ -1,9 +1,9 @@
 ########################################################################
 # This example illustrates how a function can be used to control a reaction
-# rate. This kind of calculation is appropriate when we need to link 
-# different kinds of physical processses with chemical reactions, for  
+# rate. This kind of calculation is appropriate when we need to link
+# different kinds of physical processses with chemical reactions, for
 # example, membrane curvature with molecule accumulation. The use of
-# functions to modify reaction rates should be avoided in purely chemical 
+# functions to modify reaction rates should be avoided in purely chemical
 # systems since they obscure the underlying chemistry, and do not map
 # cleanly to stochastic calculations.
 #
@@ -12,7 +12,7 @@
 # on the cylinder, and is fixed. In more elaborate computations we could
 # have a function of multiple molecules, some of which could be changing and
 # others could be buffered.
-#  
+#
 #  Copyright (C) Upinder S. Bhalla NCBS 2018
 #  Released under the terms of the GNU Public License V3.
 ########################################################################
@@ -33,7 +33,7 @@ def makeFuncRate():
     C = moose.Pool( '/library/chem/compt/C' )
     reac = moose.Reac( '/library/chem/compt/reac' )
     func = moose.Function( '/library/chem/compt/reac/func' )
-    func.x.num = 1
+    # func.x.num = 1
     func.expr = "(x0/1e8)^2"
     moose.connect( C, 'nOut', func.x[0], 'input' )
     moose.connect( func, 'valueOut', reac, 'setNumKf' )

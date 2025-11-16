@@ -36,6 +36,7 @@ TabWidth:        4
 UseTab:          Never
 BreakBeforeBraces: Stroustrup
 IndentFunctionDeclarationAfterType: true
+SpaceBeforeParens: true
 SpacesInParentheses: false
 SpacesInAngles:  false
 SpaceInEmptyParentheses: false

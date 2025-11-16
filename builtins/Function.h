@@ -12,16 +12,14 @@ class Variable;
 class Eref;
 class Cinfo;
 
-namespace moose { 
-    class MooseParser;
+namespace moose {
+class MooseParser;
 };
 
-
 // Symbol types.
-enum VarType {XVAR_INDEX, XVAR_NAMED, YVAR, TVAR, CONSTVAR};
+enum VarType { XVAR_INDEX, XVAR_NAMED, YVAR, TVAR, CONSTVAR };
 
-class Function 
-{
+class Function {
 public:
     static const int VARMAX;
     Function();
@@ -32,7 +30,7 @@ public:
     // copy operator.
     Function& operator=(const Function& rhs);
 
-    static const Cinfo * initCinfo();
+    static const Cinfo* initCinfo();
 
     void setExpr(const Eref& e, const string expr);
     bool innerSetExpr(const Eref& e, const string expr);
@@ -41,7 +39,8 @@ public:
 
     // get a list of variable identifiers.
     vector<string> getVars() const;
-    void setVarValues(vector<string> vars, vector<double> vals); // subha: where is this defined?
+    void setVarValues(vector<string> vars,
+                      vector<double> vals);  // subha: where is this defined?
 
     /// set the value of `index`-th variable
     void setVar(unsigned int index, double value);
@@ -83,66 +82,73 @@ public:
     vector<double> getY() const;
 
     double getDerivative() const;
-
-    void findXsYs( const string& expr, vector<string>& vars );
-
-    unsigned int addVar();
+    // unsigned int addVar();
     /* void dropVar(unsigned int msgLookup); */
 
     void process(const Eref& e, ProcPtr p);
     void reinit(const Eref& e, ProcPtr p);
 
-    // This is also used as callback.
-    void addVariable(const string& name);
+    // // This is also used as callback.
+    // void addVariable(const string& name);
 
-    // Add unknown variable.
-    void callbackAddSymbol(const string& name);
+    // // Add unknown variable.
+    // void callbackAddSymbol(const string& name);
 
+    /**
+       Check of symbol named name exists in the Function.
+
+       @param name name of symbol.
+       @return true if name exists in symbol table, false otherwise.
+    */
     bool symbolExists(const string& name) const;
 
-    void addXByIndex(const unsigned int index);
-    void addXByName(const string& name);
+    /**
+       Add ys variable (names of the form "y{digits}")
 
-    void addY(const unsigned int index);
+       @param name set of strings of the form "y{digits}"
+    */
+    void addYs(vector<string>& names);
 
-    VarType getVarType(const string& name) const;
-
+    // VarType getVarType(const string& name) const;
+  void clearVariables();
     void clearAll();
-	void setSolver( const Eref& e, ObjId stoich );
+    void setSolver(const Eref& e, ObjId stoich);
 
 protected:
+    bool valid_{true};
+    unsigned int numVar_{0};
+    double lastValue_{0.0};
+    double value_{0.0};
+    double rate_{0.0};
+    unsigned int mode_{1};
+    bool useTrigger_{false};
+    bool doEvalAtReinit_{true};
+    bool allowUnknownVar_{true};
 
-    bool valid_;
-    unsigned int numVar_;
-    double lastValue_;
-    double value_;
-    double rate_;
-    unsigned int mode_;
-    bool useTrigger_;
-    bool doEvalAtReinit_;
-    bool allowUnknownVar_;
-
-    double t_;                             // local storage for current time
-    string independent_;                   // To take derivative.
+    double t_{0.0};         // local storage for current time
+    string independent_{};  // To take derivative.
 
     // this stores variables received via incoming messages, identifiers of
     // the form x{i} are included in this
-    vector<shared_ptr<Variable>> xs_;
+    vector<Variable*> xs_{};
 
-    // Keep the index of x's.
-    map<string, unsigned int> varIndex_;
+    /// Maps x variable names to their index in vector of x's (xs_).
+    map<string, unsigned int> varIndex_{};
+
+    /// last index of the x{i} vars - to track boundary of indexed and named
+    /// variables
+    unsigned int num_xi_{0};
 
     // this stores variable values pulled by sending request. identifiers of
     // the form y{i} are included in this
-    vector<shared_ptr<double>> ys_;
+    vector<double*> ys_{};
     map<string, shared_ptr<double>> consts_;
 
     // Used by kinetic solvers when this is zombified.
-    void* stoich_;
+    void* stoich_{};
 
     // pointer to the MooseParser
-    shared_ptr<moose::MooseParser> parser_;
-
+    moose::MooseParser* parser_{};
 };
 
 #endif /* end of include guard: FUNCTIONH_ */

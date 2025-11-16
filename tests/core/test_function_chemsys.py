@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """test_function_chemsys.py:
 
-odified from https://elifesciences.org/articles/25827 
+Modified from https://elifesciences.org/articles/25827
 Fig4.py
 """
 import sys

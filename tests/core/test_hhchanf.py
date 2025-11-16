@@ -9,42 +9,19 @@ Usage: pytest test_hhchanf.py
 """
 import moose
 import math
-import pytest
 from ephys import create_voltage_clamp, setup_step_command
 
 
-@pytest.fixture
-def container():
-    """
-    Setup:
-        Create a Neutral object as model container and ce to it before
-        yielding.
-
-    Teardown:
-        ce back to parent and delete the model
-        container.
-
-    """
-    ret = moose.Neutral('/test')
-    moose.ce(ret)
-    yield ret
-    moose.ce('..')
-    moose.delete(ret)
+def make_container(path='/test'):
+    if moose.exists(path):
+        moose.delete(path)
+    return moose.Neutral(path)
 
 
-@pytest.fixture
-def channel(container):
-    """
-    Setup:
-        Create a HHChannelF object.
-
-    Teardown:
-        Nothing. The container gets deleted
-    """
-    return moose.HHChannelF('ch')
-
-
-def test_hhgatef_creation(container):
+def test_hhgatef_creation():
+    container = make_container()
+    current = moose.getCwe()
+    moose.ce(container)
     channel = moose.HHChannelF('ch0')
     channel.Xpower = 1
     channel.Ypower = 2
@@ -52,10 +29,15 @@ def test_hhgatef_creation(container):
     assert moose.exists('ch0/gateX'), 'gateX object does not exist'
     assert math.isclose(channel.Ypower, 2), 'Ypower not set'
     assert moose.exists('ch0/gateY'), 'gateY object does not exist'
+    moose.ce(current)
 
-    
-def test_hhgatef_alpha_beta(channel):
+
+def test_hhgatef_alpha_beta():
     """Test set/get alpha and beta expressions"""
+    container = make_container()
+    current = moose.getCwe()
+    moose.ce(container)
+    channel = moose.HHChannelF('ch')
     channel.Xpower = 1
     xgate = moose.element(f'{channel.path}/gateX')
     alpha = '0.01 * (10 - v) / exp((10 - v)/10 - 1)'
@@ -66,10 +48,14 @@ def test_hhgatef_alpha_beta(channel):
     assert xgate.betaExpr == beta, 'beta not set'
     assert xgate.tauExpr == '', 'tau not reset'
     assert xgate.infExpr == '', 'inf not reset'
-    
+    moose.ce(current)
 
-def test_hhgatef_tau_inf(channel):
+def test_hhgatef_tau_inf():
     """Test set/get tau and inf expressions"""
+    container = make_container()
+    current = moose.getCwe()
+    moose.ce(container)
+    channel = moose.HHChannelF('ch')
     channel.Xpower = 1
     xgate = moose.element(f'{channel.path}/gateX')
     alpha = '0.01 * (10 - v) / exp((10 - v)/10 - 1)'
@@ -80,9 +66,13 @@ def test_hhgatef_tau_inf(channel):
     assert xgate.infExpr == beta, 'inf not set'
     assert xgate.alphaExpr == '', 'alpha not reset'
     assert xgate.betaExpr == '', 'beta not reset'
+    moose.ce(current)
 
-    
-def test_complex_expr(channel):    
+def test_complex_expr():
+    container = make_container()
+    current = moose.getCwe()
+    moose.ce(container)
+    ch = moose.HHChannelF('ch')
     channel.Xpower = 3
     channel.Ypower = 1
     channel.Ek = 55e-3
@@ -102,9 +92,9 @@ def test_complex_expr(channel):
     assert mgate.infExpr == minf, 'inf not set'
     assert hgate.tauExpr == htau, 'tau not set'
     assert hgate.infExpr == hinf, 'inf not set'
-    
-    
-def test_hh_k_vclamp(container, steptime=5.0):
+    moose.ce(current)
+
+def test_hh_k_vclamp(steptime=5.0):
     """Simulate a voltage clamp with Hodhkin and Huxley's K+ channel.
 
     Parameters
@@ -112,6 +102,9 @@ def test_hh_k_vclamp(container, steptime=5.0):
     steptime: float
         Time of the voltage step
     """
+    container = make_container()
+    current = moose.getCwe()
+    moose.ce(container)
     comp = moose.Compartment('comp0')
     chan = moose.HHChannelF(f'{comp.path}/K')
     moose.connect(chan, 'channel', comp, 'channel')
@@ -156,11 +149,14 @@ def test_hh_k_vclamp(container, steptime=5.0):
         assert math.isclose(
             gk, chan.Gk, abs_tol=1e-6
         ), f'Vm={vstep} Gk={chan.Gk}, expected={gk}'
+    moose.ce(current)
 
-
-def test_hh_na_vclamp(container, steptime=5.0):
+def test_hh_na_vclamp(steptime=5.0):
     """Test the evaluation of hhchannel conductance using Hodgkin and
     Huxleys Na channel model"""
+    container = make_container()
+    current = moose.getCwe()
+    moose.ce(container)
     comp = moose.Compartment('comp0')
     chan = moose.HHChannelF(f'{comp.path}/Na')
     moose.connect(chan, 'channel', comp, 'channel')
@@ -209,11 +205,14 @@ def test_hh_na_vclamp(container, steptime=5.0):
         assert math.isclose(
             gna, chan.Gk, abs_tol=1e-6
         ), f'Vm={vstep} Gk={chan.Gk}, expected={gna}'
-    
+    moose.ce(current)
 
-def test_hhchanf_eval(container):
+def test_hhchanf_eval():
     """Test the evaluation of hhchannel conductance using Hodgkin and
     Huxleys Na channel model"""
+    container = make_container()
+    current = moose.getCwe()
+    moose.ce(container)
     comp = moose.Compartment('comp0')
     chan = moose.HHChannelF(f'{comp.path}/Na')
     moose.connect(chan, 'channel', comp, 'channel')
@@ -245,7 +244,7 @@ def test_hhchanf_eval(container):
         moose.start(tdelta)
         t += tdelta
         print(f'time={t} Gk={chan.Gk} Vm={comp.Vm}')
-
+    moose.ce(current)
 
 if __name__ == '__main__':
     test_hhgatef_creation()

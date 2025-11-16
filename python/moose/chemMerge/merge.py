@@ -12,7 +12,7 @@
 #**           copyright (C) 2003-2017 Upinder S. Bhalla. and NCBS
 #Created : Friday Dec 16 23:19:00 2016(+0530)
 #Version
-#Last-Updated: Wed May 21 11:52:33 2018(+0530)
+#Last-Updated: Fri Nov 14 20:13:25 2025 (+0530)
 #         By: Harsha
 #**********************************************************************/
 
@@ -40,14 +40,14 @@
 #
 '''
 Change log
-May 21 : Instead of A and B changed to S and D (source and destination), 
+May 21 : Instead of A and B changed to S and D (source and destination),
         - at Pool level Neutral and its objected where copied, but again at Enz and Reac level copying was done which caused duplicates which is taken care
         - If Neutral object name is changed for destination, then change made to source file which would be easy to copy else path issue will come
 Oct 25 : line to load SBML file was commented, which is uncommented now and also while copying MMenz had a problem which also cleaned up
 Oct 14 : absolute import with mtypes just for python3
 
 Oct 12 : clean way of cheking the type of path provided, filepath,moose obj, moose path are taken,
-        if source is empty then nothing to copy, 
+        if source is empty then nothing to copy,
         if destination was empty list is update with new object
 
 Oct 11 : missing group are copied instead of creating one in new path which also copies Annotator info
@@ -106,7 +106,7 @@ def mergeChemModel(src,des):
     modelB = moose.element('/')
     modelA,loadedA = checkFile_Obj_str(A)
     modelB,loadedB = checkFile_Obj_str(B)
-    
+
     if loadedA and loadedB:
         ## yet deleteSolver is called to make sure all the moose object are off from solver
         deleteSolver(modelA)
@@ -117,7 +117,7 @@ def mergeChemModel(src,des):
         grpNotcopiedyet = []
         dictComptA = dict( [ (i.name,i) for i in moose.wildcardFind(modelA+'/##[ISA=ChemCompt]') ] )
         dictComptB = dict( [ (i.name,i) for i in moose.wildcardFind(modelB+'/##[ISA=ChemCompt]') ] )
-                
+
         poolNotcopiedyet = []
         if len(dictComptA):
             for key in list(dictComptA.keys()):
@@ -134,16 +134,16 @@ def mergeChemModel(src,des):
                         while (abs(dictComptB[key].volume - dictComptA[key].volume) != 0.0):
                             dictComptA[key].volume = float(dictComptB[key].volume)
                     dictComptB = dict( [ (i.name,i) for i in moose.wildcardFind(modelB+'/##[ISA=ChemCompt]') ] )
-                    
+
                     #Mergering pool
                     poolMerge(dictComptA[key],dictComptB[key],poolNotcopiedyet)
 
-            
+
             comptBdict =  comptList(modelB)
 
             poolListinb = {}
             poolListinb = updatePoolList(comptBdict)
-            
+
             R_Duplicated, R_Notcopiedyet,R_Dangling = [], [], []
             E_Duplicated, E_Notcopiedyet,E_Dangling = [], [], []
             for key in list(dictComptA.keys()):
@@ -155,7 +155,7 @@ def mergeChemModel(src,des):
 
                 poolListinb = updatePoolList(dictComptB)
                 E_Duplicated,E_Notcopiedyet,E_Dangling = enzymeMerge(dictComptB,dictComptA,key,poolListinb)
-            
+
             # if isinstance(src, str):
             #     if os.path.isfile(src) == True:
             #         spath, sfile = os.path.split(src)
@@ -171,7 +171,7 @@ def mergeChemModel(src,des):
             #         dfile = des
             # else:
             #     dfile = des
-            
+
             print("\nThe content of %s (src) model is merged to %s (des)." %(sfile, dfile))
             # Here any error or warning during Merge is written it down
             if funcExist:
@@ -219,7 +219,7 @@ def mergeChemModel(src,des):
                     print ("Enzyme:")
                     for ed in list(E_Dangling):
                         print ("%s " %str(ed.name))
-            
+
             ## Model is saved
             print ("\n ")
             print ('\nMerged model is available under moose.element(\'%s\')' %(modelB))
@@ -253,7 +253,7 @@ def mergeChemModel(src,des):
             #     print ('  If you are in python terminal you could save \n   >moose.mooseWriteKkit(\'%s\',\'filename.g\')' %(modelB))
             #     print ('  If you are in python terminal you could save \n   >moose.mooseWriteSBML(\'%s\',\'filename.g\')' %(modelB))
             #return modelB
-        
+
     else:
         print ('\nSource file has no objects to copy(\'%s\')' %(modelA))
         return moose.element('/')
@@ -300,16 +300,7 @@ def createFunction(fb,setpool,objB,objA):
     fapath1 = fb.path.replace(objB,objA)
     fapath = fapath1.replace('[0]','')
 
-    if not moose.exists(fapath):
-        # if fb.parent.className in ['CubeMesh','CyclMesh']:
-        #   des = moose.Function('/'+objA+'/'+fb.parent.name+'/'+fb.name)
-        # elif fb.parent.className in ['Pool','ZombiePool','BufPool','ZombieBufPool']:
-        #   for akey in list(poolListina[findCompartment(fb).name]):
-        #       if fb.parent.name == akey.name:
-        #           des = moose.Function(akey.path+'/'+fb.name)
-        des = moose.Function(fapath)
-    else:
-        des = moose.element(fapath)
+    des = moose.Function(fapath)
     inputB = moose.element(fb.path+'/x').neighbors["input"]
     moose.connect(des, 'valueOut', moose.element(setpool),'setN' )
     inputA = []
@@ -385,13 +376,13 @@ def poolMerge(comptS,comptD,poolNotcopiedyet):
     #Then for that group pools are copied
     SCmptGrp = moose.wildcardFind(comptS.path+'/#[TYPE=Neutral]')
     SCmptGrp.append(moose.element(comptS.path))
-    
+
     DCmptGrp = moose.wildcardFind(comptD.path+'/#[TYPE=Neutral]')
     DCmptGrp.append(moose.element(comptD.path))
-    
+
     objS = moose.element(comptS.path).parent.name
     objD = moose.element(comptD.path).parent.name
-    
+
     for spath in SCmptGrp:
         grp_cmpt = ((spath.path).replace(objS,objD,1)).replace('[0]','')
         if moose.exists(grp_cmpt):
@@ -402,7 +393,7 @@ def poolMerge(comptS,comptD,poolNotcopiedyet):
                 grp_cmpt = grp_cmpt+'_grp'
                 moose.Neutral(grp_cmpt)
                 # If group name is changed while creating in destination, then in source file the same is changed,
-                # so that later path issue doens't come 
+                # so that later path issue doens't come
                 spath.name = spath.name+'_grp'
         else:
             #Neutral obj from src if doesn't exist in destination,then create src's Neutral obj in des
@@ -416,14 +407,14 @@ def poolMerge(comptS,comptD,poolNotcopiedyet):
         dpoollist = moose.wildcardFind(dpath.path+'/#[ISA=PoolBase]')
         #check made, for a given Neutral or group if pool doesn't exist then copied
         # but some pool if enzyme cplx then there are holded untill that enzyme is copied in
-        # `enzymeMerge` function        
+        # `enzymeMerge` function
         for spool in spoollist:
             if spool.name not in [dpool.name for dpool in dpoollist]:
                 copied = copy_deleteUnlyingPoolObj(spool,dpath)
                 if copied == False:
                     #hold it for later, this pool may be under enzyme, as cplx
                     poolNotcopiedyet.append(spool)
-    
+
 def copy_deleteUnlyingPoolObj(pool,path):
     # check if this pool is under compartement or under enzyme?(which is enzyme_cplx)
     # if enzyme_cplx then don't copy untill this perticular enzyme is copied
@@ -562,10 +553,10 @@ def reacMerge(comptS,comptD,key,poolListina):
     comptDpath = moose.element(comptD[key]).path
     objS = moose.element(comptSpath).parent.name
     objD = moose.element(comptDpath).parent.name
-    
+
     reacListins = moose.wildcardFind(comptSpath+'/##[ISA=Reac]')
     reacListind = moose.wildcardFind(comptDpath+'/##[ISA=Reac]')
-    
+
     for rs in reacListins:
         rSsubname, rSprdname = [],[]
         rSsubname = subprdList(rs,"sub")
@@ -603,7 +594,7 @@ def reacMerge(comptS,comptD,key,poolListina):
             #Same reaction name
             #   -- Same substrate and product including same volume then don't copy
             #   -- different substrate/product or if sub/prd's volume is different then DUPLICATE the reaction
-            
+
             allclean = False
             for rd in reacListind:
                 if rs.name == rd.name:
@@ -642,7 +633,7 @@ def reacMerge(comptS,comptD,key,poolListina):
                             RE_Notcopiedyet.append(rs)
                         else:
                             RE_Dangling.append(rs)
-    
+
     return RE_Duplicated,RE_Notcopiedyet,RE_Dangling
 
 def subprdList(reac,subprd):

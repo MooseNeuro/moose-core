@@ -60,7 +60,7 @@ public:
         if ( expr.find( "oldVal" ) != string::npos )
             useOldVal = true;
 
-        SetExpr( expr );
+        SetExpr( expr, false );
     }
 
     /// Defines the order of arguments in the val array.
