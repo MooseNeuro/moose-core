@@ -1,4 +1,4 @@
-"""test_moose_attribs.py: 
+"""test_moose_attribs.py:
 
 """
 
@@ -125,15 +125,16 @@ attribs = [
     "about",
     "Variable",
     "VectorTable",
-    "ZombieBufPool",
     "ZombieCaConc",
     "ZombieCompartment",
-    "ZombieEnz",
-    "ZombieFunction",
+    ## These classes have been removed
+    # "ZombieBufPool",
+    # "ZombieEnz",
+    # "ZombieFunction",
+    # "ZombieMMenz",
+    # "ZombiePool",
+    # "ZombieReac",
     "ZombieHHChannel",
-    "ZombieMMenz",
-    "ZombiePool",
-    "ZombieReac",
     "_moose",
     "chemMerge",
     "chemUtil",

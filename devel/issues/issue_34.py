@@ -36,7 +36,7 @@ k = moose.Gsolve('/compt/ksolve')
 s = moose.Stoich('/compt/stoich')
 s.compartment = compt
 s.ksolve = k
-s.path = '/compt/##'
+s.reacSystemPath'/compt/##'
 
 moose.reinit()
 moose.start(10)

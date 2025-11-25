@@ -47,7 +47,7 @@ for compt in compts:
     stoich = moose.Stoich( compt.path+'/stoich' )
     stoich.compartment = compt
     stoich.ksolve = ksolve
-    stoich.path = compt.path+"/##"
+    stoich.reacSystemPath = compt.path+"/##"
 
 print("After solver is set")
 print(" f name= ",f.name,f.tick)
