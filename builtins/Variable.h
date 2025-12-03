@@ -54,7 +54,7 @@ public:
         return name_;
     }
 
-    double* ref()
+    double* ptr()
     {
         return &value_;
     }
@@ -67,4 +67,3 @@ private:
 };
 
 #endif // include guard.
-
