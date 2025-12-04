@@ -50,8 +50,8 @@ struct ParserException : public std::exception
 };
 
 typedef ParserException exception_type;
-typedef map<string, double> varmap_type;
-} // namespace Parser
+typedef vector<pair<string, double>> varmap_type;
+}  // namespace Parser
 
 class MooseParser
 {
@@ -64,8 +64,9 @@ public:
     /*-----------------------------------------------------------------------------
      *  Set/Get
      *-----------------------------------------------------------------------------*/
-    Parser::symbol_table_t& GetSymbolTable(const unsigned int nth=0);
-    const Parser::symbol_table_t& GetSymbolTable(const unsigned int nth=0) const;
+    Parser::symbol_table_t& GetSymbolTable();
+    // const Parser::symbol_table_t& GetSymbolTable(
+    //     const unsigned int nth = 0) const;
 
     /*-----------------------------------------------------------------------------
      *  User interface.
@@ -76,20 +77,20 @@ public:
 
     void DefineFun1( const string& funcName, double (&func)(double) );
 
-    bool SetExpr( const string& expr);
-    bool SetExprWithUnknown( const string& expr, Function* func);
+  bool SetExpr(const string& expr, bool allow_unknown=false);
 
-    bool CompileExpr();
-    bool CompileExprWithUnknown(Function* func);
+    bool CompileExpr(bool allow_uknown);
 
     // Reformat the expression to meet TkExpr.
-    string Reformat( const string user_expr );
+    static string Reformat( const string user_expr );
 
-    static void findAllVars( const string& expr, set<string>& vars, const string& start );
-    static void findXsYs(const string& expr, set<string>& xs, set<string>& ys);
+    // static void findAllVars( const string& expr, set<string>& vars, const string& start );
+    // static void findXsYs(const string& expr, set<string>& xs, set<string>& ys);
 
-    void LinkVariables(vector<Variable*>& xs_, vector<double*>& ys_, double* t);
-    void LinkVariables(vector<shared_ptr<Variable>>& xs_, vector<shared_ptr<double>>& ys_, double* t);
+    /// Internal function to do a first pass of parsing to obtain variable names
+  bool ParseVariables(const string& expr, vector<string>& vars);
+    // void LinkVariables(vector<Variable*>& xs_, vector<double*>& ys_, double* t);
+    // void LinkVariables(vector<shared_ptr<Variable>>& xs_, vector<shared_ptr<double>>& ys_, double* t);
 
     double Eval(bool check=false) const;
 
@@ -100,13 +101,17 @@ public:
     bool IsConst(const string& name) const;
     double GetConst(const string& name) const;
     double GetVarValue(const string& name) const;
+    /**
+       Get a vector of <name, value> pairs of all defined constants
+    */
+  Parser::varmap_type GetConstants() const;
 
 
     void ClearVariables( );
     void ClearAll( );
-    void Reset( );
+    // void Reset( );
 
-    const string GetExpr( ) const;
+    const string& GetExpr( ) const;
 
     /*-----------------------------------------------------------------------------
      *  User defined function of parser.
@@ -121,12 +126,11 @@ public:
 private:
 
     /* data */
-    string expr_;
+  string expr_{"0"};
 
-    Parser::expression_t expression_;     /* expression type */
-
-    unsigned int num_user_defined_funcs_ = 0;
-
+  Parser::expression_t expression_;
+  Parser::symbol_table_t symbolTable_;
+  unsigned int num_user_defined_funcs_{0};
     bool valid_{false};
 
 };

@@ -5,6 +5,7 @@
  */
 
 #include <regex>
+#include <algorithm>
 
 #include "../basecode/header.h"
 #include "../basecode/global.h"
@@ -426,20 +427,20 @@ constant 'pi'.
 
 static const Cinfo * functionCinfo = Function::initCinfo();
 
-Function::Function():
-    valid_(true)
-    , numVar_(0)
-    , lastValue_(0.0)
-    , value_(0.0)
-    , rate_(0.0)
-    , mode_(1)
-    , useTrigger_(false)
-    , doEvalAtReinit_(false)
-    , allowUnknownVar_(true)
-    , t_(0.0)
-    , independent_("t")
-    , stoich_(nullptr)
-    , parser_(shared_ptr<moose::MooseParser>(new moose::MooseParser()))
+Function::Function()
+    : valid_(true),
+      numVar_(0),
+      lastValue_(0.0),
+      value_(0.0),
+      rate_(0.0),
+      mode_(1),
+      useTrigger_(false),
+      doEvalAtReinit_(false),
+      allowUnknownVar_(true),
+      t_(0.0),
+      independent_("t"),
+      stoich_(nullptr),
+      parser_(new moose::MooseParser())
 {
 }
 
@@ -451,8 +452,10 @@ Function& Function::operator=(const Function& rhs)
     if( this == &rhs)
         return *this;
 
+    // delete allocated vars, clear parser
+    clearAll();
+
     valid_ = rhs.valid_;
-    numVar_ = rhs.numVar_;
     lastValue_ = rhs.lastValue_;
     value_ = rhs.value_;
     mode_ = rhs.mode_;
@@ -461,26 +464,28 @@ Function& Function::operator=(const Function& rhs)
     allowUnknownVar_ = rhs.allowUnknownVar_;
     t_ = rhs.t_;
     rate_ = rhs.rate_;
+    num_xi_ = rhs.num_xi_;
 
-    // Deep copy; create new Variable and constant to link with new parser.
+    // Deep copy; create new Variables and constants to link with new parser.
     // Zombification requires it. DO NOT just copy the object/pointer of
     // MooseParser.
-    xs_.clear();
-    ys_.clear();
-    varIndex_.clear();
-    parser_->ClearAll();
-    if(rhs.parser_->GetExpr().size() > 0)
-    {
+    if (rhs.parser_->GetExpr().size() > 0) {
+        // Copy the constants
+        for (auto cc : rhs.parser_->GetConstants()) {
+            parser_->DefineConst(cc.first, cc.second);
+        }
         // These are alreay indexed. So its OK to add them by name.
-        for(auto x: rhs.xs_)
-        {
-            xs_.push_back(shared_ptr<Variable>(new Variable(x->getName())));
-            varIndex_[x->getName()] = xs_.size()-1;
+        for (auto *x : rhs.xs_) {
+            xs_.push_back(new Variable(x->getName()));
+            varIndex_[x->getName()] = xs_.size() - 1;
+            parser_->DefineVar(xs_.back()->getName(), xs_.back()->ptr());
         }
         // Add all the Ys now.
-        for(unsigned int i=0; i < rhs.ys_.size(); i++)
-            ys_.push_back(shared_ptr<double>(new double(0.0)));
-        parser_->LinkVariables(xs_, ys_, &t_);
+        for (unsigned int i = 0; i < rhs.ys_.size(); i++) {
+            ys_.push_back(new double(0.0));
+            parser_->DefineVar('y' + to_string(i), ys_[i]);
+        }
+        parser_->DefineVar("t", &t_);
         parser_->SetExpr(rhs.parser_->GetExpr());
     }
     return *this;
@@ -488,138 +493,13 @@ Function& Function::operator=(const Function& rhs)
 
 Function::~Function()
 {
-}
-
-/* --------------------------------------------------------------------------*/
-/**
- * @Synopsis  Add a xn (index n). Make sure to add all missing i's such at we have all
- * xi s from x0 to xn.
- *
- * FIXME: DO NOT CALL THIS FUNCTION if there are non xi in the xs_.
- *
- * @Param index
- */
-/* ----------------------------------------------------------------------------*/
-void Function::addXByIndex(const unsigned int index)
-{
-    // We have only xi's in xs_.
-    string name = 'x'+to_string(index);
-    if(symbolExists(name))
-        return;
-
-    if(index >= xs_.size())
-    {
-        for(unsigned int i = xs_.size(); i <= index; i++) 
-        {
-            xs_.push_back(shared_ptr<Variable>(new Variable('x'+to_string(i))));
-            varIndex_[name] = xs_.size()-1;
-        }
+    for (auto *x : xs_) {
+        delete x;
     }
-    parser_->DefineVar(name, xs_[index]->ref());
-    varIndex_[name] = xs_.size()-1;
-    numVar_ = varIndex_.size();
-}
-
-void Function::addXByName(const string& name)
-{
-    if(symbolExists(name))
-        return;
-    xs_.push_back(shared_ptr<Variable>(new Variable(name)));
-    parser_->DefineVar(name, xs_.back()->ref());
-    varIndex_[name] = xs_.size()-1;
-    numVar_ = varIndex_.size();
-}
-
-void Function::addY(const unsigned int index)
-{
-    string name = 'y'+to_string(index);
-    if(index >= ys_.size())
-        ys_.resize(index+1);
-    ys_[index].reset(new double(0.0));
-    parser_->DefineVar(name, ys_[index].get());
-}
-
-/**
-   We use different storage for constants and variables. Variables are
-   stored in a vector of Variable object pointers. They must have the
-   name x{index} where index is any non-negative integer. Note that
-   the vector is resized to whatever the maximum index is. It is up to
-   the user to make sure that indices are sequential without any
-   gap. In case there is a gap in indices, those entries will remain
-   unused.
-
-   If the name starts with anything other than `x` or `y`, then it is taken
-   to be a named constant, which must be set before any expression or
-   variables and error is thrown.
- */
-void Function::addVariable(const string& name)
-{
-    // Names starting with x are variables, everything else is constant.
-    VarType vtype = getVarType(name);
-
-    if(XVAR_INDEX == vtype)
-    {
-        addXByIndex(stoul(name.substr(1)));
-        return;
+    for (auto *y : ys_) {
+        delete y;
     }
-    if(XVAR_NAMED == vtype)
-    {
-        addXByName(name);
-        return;
-    }
-
-    if(YVAR == vtype)
-    {
-        addY(stoul(name.substr(1)));
-        return;
-    }
-
-    if (TVAR == vtype)
-    {
-        parser_->DefineVar("t", &t_);
-        return;
-    }
-
-    if(CONSTVAR == vtype)
-    {
-        // These are constants. Don't add them. We don't know there value just
-        // yet. 
-        return;
-    }
-
-    throw runtime_error(name + " is not supported or invalid name.");
-}
-
-void Function::callbackAddSymbol(const string& name)
-{
-    // Add only if doesn't exist.
-    if(varIndex_.find(name) == varIndex_.end())
-        addXByName(name);
-}
- 
-/* --------------------------------------------------------------------------*/
-/**
- * @Synopsis  Return the type of Variable.
- *
- * @Param name
- *
- * @Returns   
- */
-/* ----------------------------------------------------------------------------*/
-VarType Function::getVarType(const string& name) const
-{
-    if(regex_match(name, regex("x\\d+")))
-        return XVAR_INDEX;
-    if(regex_match(name, regex("y\\d+")))
-        return YVAR;
-    if (regex_match(name, regex("c\\d+")))
-        return CONSTVAR;
-    if (allowUnknownVar_ && parser_->IsConst(name)){ // if user already defined named constants 
-	return CONSTVAR;
-    }
-    if(name == "t")
-        return TVAR;
-    return XVAR_NAMED;
+    delete parser_;
 }
 
 /* --------------------------------------------------------------------------*/
@@ -636,10 +516,9 @@ void Function::setExpr(const Eref& eref, const string expression)
     string expr = moose::trim(expression);
     if(expr.empty())
         return;
-
-    if(valid_ && expr == parser_->GetExpr())
-    {
-        MOOSE_WARN( "No changes in the expression.");
+    expr = moose::MooseParser::Reformat(expr);
+    if (valid_ && expr == parser_->GetExpr()) {
+        MOOSE_WARN("No changes in the expression.");
         return;
     }
 
@@ -647,8 +526,8 @@ void Function::setExpr(const Eref& eref, const string expression)
     {
         valid_ = innerSetExpr(eref, expr);
     }
-    catch(moose::Parser::ParserException& e)
-    {
+    catch (moose::Parser::ParserException &e) {
+        clearAll();
         valid_ = false;
         cerr << "Error setting expression on: " << eref.objId().path() << endl;
         cerr << "\tExpression: '" << expr << "'" << endl;
@@ -680,32 +559,120 @@ bool Function::innerSetExpr(const Eref& eref, const string expr)
     //
     // >>> f.expr = 'x0+x2'
     // >>> # connect x0 and x2
-    // >>> f.expr += '+ 100+y0' 
+    // >>> f.expr += '+ 100+y0'
     // >>> # connect more etc.
 
-    // First, set the xi, yi and t to the symbol table.
-    set<string> xs;
-    set<string> ys;
-    moose::MooseParser::findXsYs(expr, xs, ys);
-    for(auto &x : xs) addXByIndex(std::stoul(x.substr(1)));
-    for(auto &y : ys) addY(std::stoul(y.substr(1)));
-    addVariable("t");
-    
-    if(allowUnknownVar_)
-       return parser_->SetExprWithUnknown(expr, this);
+    // First, add the xi, yi and t to the symbol table.
+    vector<string> vars;
+    parser_->ParseVariables(expr, vars);
+    vector<string> xs;      // variable names x0, x1, ...
+    vector<string> ys;      // variable names y0, y1, ...
+    vector<string> others;  // all other variable names
+    const regex xpattern("x\\d+");
+    const regex ypattern("y\\d+");
+    smatch sm;
+    for (auto &name : vars) {
+        if (regex_search(name, sm, xpattern)) {
+            xs.push_back(name);
+        }
+        else if (regex_search(name, sm, ypattern)) {
+            ys.push_back(name);
+        }
+        else if (name != "t" && !parser_->IsConst(name)) {
+            others.push_back(name);
+        }
+    }
+    std::sort(xs.begin(), xs.end());
+    std::sort(ys.begin(), ys.end());
+    std::sort(others.begin(), others.end());
+    // extract the constants from the parser
 
-    // If we are here that mean we have only xi, yi and t in the expression.
-    // Find all variables x\d+ or y\d+ etc, and add them.
-    return parser_->SetExpr(expr);
+    // keep the existing variables aside for relocation
+    vector<Variable *> old_xs(xs_);
+    unsigned int new_xi_count = num_xi_;
+    if (!xs.empty()) {
+        unsigned int num_xi_new = std::stoul(xs.back().substr(1)) + 1;
+        if (num_xi_new > num_xi_) {
+            new_xi_count = num_xi_new;
+        }
+    }
+    if (!allowUnknownVar_ && others.size() > 0) {
+        cerr << "Warning: allowUnknownVariables is false. These variables will "
+                "be ignored: \n";
+        for (auto &name : others) {
+            cerr << "  " << name << '\n';
+        }
+        cerr << endl;
+        clearVariables();
+        return false;
+    }
+    // collect the known named variables for relocation
+    vector<string> known;
+    for (unsigned int ii = num_xi_; ii < xs_.size(); ++ii) {
+        known.push_back(xs_[ii]->getName());
+    }
+    // find the variables do not already exist
+    vector<string> new_named;
+    std::set_difference(others.begin(), others.end(), known.begin(),
+                        known.end(), std::back_inserter(new_named));
+    unsigned int new_size = new_xi_count + known.size() + new_named.size();
+    xs_.resize(new_size);
+
+    // Fill the new xi vars - resize preserves existing entries
+    // Add x variables by index ("x0", "x1", etc.). If N is the
+    // largest value for ii for variable names "x{ii}", then a total
+    // of N Variable objects, named "x0", "x1", ..., "xN" are
+    // created. This is true even if some indices are missing in the
+    // parameter names.
+    for (unsigned int ii = num_xi_; ii < new_xi_count; ++ii) {
+        string name = 'x' + to_string(ii);
+        xs_[ii] = new Variable(name);
+        varIndex_[name] = ii;
+        parser_->DefineVar(name, xs_[ii]->ptr());
+    }
+
+    // Now re-fill the known named variables
+    for (unsigned int ii = 0; ii < old_xs.size() - num_xi_; ++ii) {
+        Variable *var = old_xs[ii + num_xi_];
+        xs_[ii + new_xi_count] = var;
+        varIndex_[var->getName()] = ii + new_xi_count;
+        // already defined in symbol table
+    }
+    num_xi_ = new_xi_count;
+    // Now create and append new named variables
+    // Add x variable by name (anything but "x{digits}" and "y{digits}").
+
+    for (unsigned int ii = 0; ii < new_named.size(); ++ii) {
+        unsigned int idx = num_xi_ + ii;
+        xs_[idx] = new Variable(new_named[ii]);
+        parser_->DefineVar(new_named[ii], xs_[idx]->ptr());
+        varIndex_[new_named[ii]] = idx;
+    }
+    // Add ys variable (names of the form "y{digits}")
+    if (!ys.empty()) {
+        unsigned int old_yi_count = ys_.size();
+        unsigned num_yi_new = std::stoul(ys.back().substr(1)) + 1;
+        if (old_yi_count < num_yi_new) {
+            ys_.resize(num_yi_new);
+            for (unsigned int ii = old_yi_count; ii < num_yi_new; ++ii) {
+                ys_[ii] = new double(0.0);
+                parser_->DefineVar('y' + to_string(ii), ys_[ii]);
+            }
+        }
+    }
+    if (others.size() > 0 && allowUnknownVar_) {
+    }
+    parser_->DefineVar("t", &t_);
+    return parser_->SetExpr(expr, allowUnknownVar_);
 }
 
 string Function::getExpr( const Eref& e ) const
 {
-    if (!valid_)
-    {
-        cerr << __func__ << " Error: " << e.objId().path() << "::getExpr() - invalid parser state" << endl;
-        cout << "\tExpression was : " << parser_->GetExpr() << endl;
-        return "";
+    if (!valid_) {
+        cerr << __func__ << " Error: " << e.objId().path()
+             << "::getExpr() - invalid parser state. Assign a correct "
+                "expression."
+             << endl;
     }
     return parser_->GetExpr();
 }
@@ -793,9 +760,11 @@ double Function::getDerivative() const
     double value = 0.0;
     if (!valid_) {
         cerr << __func__ << "Error:  invalid state" << endl;
-        return value;
     }
-    return parser_->Derivative(independent_);
+    else {
+        value = parser_->Derivative(independent_);
+    }
+    return value;
 }
 
 void Function::setNumVar(const unsigned int num)
@@ -807,7 +776,7 @@ void Function::setNumVar(const unsigned int num)
 
 unsigned int Function::getNumVar() const
 {
-    return numVar_;
+    return xs_.size();
 }
 
 void Function::setVar(unsigned int index, double value)
@@ -828,7 +797,7 @@ Variable* Function::getX(unsigned int ii)
         //MOOSE_WARN("No active variable for index " << ii);
         return &dummy;
     }
-    return xs_[ii].get();
+    return xs_[ii];
 }
 
 void Function::setConst(string name, double value)
@@ -866,21 +835,19 @@ void Function::process(const Eref &e, ProcPtr p)
     // Update values of incoming variables.
     vector<double> databuf;
     requestOut()->send(e, &databuf);
+    for (unsigned int ii = 0; (ii < databuf.size()) && (ii < ys_.size()); ++ii)
+        *ys_[ii] = databuf[ii];
 
     t_ = p->currTime;
     value_ = getEval();
     rate_ = (value_ - lastValue_) / p->dt;
 
-    for (unsigned int ii = 0; (ii < databuf.size()) && (ii < ys_.size()); ++ii)
-        *ys_[ii] = databuf[ii];
-
-    if ( useTrigger_ && value_ < TriggerThreshold )
-    {
+    if (useTrigger_ && value_ < TriggerThreshold) {
         lastValue_ = value_;
         return;
     }
 
-    switch (mode_) 
+    switch (mode_)
     {
     case 1:
     {
@@ -954,20 +921,37 @@ void Function::reinit(const Eref &e, ProcPtr p)
     }
     }
 }
-    
 
-void Function::clearAll()
+
+void Function::clearVariables()
 {
+    for (auto *xx : xs_) {
+        delete xx;
+    }
+    for (auto *yy : ys_) {
+        delete yy;
+    }
+    num_xi_ = 0;
     xs_.clear();
     ys_.clear();
     varIndex_.clear();
+    parser_->ClearVariables();
+}
+void Function::clearAll()
+{
+    clearVariables();
+    // moose::Parser::varmap_type vars = parser_->GetConstants();
+    parser_->ClearAll();
+    // for (auto var : vars) {
+    //     parser_->DefineConst(var.first, var.second);
+    // }
 }
 
 void Function::setSolver( const Eref& e, ObjId newStoich )
 {
-	
+
 	if ( newStoich.bad() ) {
-		cout << "Warning: Function::setSolver: Bad Stoich " << 
+		cout << "Warning: Function::setSolver: Bad Stoich " <<
 				e.id().path() << endl;
 		return;
 	}
