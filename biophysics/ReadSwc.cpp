@@ -22,6 +22,18 @@
 // Believe it or not, some otherwise reasonable files do have smaller radii
 static const double MinRadius = 0.04;
 
+bool isWhitespaceOnly(const std::string& s) {
+    if (s.empty()) {
+        return true;
+    }
+    for (char c : s) {
+        if (!std::isspace(static_cast<unsigned char>(c))) {
+            return false; // Found a non-whitespace character
+        }
+    }
+    return true; // All characters were whitespace
+}
+
 ReadSwc::ReadSwc( const string& fname )
 {
     ifstream fin( fname.c_str() );
@@ -35,7 +47,7 @@ ReadSwc::ReadSwc( const string& fname )
     int badSegs = 0;
     while( getline( fin, temp ) )
     {
-        if ( temp.length() == 0 )
+        if ( isWhitespaceOnly(temp) )
             continue;
         auto pos = temp.find_first_not_of( "\t " );
         if ( pos == string::npos )
@@ -226,27 +238,22 @@ void ReadSwc::diagnostics() const
     }
 
     for ( int i = 0; i < 14; ++i )
-        cout << "ReadSwc::diagnostics: " << setw(12) << SwcSegment::typeName[i] 
-            << ": " << setw(5) << diag[i] << endl;
+        cout << "ReadSwc::diagnostics: " << setw(12) << 
+            ": " << setw(5) << diag[i] << endl;
 
 }
 
-static Id makeCompt( Id parent,
+static Id makeCompt( Id parent, const string& __name,
                      const SwcSegment& seg, const SwcSegment& pa,
-                     double RM, double RA, double CM,
-                     unsigned int i, unsigned int j    )
+                     double RM, double RA, double CM )
 {
     Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
     double len = seg.radius() * 2.0;
-    string name = "soma";
     Id compt;
     double x0, y0, z0;
     if ( seg.parent() != ~0U )
     {
         len = seg.distance( pa );
-        stringstream ss;
-        ss << SwcSegment::typeName[ seg.type() ] << "_" << i << "_" << j;
-        name = ss.str();
         x0 = pa.vec().a0();
         y0 = pa.vec().a1();
         z0 = pa.vec().a2();
@@ -258,7 +265,7 @@ static Id makeCompt( Id parent,
         z0 = seg.vec().a2();
     }
     assert( len > 0.0 );
-    compt = shell->doCreate( "Compartment", parent, name, 1 );
+    compt = shell->doCreate( "Compartment", parent, __name, 1 );
     Eref er = compt.eref();
     moose::CompartmentBase *cptr = reinterpret_cast< moose::CompartmentBase* >(
                                        compt.eref().data() );
@@ -279,27 +286,89 @@ static Id makeCompt( Id parent,
     return compt;
 }
 
+bool ReadSwc::testIfOnlyBasalsArePresent() const
+{
+	/// Some SWCs label all non-soma segments as basals.
+	unsigned int numDend = 0;
+	unsigned int numBasal = 0;
+    for ( unsigned int i = 0; i < branches_.size(); ++i ) {
+        const SwcBranch& br = branches_[i];
+        for ( unsigned int j = 0; j < br.segs_.size(); ++j ) {
+            const SwcSegment& seg = segs_[ br.segs_[j] -1 ];
+            numBasal+= ( seg.type() == SwcSegment::BASAL);
+            numDend+= ( seg.type() == SwcSegment::DEND);
+		}
+	}
+	return( (numBasal > 0) && (numDend==0) );
+}
+
 bool ReadSwc::build( Id parent,
                      double lambda, double RM, double RA, double CM )
 {
     Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
     vector< Id > compts( segs_.size() );
+	unsigned int numSomas = 0;
+	unsigned int numRootAxons = 0;
+	unsigned int numRootBasals = 0;
+	unsigned int numRootDends = 0;
+	vector< unsigned int> numBranchesOnMyParent( branches_.size(), 0 );
+	vector< string > parentName( segs_.size() );
+	string segName;
+	string basalName = "basal";
+	if ( testIfOnlyBasalsArePresent() )
+		basalName = "dend";
     for ( unsigned int i = 0; i < branches_.size(); ++i )
     {
         SwcBranch& br = branches_[i];
+		unsigned int myBranchIdx = numBranchesOnMyParent[ br.parent() ];
+		numBranchesOnMyParent[ br.parent() ]++;
         for ( unsigned int j = 0; j < br.segs_.size(); ++j )
         {
+			stringstream ss;
             Id compt;
             SwcSegment& seg = segs_[ br.segs_[j] -1 ];
             unsigned int paIndex = seg.parent();
             if ( paIndex == ~0U )   // soma
             {
-                compt = makeCompt( parent, seg, seg, RM, RA, CM, i, j );
+                compt = makeCompt( parent, "soma", seg, seg, RM, RA, CM );
+				numSomas++;
+            }
+            else if ( seg.type() == SwcSegment::SOMA) 
+            {
+   				ss << "soma" << numSomas;
+				segName = ss.str();
+                compt = makeCompt( parent, segName, seg, seg, RM, RA, CM );
+				numSomas++;
             }
             else
             {
                 SwcSegment& pa = segs_[ paIndex - 1 ];
-                compt = makeCompt( parent, seg, pa, RM, RA, CM, i, j );
+				if (pa.type() != seg.type() ) {
+					if ( seg.type() == SwcSegment::AXON) {
+        				ss << "axon" << numRootAxons;
+						segName = ss.str();
+						numRootAxons++;
+					} else if ( seg.type() == SwcSegment::BASAL ) {
+        				ss << basalName << numRootBasals;
+						segName = ss.str();
+						numRootBasals++;
+					} else {	// Everything else is a dend.
+        				ss << "dend" << numRootDends;
+						segName = ss.str();
+						numRootDends++;
+					}
+				} else if (j == 0 ) { // extend name with branch idx
+					const string& paName=compts[paIndex-1].element()->getName();
+					string paBranchName = paName.substr(0,  paName.rfind('_') );
+					ss << paBranchName << "." << myBranchIdx << "_0";
+					segName = ss.str();
+				} else {
+					const string& paName=compts[paIndex-1].element()->getName();
+					string paBranchName = paName.substr(0, paName.rfind('_') );
+					ss << paBranchName << "_" << j;
+					segName = ss.str();
+				}
+                compt = makeCompt( parent, segName, seg, pa, RM, RA, CM);
                 assert( compt != Id() );
                 assert( compts[ paIndex -1 ] != Id() );
                 shell->doAddMsg( "Single",

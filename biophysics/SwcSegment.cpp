@@ -20,22 +20,11 @@ using namespace std;
 const short SwcSegment::UNDEF = 0;
 const short SwcSegment::SOMA = 1;
 const short SwcSegment::AXON = 2;
-const short SwcSegment::DEND = 3;
-const short SwcSegment::APICAL = 4;
+const short SwcSegment::BASAL = 3;
+const short SwcSegment::DEND = 4;
 const short SwcSegment::FORK = 5; // Assumed to be on regular dend
 const short SwcSegment::END = 6; // Assumed to be on regular dend
 const short SwcSegment::CUSTOM = 7;
-		// Here are a few more
-const short SwcSegment::BadSegment = 8;
-const short SwcSegment::AXON_FORK = 10;
-const short SwcSegment::AXON_END = 11;
-const short SwcSegment::APICAL_FORK = 12;
-const short SwcSegment::APICAL_END = 13;
-
-const string SwcSegment::typeName[] = {
-	"undef", "soma", "axon", "dend", "apical", "dend_f", "dend_e",
-	"custom", "bad", "undef",
-	"axon_f", "axon_e", "apical_f", "apical_e" };
 
 SwcSegment::SwcSegment( const string& line )
 		:
@@ -62,7 +51,7 @@ SwcSegment::SwcSegment( const string& line )
 		else
 			parent_ = ~0U;
 	} else {
-		type_ = BadSegment;
+		type_ = UNDEF;
 	}
 }
 
@@ -89,22 +78,11 @@ void SwcSegment::figureOutType()
 {
 	if ( type_ == SOMA ) // already defined as soma
 		return;
-	if ( type_ == DEND ) {
-		if ( kids_.size() > 1 )
-			type_ = FORK; // Dend fork point
-		else if ( kids_.size() == 0 )
-			type_ = END; // end point
-	} else if ( type_ == APICAL ) {
-		if ( kids_.size() > 1 )
-			type_ = APICAL_FORK; // apical Dend fork point
-		else if ( kids_.size() == 0 )
-			type_ = APICAL_END; // apical end point
-	} else if ( type_ == AXON ) {
-		if ( kids_.size() > 1 )
-			type_ = AXON_FORK; // apical Dend fork point
-		else if ( kids_.size() == 0 )
-			type_ = AXON_END; // apical end point
-	}
+	if ( type_ == BASAL )
+		return;
+	if ( type_ == AXON )
+		return;
+	type_ = DEND; // Fall back for all other types
 }
 
 //////////////////////////////////////////////////////////////////////

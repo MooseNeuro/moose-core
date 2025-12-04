@@ -33,11 +33,11 @@ class SwcSegment
 						double r, int parent );
 		bool OK() const
 		{
-			return type_!=BadSegment && type_!=UNDEF && type_!=CUSTOM;
+			return type_!=UNDEF && type_!=CUSTOM;
 		}
 
 		void setBad() {
-			type_ = BadSegment;
+			type_ = UNDEF;
 		}
 
 
@@ -122,17 +122,11 @@ class SwcSegment
 		static const short UNDEF;
 		static const short SOMA;
 		static const short AXON;
+		static const short BASAL;
 		static const short DEND;
-		static const short APICAL;
 		static const short FORK; // Assumed to be on regular dend
 		static const short END; // Assumed to be on regular dend
 		static const short CUSTOM;
-		// Here are a few more
-		static const short BadSegment;
-		static const short AXON_FORK;
-		static const short AXON_END;
-		static const short APICAL_FORK;
-		static const short APICAL_END;
 
 		static const string typeName[];
 
