@@ -1,6 +1,9 @@
 name: Python package
 
-on: [push]
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
 
 jobs:
   build_wheel:
