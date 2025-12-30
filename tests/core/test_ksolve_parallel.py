@@ -8,7 +8,7 @@ os.environ['MOOSE_SHOW_PROFILING_INFO'] = '1'
 def test_ksolver_parallel( nthreads = 4 ):
     """
     This example implements a reaction-diffusion like system which is
-    bistable and propagates losslessly. It is based on the NEURON example 
+    bistable and propagates losslessly. It is based on the NEURON example
     rxdrun.py, but incorporates more compartments and runs for a longer time.
     The system is implemented as a hybrid of a reaction and a function which
     sets its rates. Please see rxdFuncDiffusion.py for a variant that uses
@@ -22,7 +22,7 @@ def test_ksolver_parallel( nthreads = 4 ):
     compt.r0 = compt.r1 = 1
     #  compt.diffLength = 1e-6
     compt.x1 = 1e-2
-    assert compt.numDiffCompts == int(compt.x1/compt.diffLength), ( 
+    assert compt.numDiffCompts == int(compt.x1/compt.diffLength), (
             compt.numDiffCompts, compt.x1 / compt.diffLength )
     print( 'No of compartment %d' % compt.numDiffCompts )
 
@@ -40,8 +40,6 @@ def test_ksolver_parallel( nthreads = 4 ):
     # so here we set up a function calculation to do the same thing.
     func = moose.Function( '/cylinder/reac/func' )
     func.expr = "(1 - x0) * (0.3 - x0)"
-    func.x.num = 1 #specify number of input variables.
-
     #Connect the reaction to the pools
     moose.connect( reaction, 'sub', c, 'reac' )
     moose.connect( reaction, 'prd', buf, 'reac' )

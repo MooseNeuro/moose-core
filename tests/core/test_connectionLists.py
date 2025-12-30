@@ -1,11 +1,11 @@
-"""test_connectionLists.py: 
+"""test_connectionLists.py:
 
 Test connectionList in SparseMsg.
 
 """
 
 from __future__ import print_function
-    
+
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2016, Dilawar Singh"
 __credits__          = ["NCBS Bangalore"]
@@ -65,7 +65,7 @@ def makeGlobalBalanceNetwork():
 
     temp = moose.connect( stim, 'spikeOut', iv, 'addSpike', 'Sparse' )
     inhibMatrix = moose.element( temp )
-    inhibMatrix.setRandomConnectivity( 
+    inhibMatrix.setRandomConnectivity(
             params['stimToInhProb'], params['stimToInhSeed'] )
     cl = inhibMatrix.connectionList
 
@@ -79,15 +79,15 @@ def makeGlobalBalanceNetwork():
 
     temp = moose.connect( stim, 'spikeOut', ov, 'addSpike', 'Sparse' )
     excMatrix = moose.element( temp )
-    excMatrix.setRandomConnectivity( 
+    excMatrix.setRandomConnectivity(
             params['stimToOutProb'], params['stimToOutSeed'] )
 
     temp = moose.connect( inhib, 'spikeOut', oiv, 'addSpike', 'Sparse' )
     negFFMatrix = moose.element( temp )
-    negFFMatrix.setRandomConnectivity( 
+    negFFMatrix.setRandomConnectivity(
             params['inhToOutProb'], params['inhToOutSeed'] )
 
-    # print("ConnMtxEntries: ", inhibMatrix.numEntries, excMatrix.numEntries, negFFMatrix.numEntries)
+    print("ConnMtxEntries: ", inhibMatrix.numEntries, excMatrix.numEntries, negFFMatrix.numEntries)
     got = (inhibMatrix.numEntries, excMatrix.numEntries, negFFMatrix.numEntries)
     expected = (7, 62, 55)
     assert expected == got, "Expected %s, Got %s" % (expected,got)
@@ -97,7 +97,8 @@ def makeGlobalBalanceNetwork():
     niv = 0
     nov = 0
     noiv = 0
-    for i in moose.vec( insyn ):
+    # _v = moose.vec( insyn )
+    for i in moose.vec(insyn):
         niv += i.synapse.num
         numInhSyns.append( i.synapse.num )
         if i.synapse.num > 0:

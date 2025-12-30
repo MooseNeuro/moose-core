@@ -528,7 +528,7 @@ unsigned int Cinfo::getNumLookupFinfo() const
 }
 
 ////////////////////////////////////////////////////////////////////
-Finfo* Cinfo::getSharedFinfo(unsigned int i)
+Finfo* Cinfo::getSharedFinfo(unsigned int i) const
 {
     if(i >= getNumSharedFinfo())
         return &dummy;

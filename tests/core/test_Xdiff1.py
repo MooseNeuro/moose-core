@@ -111,7 +111,7 @@ def main( standalone = False ):
     for i in range( 10, 18 ):
         moose.setClock( i, 0.01 )
     moose.reinit()
-    moose.start( runtime, 1 )
+    moose.start( runtime, True )
     s = moose.element( '/model/compartment/s' )
     es = moose.element( '/model/endo/s' )
     assert( almostEq( s.conc, es.conc ) )

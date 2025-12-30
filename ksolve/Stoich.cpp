@@ -1163,9 +1163,9 @@ void Stoich::installAndUnschedFuncReac(Id func, Id reac)
     vector<Id> srcPools;
 #ifndef NDEBUG
     unsigned int n =
-#endif
         ei.element()->getNeighbors(srcPools, funcSrcFinfo);
     assert(numSrc == n);
+#endif
     vector<unsigned int> poolIndex(numSrc, 0);
     for(unsigned int i = 0; i < numSrc; ++i)
         poolIndex[i] = convertIdToPoolIndex(srcPools[i]);
