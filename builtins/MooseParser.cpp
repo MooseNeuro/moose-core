@@ -167,7 +167,7 @@ void MooseParser::DefineFun1( const string& funcName, double (&func)(double) )
  *
  * @Param user_expr
  *
- * @Returns   
+ * @Returns
  */
 /* ----------------------------------------------------------------------------*/
 string MooseParser::Reformat( const string user_expr )
@@ -317,8 +317,7 @@ double MooseParser::Eval(bool check) const
 {
     if(! valid_)
     {
-        cout << "MooseParser::Eval: Warn: Invalid parser state." << endl;
-        return 0.0;
+        throw runtime_error("MooseParser::Eval: Invalid parser state.");
     }
 
     if(expr_.empty())

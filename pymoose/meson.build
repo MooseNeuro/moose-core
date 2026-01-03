@@ -2,6 +2,7 @@
 # Date: Sun Jul  7 2024
 
 pymoose_src = [
+  'PyRun.cpp',
   'helper.cpp',
   'MooseVec.cpp',
   'Finfo.cpp',

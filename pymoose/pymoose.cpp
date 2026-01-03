@@ -298,8 +298,9 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
     m.def("getDoc", &pymoose::getDoc, docs::getDoc);
 
     m.def("version_info", &pymoose::getVersionInfo);
-
+    // ----------------------------------------------------------------------
     // Global Constant Attributes.
+    // ----------------------------------------------------------------------
     m.attr("NA") = NA;
     m.attr("PI") = PI;
     m.attr("FaradayConst") = FaradayConst;
@@ -307,6 +308,10 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
     m.attr("OUTMSG") = 0;
     m.attr("INMSG") = 1;
     m.attr("ALLMSG") = 2;
+    // PyRun mode
+    m.attr("PYRUN_PROC") = 0;
+    m.attr("PYRUN_TRIG") = 1;
+    m.attr("PYRUN_BOTH") = 2;
 
     // Version information.
     m.attr("__version__") = MOOSE_VERSION;

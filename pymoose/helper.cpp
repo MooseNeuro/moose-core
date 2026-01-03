@@ -12,6 +12,8 @@
 #include <set>
 #include <csignal>
 
+#include <nanobind/stl/string.h>
+
 #include "../basecode/header.h"
 #include "../builtins/Variable.h"
 #include "../msg/OneToOneMsg.h"
@@ -612,21 +614,26 @@ nb::object getCwe()
 
 ObjId convertToObjId(const nb::object &arg)
 {
+    ObjId ret;
     if(nb::isinstance<nb::str>(arg)) {
-        return ObjId(nb::cast<string>(arg));
+        ret = ObjId(nb::cast<string>(arg));
+        if (ret.bad()){
+            throw std::runtime_error("object does not exist: " + nb::cast<string>(arg));
+        }
     }
     else if(nb::isinstance<MooseVec>(arg)) {
-        return nb::cast<MooseVec>(arg).oid();
+        ret = nb::cast<MooseVec>(arg).oid();
     }
     else if(nb::isinstance<Id>(arg)) {
-        return nb::cast<Id>(arg);
+        ret = nb::cast<Id>(arg);
     }
     else if(nb::isinstance<ObjId>(arg)) {
-        return nb::cast<ObjId>(arg);
+        ret = nb::cast<ObjId>(arg);
     }
     else {
         throw nb::type_error("expected str, ObjId, Id, or MooseVec");
     }
+    return ret;
 }
 
 void setCwe(const nb::object &arg)
@@ -636,7 +643,8 @@ void setCwe(const nb::object &arg)
 
 bool doDelete(nb::object &arg)
 {
-    return getShellPtr()->doDelete(convertToObjId(arg));
+    ObjId oid = convertToObjId(arg);
+    return getShellPtr()->doDelete(oid);
 }
 
 MooseVec copy(const nb::object &elem, const nb::object &newParent,
