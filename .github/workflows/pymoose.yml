@@ -78,8 +78,8 @@ jobs:
           micromamba activate moose
           python -c "import sys; print('#' * 60, sys.version)"
           pip install python-libsbml
-	  pip install nanobind
-	  pip install robin-map
+          pip install nanobind
+          pip install robin-map
           pip install .
           python -c "import moose; moose.le()"
       - name: Build and install (windows)
