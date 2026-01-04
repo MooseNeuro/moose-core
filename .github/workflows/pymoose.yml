@@ -55,8 +55,6 @@ jobs:
             ninja
             meson-python
             gsl
-            nanobind
-            tsl_robin_map
           post-cleanup: all
           generate-run-shell: false
       - name: Display Python version

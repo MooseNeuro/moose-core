@@ -14,6 +14,7 @@ project('pymoose', 'c', 'cpp',
         # The version is created dynamically based on git commit hash. For release, make this explicit string
         # version: run_command('git', 'rev-parse',  '--short', 'HEAD', check:false).stdout().strip(),
         version: '4.1.3',  # cibuildwheel/meson crashes with github hash as version
+        meson_version: '>=1.1',
 	default_options: ['c_std=c17', 'cpp_std=c++17', 'b_ndebug=if-release'])
 
 ##################################
