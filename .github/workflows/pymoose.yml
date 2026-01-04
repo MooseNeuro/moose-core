@@ -55,6 +55,8 @@ jobs:
             ninja
             meson-python
             gsl
+	    nanobind
+	    tsl-robin-map
           post-cleanup: all
           generate-run-shell: false
       - name: Display Python version
@@ -67,8 +69,7 @@ jobs:
       - if: ${{ matrix.brew }}
         run: |
           brew list pkg-config && brew uninstall pkg-config || echo "pkg-config not installed, skipping uninstall."
-          brew install gsl  # Always install the latest GSL version on macOS
-          brew install hdf5
+          brew install gsl hdf5   # Always install the latest GSL version on macOS
       - name: checkout
         uses: actions/checkout@v4
       - name: Build and install (non-windows)
@@ -78,8 +79,6 @@ jobs:
           micromamba activate moose
           python -c "import sys; print('#' * 60, sys.version)"
           pip install python-libsbml
-          pip install nanobind
-          pip install robin-map
           pip install .
           python -c "import moose; moose.le()"
       - name: Build and install (windows)
@@ -89,7 +88,5 @@ jobs:
           micromamba activate moose
           python -c "import sys; print('#' * 60, sys.version)"
           pip install python-libsbml
-          pip install nanobind
-          pip install robin-map
           pip install .
           python -c "import moose; moose.le()"
