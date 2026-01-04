@@ -302,7 +302,9 @@ bool LookupField::set(const nb::object& key, const nb::object& value)
     LOOKUP_SET(vector<unsigned int>, double)
 #undef LOOKUP_SET
 
-// throw nb::type_error(("Unsupported LookupField type: " + keyType_ + "," + valType_).c_str());
+    throw nb::type_error(
+        ("Unsupported LookupField type: " + keyType_ + "," + valueType_).c_str());
+
 }
 
 

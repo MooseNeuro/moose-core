@@ -11,6 +11,7 @@
 #include <string>
 #include <set>
 #include <csignal>
+#include <ctime>
 
 #include <nanobind/stl/string.h>
 
@@ -913,7 +914,7 @@ map<string, string> getVersionInfo()
 {
     std::time_t t = std::time(nullptr);
     char mbstr[100];
-    std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&t));
+    std::strftime(mbstr, sizeof(mbstr), "%A %c", ::localtime(&t));
 
     vector<string> vers;
     moose::tokenize(string(MOOSE_VERSION), ".", vers);

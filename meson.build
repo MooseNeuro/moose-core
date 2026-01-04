@@ -89,12 +89,11 @@ endif
 
 
 _global_c_args = cc.get_supported_arguments(
-  '-Wno-unused-but-set-variable',
-  '-Wno-unused-function',
+  '-Wno-unused',
   '-Wno-conversion',
   '-Wno-misleading-indentation',
 )
-add_project_arguments(_global_c_args, language : 'c')
+add_project_arguments(_global_c_args, language : ['c', 'cpp'])
 
 # We need -lm for all C code (assuming it uses math functions, which is safe to
 # assume for SciPy). For C++ it isn't needed, because libstdc++/libc++ is
