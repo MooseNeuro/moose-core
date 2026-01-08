@@ -12,7 +12,7 @@ jobs:
         os: [ubuntu-22.04, macos-14, macos-15, windows-latest]
         build_type: [Release]
         c_compiler: [clang]
-        python-version: ["3.12"]
+        python-version: ["3.12", "3.13", "3.14"]
         include:
           - os: ubuntu-22.04
             apt: 10  # Linux will install the latest GSL version
