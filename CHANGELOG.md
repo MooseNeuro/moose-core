@@ -4,6 +4,37 @@
 ## Unreleased
 *Unreleased changes go here*
 
+## [4.1.4] - 2025-01-09
+Jhangri
+
+### Fixed
+- Function class (PR #40): Fixed ordering of computation of function value and collecting y variables
+- Function class: Added `Function::clearVariables()` for proper symbol table cleanup
+- Function class: Updated `Function::clearAll()` variable clearing
+- MooseParser: Removed singleton parser - each expression now gets own symbol table
+- MooseParser: `symbolTable` is now a member variable
+- MooseParser: Added `ParseVariables()` for expression validation and variable extraction
+- MooseParser: `ClearVariable` ensures release of expression before clearing symbol table
+- MooseParser: Added `GetConstants()` to retrieve defined constants from symbol table
+- `Variable::ref()` renamed to `Variable::ptr()` to reflect its function
+- `test_function.py`: Updated expected values for corrected evaluation order
+
+### Added
+- Global function `init_symtab()` to initialize functions and constants in symbol table
+
+### Changed
+- SWC reader: New hierarchical naming scheme for dendritic compartments using format `name{branch_no}[_{segment_no}].{sub_branch_no}...`
+- MooseParser: `Reformat()` made static
+- Build: Changed workflow trigger from `on: push` to `workflow_dispatch` for manual control
+- Build: Added `permissions: contents: write` for release creation
+- Documentation: Updated macOS build instructions
+
+### Removed
+- `Function::findXsYs()`, `addXByIndex()`, `addXByName()`, `addY()`, `addVariable()`
+- `MooseParser::CompleExprWithUnknown` - use `CompileExpr(bool allow_unknown)` instead
+- `MooseParser::findAllVars()`
+- `MooseParser::LinkVariables`
+
 ## [4.1.1] - 2025-06-23
 Jhangri
 
