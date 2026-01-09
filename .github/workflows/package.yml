@@ -15,14 +15,16 @@ jobs:
         build_type: [Release]
         c_compiler: [clang]
         python-version: ['3.11']
-        # python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        # python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13','3.14']
     steps:
       - uses: actions/checkout@v4
         
       - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
       - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel==2.21.3
+        run: python -m pip install cibuildwheel==3.3.0
         
       - name: MacOS dpendencies
         if: ${{ runner.os == 'macOS' }}
@@ -70,7 +72,7 @@ jobs:
             yum install -y gsl-devel &&
             yum install -y hdf5-devel
           CIBW_BUILD: '*-manylinux_x86_64'
-          CIBW_SKIP: 'pp*'
+          CIBW_SKIP: 'pp* *t-*'
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
           CIBW_MANYLINUX_PYPY_X86_64_IMAGE: manylinux_2_28          
         run: |
@@ -91,7 +93,7 @@ jobs:
             echo "@@@@@ `pkg-config --cflags gsl`"
           CIBW_ARCHS: 'arm64'
           CIBW_BUILD: '*-macosx_arm64'
-          CIBW_SKIP: 'pp* cp38*'
+          CIBW_SKIP: 'pp* cp38* *t-*'
         run: |
           export "MACOSX_DEPLOYMENT_TARGET=$(echo ${{ matrix.os }} | cut -c 7-8).0"  # required because gsl2.8 has minimum target of 14.0
           python -m cibuildwheel --output-dir wheelhouse
@@ -101,7 +103,7 @@ jobs:
         env:
           CIBW_BEFORE_ALL: 'uname -a'
           CIBW_BUILD: '*-win_*'
-          CIBW_SKIP: '*-win32 pp* cp313t-* cp314t-*'
+          CIBW_SKIP: '*-win32 pp* *t-*'
         run: |
           micromamba shell hook -s powershell | Out-String | Invoke-Expression
           micromamba activate moose
