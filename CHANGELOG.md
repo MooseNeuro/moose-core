@@ -4,6 +4,27 @@
 ## Unreleased
 *Unreleased changes go here*
 
+## [4.1.4] - 2026-01-12
+Jhangri
+
+### Bug Fixes
+- Fixed a crash (segmentation fault) that could occur when deleting Function objects
+- Fixed incorrect evaluation order in Function objects that could lead to wrong results in some models
+- Improved stability of expression parsing when working with dynamically changing expressions
+
+### Model Import Improvements
+- Improved SWC morphology reader with clearer hierarchical naming scheme for dendritic compartments, making imported neuron structures easier to interpret and debug
+
+### Documentation
+- Updated build instructions for macOS
+
+### Build and Packaging
+- Improved GitHub Actions workflows for release packages
+- Enabled manual triggering of release workflows
+- Fixed permission issues during GitHub release creation
+
+
+
 ## [4.1.1] - 2025-06-23
 Jhangri
 

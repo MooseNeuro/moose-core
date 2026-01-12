@@ -32,6 +32,7 @@ class ReadSwc
 		bool build( Id parent,
 					double lambda, double RM, double RA, double CM );
 		void diagnostics() const;
+		bool testIfOnlyBasalsArePresent() const;
 
 	private:
 		vector< SwcSegment > segs_;

@@ -83,30 +83,35 @@ public:
     vector<double> getY() const;
 
     double getDerivative() const;
-
-    void findXsYs( const string& expr, vector<string>& vars );
-
-    unsigned int addVar();
+    // unsigned int addVar();
     /* void dropVar(unsigned int msgLookup); */
 
     void process(const Eref& e, ProcPtr p);
     void reinit(const Eref& e, ProcPtr p);
 
-    // This is also used as callback.
-    void addVariable(const string& name);
+    // // This is also used as callback.
+    // void addVariable(const string& name);
 
-    // Add unknown variable.
-    void callbackAddSymbol(const string& name);
+    // // Add unknown variable.
+    // void callbackAddSymbol(const string& name);
 
     bool symbolExists(const string& name) const;
 
-    void addXByIndex(const unsigned int index);
-    void addXByName(const string& name);
+    // void addXByIndex(const unsigned int index);
+    // void addXByName(const string& name);
 
-    void addY(const unsigned int index);
+    // void addY(const unsigned int index);
 
-    VarType getVarType(const string& name) const;
+    /**
+       Add ys variable (names of the form "y{digits}")
 
+       @param name set of strings of the form "y{digits}"
+    */
+    void addYs(vector<string>& names);
+
+
+    // VarType getVarType(const string& name) const;
+  void clearVariables();
     void clearAll();
 	void setSolver( const Eref& e, ObjId stoich );
 
@@ -127,22 +132,25 @@ protected:
 
     // this stores variables received via incoming messages, identifiers of
     // the form x{i} are included in this
-    vector<shared_ptr<Variable>> xs_;
+    vector<Variable*> xs_{};
 
     // Keep the index of x's.
     map<string, unsigned int> varIndex_;
 
+    /// last index of the x{i} vars - to track boundary of indexed and named
+    /// variables
+    unsigned int num_xi_{0};
+
     // this stores variable values pulled by sending request. identifiers of
     // the form y{i} are included in this
-    vector<shared_ptr<double>> ys_;
+    vector<double*> ys_{};
     map<string, shared_ptr<double>> consts_;
 
     // Used by kinetic solvers when this is zombified.
     void* stoich_;
 
     // pointer to the MooseParser
-    shared_ptr<moose::MooseParser> parser_;
-
+    moose::MooseParser* parser_{};
 };
 
 #endif /* end of include guard: FUNCTIONH_ */
