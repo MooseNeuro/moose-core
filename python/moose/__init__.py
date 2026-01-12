@@ -317,7 +317,6 @@ def showfields(el, field="*", showtype=False):
 
     """
     el = _moose.element(el)
-    print('DEBUG: ', el, type(el))
     result = []
     if field == "*":
         value_field_dict = _moose.getFieldTypeDict(el.className, "valueFinfo")

@@ -51,11 +51,10 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
         .def("__getitem__", &pymoose::LookupField::get)
         .def("__setitem__", &pymoose::LookupField::set)
         .def("__call__", &pymoose::LookupField::get)  // also callable
-        .def("__repr__",
-             [](pymoose::LookupField &f) {
-                 return "<LookupField " + f.finfo_->name() + "{" + f.keyType_ +
-                        ": " + f.valueType_ + "}:  of " + f.oid_.path() + ">";
-             });
+        .def("__repr__", [](pymoose::LookupField &f) {
+            return "<LookupField " + f.finfo_->name() + "{" + f.keyType_ +
+                   ": " + f.valueType_ + "}:  of " + f.oid_.path() + ">";
+        });
 
     nb::class_<pymoose::ElementFieldIterator>(m, "ElementFieldIterator")
         .def("__iter__",
@@ -66,16 +65,42 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
         .def("__len__", &pymoose::ElementField::size)
         .def("__getitem__", &pymoose::ElementField::getItem)
         .def("__iter__", &pymoose::ElementField::iter)
-        .def_prop_rw("num", &pymoose::ElementField::getNum,
-                     &pymoose::ElementField::setNum)
+        .def_prop_ro(
+            "path",
+            [](const pymoose::ElementField &f) { return f.foid_.path(); })
         .def("__repr__",
-            [](pymoose::ElementField &f) {
-                return "<ElementField: " + f.finfo_->name() +
+             [](pymoose::ElementField &f) {
+                 return "<ElementField: " + f.finfo_->name() +
                         " size=" + std::to_string(f.size()) + " of " +
-                     f.oid_.path() + ">";
+                        f.oid_.path() + ">";
              })
         .def("__getattr__", &pymoose::ElementField::getAttribute)
         .def("__setattr__", &pymoose::ElementField::setAttribute);
+
+    // Access LookupField for vec objects
+    nb::class_<pymoose::VecLookupField>(m, "VecLookupField")
+        .def("__getitem__", &pymoose::VecLookupField::get)
+        .def("__setitem__", &pymoose::VecLookupField::set)
+        .def("__repr__", [](pymoose::VecLookupField &f) {
+            return "<VecLookupField " + f.finfo_->name() + "{" + f.keyType_ +
+                   ": " + f.valueType_ + "}:  of " + f.id_.path() + ">";
+        });
+
+    nb::class_<pymoose::VecElementField>(m, "VecElementField")
+        .def("__len__", &pymoose::VecElementField::size)
+        .def("__getitem__", &pymoose::VecElementField::getParent)
+        .def_prop_ro("sizes", &pymoose::VecElementField::sizes)
+        .def_prop_ro("path",
+                     [](const pymoose::VecElementField &f) {
+                         return f.parentId_.path() + "/" + f.finfo_->name();
+                     })
+
+        .def("__getattr__", &pymoose::VecElementField::getAttribute)
+        .def("__setattr__", &pymoose::VecElementField::setAttribute)
+        .def("__repr__", [](pymoose::VecElementField &f) {
+            return "<VecElementField " + f.finfo_->name() + " of " +
+                   f.parentId_.path() + ">";
+        });
 
     // Id class wrapper
     nb::class_<Id>(m, "Id")
@@ -153,19 +178,17 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
                 return pymoose::connect(self, srcfield, dest, destfield,
                                         msgtype);
             },
-            nb::arg("srcfield"), nb::arg("dest"),
-             nb::arg("destfield"), nb::arg("msgtype") = "Single",
-             docs::ObjId_connect)
+            nb::arg("srcfield"), nb::arg("dest"), nb::arg("destfield"),
+            nb::arg("msgtype") = "Single", docs::ObjId_connect)
         .def(
             "connect",
             [](const ObjId &self, const string &srcfield, const MooseVec &dest,
                const string &destfield, const string &msgtype) {
                 return pymoose::connectToVec(self, srcfield, dest, destfield,
-                                        msgtype);
+                                             msgtype);
             },
-            nb::arg("srcfield"), nb::arg("dest"),
-             nb::arg("destfield"), nb::arg("msgtype") = "Single",
-             docs::ObjId_connect)
+            nb::arg("srcfield"), nb::arg("dest"), nb::arg("destfield"),
+            nb::arg("msgtype") = "Single", docs::ObjId_connect)
         .def("__repr__", [](const ObjId &oid) {
             return "<moose." + oid.element()->cinfo()->name() +
                    " id=" + to_string(oid.id.value()) +

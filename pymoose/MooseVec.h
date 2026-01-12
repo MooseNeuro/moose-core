@@ -29,7 +29,7 @@ public:
     MooseVec(const Id& id);
     MooseVec(const ObjId& oid);
 
-    const ObjId& oid() const;
+    ObjId oid() const;
     const string dtype() const;
     size_t size() const;
     vector<MooseVec> children() const;
@@ -70,7 +70,7 @@ public:
     template <typename T>
     bool setAttrOneToAll(const string& name, const T& val)
     {
-        auto cinfo = oid_.element()->cinfo();
+        auto cinfo = id_.element()->cinfo();
         auto finfo = cinfo->findFinfo(name);
         if(!finfo) {
             throw nb::attribute_error((name + " not found").c_str());
@@ -86,7 +86,7 @@ public:
     template <typename T>
     bool setAttrOneToOne(const string& name, const vector<T>& val)
     {
-        auto cinfo = oid_.element()->cinfo();
+        auto cinfo = id_.element()->cinfo();
         auto finfo = cinfo->findFinfo(name);
         if(!finfo) {
             throw nb::attribute_error((name + " not found").c_str());
@@ -115,7 +115,7 @@ public:
     size_t id() const;
 
 private:
-    ObjId oid_;
+    Id id_;
     vector<ObjId> elements_{};
 };
 

@@ -531,6 +531,15 @@ nb::object createDestFunction(const ObjId& oid, const Finfo* finfo) {
 nb::object getFieldGeneric(const ObjId &oid, const string &fieldName)
 {
 
+    // Special fields that do not depend on a valid element being there: empty
+    // FieldElements
+    if(fieldName == "numData") {
+        return nb::cast(Field<unsigned int>::get(oid, "numData"));
+    }
+    else if(fieldName == "numFields") {
+        return nb::cast(Field<unsigned int>::get(oid, "numField"));
+    }
+
     auto cinfo = oid.element()->cinfo();
     auto finfo = cinfo->findFinfo(fieldName);
 

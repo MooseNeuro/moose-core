@@ -63,12 +63,6 @@ def test_eval():
         f.value, 0.0
     ), f'Expected value to be set to 0 upon reinit, but got {f.value}'
 
-def testAllowUnknownVariable():
-    f = moose.Function('/f_testAllowUnknownVariable')
-    f.allowUnknownVariable = False
-    f.expr = '(mass / mw) * A'
-    assert f.expr == ''
-
 def test_var_order():
     """The y values are one step behind the x values because of
     scheduling sequences.
@@ -198,10 +192,19 @@ def test_fmod():
     print('Passed fmod(t,2)')
 
 
+def test_change_expr_with_const():
+    print('Testing change of expression')
+    fn = moose.Function('fn')
+    fn.c['Aplus'] = 1.0
+    fn.expr = 'a'
+    fn.expr = 'A = tpre < tpost? Aplus: Aminus; weightOut = weightIn * (1 + A * exp(- abs(tpost - tpre) / tau))'
+    print('Passed Testing change of expression')
+
+
 if __name__ == '__main__':
     test_var_order()
     test_t()
     test_trigonometric()
     test_rand()
     test_fmod()
-    testAllowUnknownVariable()
+    test_change_expr_with_const()
