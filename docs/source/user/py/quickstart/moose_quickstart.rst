@@ -12,7 +12,7 @@ Getting started with python scripting for MOOSE
 
 *To see an interactive version of this page, click the following link*
 
-.. image:: https://mybinder.org/badge.svg 
+.. image:: https://mybinder.org/badge.svg
    :target: https://mybinder.org/v2/gh/BhallaLab/moose-binder/master?filepath=home%2Fmooser%2Fquickstart%2FGetting%20started%20with%20python%20scripting%20for%20MOOSE.ipynb
 
 
@@ -41,34 +41,34 @@ Contents:
 Coding basics and how to use this document
 ==========================================
 
-This page acts as the first stepping stone for learning how moose works. The tutorials here are intended to be interactive, and are presented as python commands. Python commands are identifiable by the ``>>>`` before the command as opposed to ``$`` which identifies a command-line command.  
+This page acts as the first stepping stone for learning how moose works. The tutorials here are intended to be interactive, and are presented as python commands. Python commands are identifiable by the ``>>>`` before the command as opposed to ``$`` which identifies a command-line command.
 
         >>> this_is_a_python_command
 
-You are encouraged to run a python shell while reading through this documentation and trying out each command for yourself. Python shells are environments within your terminal wherein everything you type is interpreted as a python command. They can be accessed by typing 
+You are encouraged to run a python shell while reading through this documentation and trying out each command for yourself. Python shells are environments within your terminal wherein everything you type is interpreted as a python command. They can be accessed by typing
 ::
 
         $ python
 
 in your command-line terminal.
 
-While individually typing lines of code in a python terminal is useful for practicing using moose and coding in general, note that once you close the python environment all the code you typed is gone and the moose models created are also lost. In order to 'save' models that you create, you would have to type your code in a text file with a ``.py`` extension. The easiest way to do this is to create a text file in command line, open it with a text editor (for example, gedit), and simply type your code in (make sure you indent correctly). 
+While individually typing lines of code in a python terminal is useful for practicing using moose and coding in general, note that once you close the python environment all the code you typed is gone and the moose models created are also lost. In order to 'save' models that you create, you would have to type your code in a text file with a ``.py`` extension. The easiest way to do this is to create a text file in command line, open it with a text editor (for example, gedit), and simply type your code in (make sure you indent correctly).
 ::
 
         $ touch code.py
         $ gedit code.py
 
-Once you have written your code in the file, you can run it through your python environment. 
+Once you have written your code in the file, you can run it through your python environment.
 ::
 
         $ python code.py
 
-Note that apart from this section of the quickstart, most of the moose documentation is in the form of ``snippets``. These are basically ``.py`` files with code that demonstrates a certain functionality in moose. If you see a dialogue box like this one: 
+Note that apart from this section of the quickstart, most of the moose documentation is in the form of ``snippets``. These are basically ``.py`` files with code that demonstrates a certain functionality in moose. If you see a dialogue box like this one:
 
 .. automodule:: func
   :members: main
 
-You can view the code by clicking the green source button on the left side of the box. Alternatively, the source code for all of the examples in the documentation can be found in ``moose/moose-examples/snippets``. Once you run each file in python, it is encouraged that you look through the code to understand how it works. 
+You can view the code by clicking the green source button on the left side of the box. Alternatively, the source code for all of the examples in the documentation can be found in ``moose/moose-examples/snippets``. Once you run each file in python, it is encouraged that you look through the code to understand how it works.
 
 In the quickstart, most of the snippets demonstrate the functionality of specific classes. However, snippets in later sections such as the cookbook show how to do specific things in moose such as creating networks, chemical models, and synaptic channels.
 
@@ -77,7 +77,7 @@ Importing moose and accessing documentation
 ===========================================
 
 
-In a python script you import modules to access the functionalities they provide. In order to use moose, you need to import it within a python environment or at the beginning of your python script. 
+In a python script you import modules to access the functionalities they provide. In order to use moose, you need to import it within a python environment or at the beginning of your python script.
 
         >>> import moose
 
@@ -95,10 +95,11 @@ function [1]_. ::
         >>> dir(moose)
 
 MOOSE has built-in documentation in the C++-source-code independent of
-Python. The ``moose`` module has a separate ``doc`` function to extract
-this documentation. ::
+Python. In addition to python's builtin ``help`` function, ``moose``
+module has a separate ``doc`` function to extract this
+documentation. ::
 
-        >>> moose.doc('moose.Compartment')
+        >>> moose.doc('Compartment')
 
 The class level documentation will show whatever the author/maintainer
 of the class wrote for documentation followed by a list of various kinds
@@ -113,13 +114,13 @@ Note that you need to put the class-name followed by dot followed by
 field-name within quotes. Otherwise, ``moose.doc`` will receive the
 field value as parameter and get confused.
 
-Alternatively, if you want to see a full list of classes, functions and their fields, you can browse through the following pages. This is especially helpful when going through snippets. 
+Alternatively, if you want to see a full list of classes, functions and their fields, you can browse through the following pages. This is especially helpful when going through snippets.
 
 * :ref:`genindex`
 * :ref:`modindex`
 
-.. 
-   :ref:`search` 
+..
+   :ref:`search`
 
 .. _quickstart-creating:
 
@@ -172,12 +173,12 @@ Every element has a unique path. This is a concatenation of the names of
 all the objects one has to traverse starting with the root to reach that
 element. ::
 
-        >>> print soma.path
+        >>> print(soma.path)
         /model/soma
 
 The name of the element can be printed, too. ::
 
-        >>> print soma.name
+        >>> print(soma.name)
         soma
 
 The ``Compartment`` elements model small sections of a neuron. Some
@@ -271,7 +272,7 @@ voltage ``Em`` is in series with the resistor, as shown below:
 
 The fields are populated with some defaults. ::
 
-        >>> print soma.Cm, soma.Rm, soma.Vm, soma.Em, soma.initVm
+        >>> print(soma.Cm, soma.Rm, soma.Vm, soma.Em, soma.initVm)
         1.0 1.0 -0.06 -0.06 -0.06
 
 
@@ -337,8 +338,8 @@ special source and destination fields. These types are named
 destination fields on an element using ``getFieldNames`` as before. This
 time, let us do it another way: by the class name ::
 
-        >>> moose.getFieldNames('PulseGen', 'srcFinfo')
-        ('childMsg', 'output')
+        >>> moose.getFieldNames('PulseGen', 'src')
+        ('childOut', 'output')
 
 This form has the advantage that you can get information about a class
 without creating elements of that class.
@@ -348,7 +349,7 @@ to connect child elements to parent elements. The second one is of our
 interest. Check out the built-in documentation here ::
 
         >>> moose.doc('PulseGen.output')
-        PulseGen.output: double - source field
+        PulseGen.output: double - SrcFinfo
         Current output level.
 
 so this is the output of the pulse generator and this must be injected
@@ -387,7 +388,7 @@ the pulse generator output to the soma input ::
 element's ``dest_field`` field and returns that message. Messages are
 also elements. You can print them to see their identity ::
 
-        >>> print m
+        >>> print(m)
         <moose.SingleMsg: id=5, dataId=733, path=/Msgs/singleMsg[733]>
 
 You can print any element as above and the string representation will
@@ -395,7 +396,7 @@ show you the class, two numbers(\ ``id`` and ``dataId``) uniquely
 identifying it among all elements, and its path. You can get some more
 information about a message ::
 
-        >>> print m.e1.path, m.e2.path, m.srcFieldsOnE1, m.destFieldsOnE2
+        >>> print(m.e1.path, m.e2.path, m.srcFieldsOnE1, m.destFieldsOnE2)
         /model/pulse /model/soma ('output',) ('injectMsg',)
 
 
@@ -461,40 +462,15 @@ assigned a tick. Each tick can have a different ticking interval
 (``dt``) that allows different elements to be updated at different
 rates.
 
-By default, every object is assigned a clock tick with reasonable default
-timesteps as soon it is created::
-
-    Class type                      tick    dt
-    Electrical computations:        0-7     50 microseconds
-    electrical compartments,
-    V and ligand-gated ion channels,
-    Calcium conc and Nernst,
-    stimulus generators and tables,
-    HSolve.
-
-    Table (to plot elec. signals)   8       100 microseconds
-
-    Diffusion solver                10      0.01 seconds
-    Chemical computations:          11-17   0.1 seconds
-    Pool, Reac, Enz, MMEnz,
-    Func, Function,
-    Gsolve, Ksolve,
-    Stats (to do stats on outputs)
-
-    Table2 (to plot chem. signals)  18      1 second
-
-    HDF5DataWriter                  30      1 second
-    Postmaster (for parallel        31      0.01 seconds
-    computations)
-
-There are 32 available clock ticks. Numbers 20 to 29 are
-unassigned so you can use them for whatever purpose you like.
+By default, every object is assigned a clock tick with reasonable
+default timesteps as soon it is created. There are 32 available clock
+ticks. In most simulations you need only a few.
 
 If you want fine control over the scheduling, there are three things
 you can do.
 
-    * Alter the 'tick' field on the object
-    * Alter the dt associated with a given tick, using the
+    * Alter the `tick` field on the object
+    * Alter the `dt` associated with a given tick, using the
       **moose.setClock( tick, newdt)** command
     * Go through a wildcard path of objects reassigning there clock ticks,
       using **moose.useClock( path, newtick, function)**.
@@ -505,9 +481,9 @@ Here we discuss these in more detail.
 
 Every object knows which tick and dt it uses::
 
-    >>> a = moose.Pool( '/a' )
-    >>> print a.tick, a.dt
-    13 0.1
+    >>> a = moose.Table( '/a' )
+    >>> print(a.tick, a.dt)
+    8 0.0001
 
 The ``tick`` field on every object can be changed, and the object will
 adopt whatever clock dt is used for that tick. The ``dt`` field is
@@ -589,7 +565,7 @@ initial state using ::
 You may remember that we had changed initVm from ``-0.06`` to ``-0.07``.
 The reinit call we initialize ``Vm`` to that value. You can verify that ::
 
-        >>> print soma.Vm
+        >>> print(soma.Vm)
         -0.07
 
 Finally, we run the simulation for 300 ms ::
@@ -634,13 +610,13 @@ This tells MOOSE to create an ``vec`` of 3 ``Compartment`` elements
 with path ``/model/comp``. For ``vec`` objects with multiple
 elements, the index in the ``vec`` is part of the element path. ::
 
-        >>> print comp_array.path, type(comp_array)
+        >>> print(comp_array.path, type(comp_array))
 
 shows that ``comp_array`` is an instance of ``vec`` class. You can
 loop through the elements in an ``vec`` like a Python list ::
 
         >>> for comp in comp_array:
-        ...    print comp.path, type(comp)
+        ...    print(comp.path, type(comp))
 	...
 
 shows ::

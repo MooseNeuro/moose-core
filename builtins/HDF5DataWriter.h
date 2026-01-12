@@ -6,9 +6,9 @@
 // Maintainer:
 // Created: Sat Feb 25 15:47:23 2012 (+0530)
 // Version:
-// Last-Updated: Sun Dec 20 23:17:22 2015 (-0500)
-//           By: subha
-//     Update #: 45
+// Last-Updated: Mon Jan 12 21:05:58 2026 (+0530)
+//           By: Subhasis Ray
+//     Update #: 48
 // URL:
 // Keywords:
 // Compatibility:
@@ -44,6 +44,7 @@ class HDF5DataWriter: public HDF5WriterBase
   public:
     HDF5DataWriter();
     virtual ~HDF5DataWriter();
+    HDF5DataWriter& operator=(const HDF5DataWriter& other);
     void setFlushLimit(unsigned int limit);
     unsigned int getFlushLimit() const;
     // void flush();

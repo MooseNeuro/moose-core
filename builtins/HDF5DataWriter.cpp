@@ -76,7 +76,7 @@ const Cinfo * HDF5DataWriter::initCinfo()
         " current values of the fields in all the targets at each time step in"
         " a local buffer. When the buffer size exceeds `flushLimit` (default"
         " 4M), it will write the data into the HDF5 file specified in its"
-        " `filename` field (default moose_output.h5). You can explicitly force"
+        " `filename` field. You can explicitly force"
         " writing by calling the `flush` function."
         "\n"
         "The dataset location in the output file replicates the MOOSE element"
@@ -111,6 +111,23 @@ HDF5DataWriter::~HDF5DataWriter()
     close();
 }
 
+HDF5DataWriter& HDF5DataWriter::operator=(const HDF5DataWriter& other)
+{
+    if(this == &other) {
+        return *this;
+    }
+    HDF5WriterBase::operator=(other);
+    flushLimit_ = other.flushLimit_;
+    steps_ = other.steps_;
+
+    // These are rebuilt at reinit based on connections
+    src_.clear();
+    data_.clear();
+    func_.clear();
+    datasets_.clear();
+
+    return *this;
+}
 void HDF5DataWriter::close()
 {
     if (filehandle_ < 0){
@@ -181,6 +198,10 @@ void HDF5DataWriter::process(const Eref & e, ProcPtr p)
 
 void HDF5DataWriter::reinit(const Eref & e, ProcPtr p)
 {
+    if (filename_.empty()){
+        throw invalid_argument("HDF5DataWriter::reinit: filename is empty.");
+    }
+
     steps_ = 0;
     for (unsigned int ii = 0; ii < data_.size(); ++ii){
         H5Dclose(datasets_[ii]);
@@ -197,9 +218,6 @@ void HDF5DataWriter::reinit(const Eref & e, ProcPtr p)
     // TODO: what to do when reinit is called? Close the existing file
     // and open a new one in append mode? Or keep adding to the
     // current file?
-    if (filename_.empty()){
-        filename_ = "moose_data.h5";
-    }
     if (filehandle_ > 0 ){
         close();
     }
