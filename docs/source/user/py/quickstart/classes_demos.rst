@@ -68,7 +68,7 @@ Interpolation
 Function
 ^^^^^^^^
 
-.. automodule:: func
+.. automodule:: function
   :members:
   :noindex:
 
