@@ -1,4 +1,4 @@
-[![Python package](https://github.com/BhallaLab/moose-core/actions/workflows/pymoose.yml/badge.svg)](https://github.com/BhallaLab/moose-core/actions/workflows/pymoose.yml)
+[![Python package](https://github.com/MooseNeuro/moose-core/actions/workflows/pymoose.yml/badge.svg)](https://github.com/MooseNeuro/moose-core/actions/workflows/pymoose.yml)
 
 # MOOSE
 
@@ -43,10 +43,10 @@ https://github.com/MooseNeuro/moose-examples.
 - A set of jupyter notebooks with step by step examples with explanation are available here:
 https://github.com/MooseNeuro/moose-notebooks.
 
-# v4.1.3 – Incremental Release over v4.1.0 "Jhangri"
+# v4.1.4 – Incremental Release over v4.1.0 "Jhangri"
 Patch release focusing on accurate version reporting, bug fixes, and documentation improvements.
 
-# ABOUT VERSION 4.1.3, `Jhangri`
+# ABOUT VERSION 4.1.4, `Jhangri`
 
 [`Jhangri`](https://en.wikipedia.org/wiki/Imarti) is an Indian sweet
 in the shape of a flower. It is made of white-lentil (*Vigna mungo*)
@@ -59,7 +59,12 @@ This release has the following changes:
 # Installation
 Installing released version from PyPI using `pip`
 
-This version is now available for installation via `pip`. To install the latest release, run
+This version is available for installation via `pip`. To install the latest release, run
+
+```
+conda create -n moose python=3.13 gsl hdf5 numpy vpython matplotlib -c conda-forge
+conda activate moose
+```
 ```
 pip install pymoose
 ```
@@ -83,14 +88,22 @@ Now you can import moose in a Python script or interpreter with the statement:
 
     >>> import moose
 
-# Fixes
-1. Version mismatch resolved: `moose.__version__` and `moose.version()` now correctly report 4.1.3 (previous 4.1.2 could still show 4.1.1).
-2. Fixed vec index issue: Resolved an issue where accessing the last element in a `vector` could incorrectly raise an `“index out of range”` error.
-3. Embedded C/C++ macro `(MOOSE_VERSION`) and build metadata are kept in sync with `pyproject.toml.`
-
+# Bug Fixes
+-  Fixed a crash (segmentation fault) that could occur when deleting function objects  
+-  Fixed incorrect evaluation order in function objects that could lead to wrong results in some models
+-  Improved stability of expression parsing when working with dynamically changing expressions  
+-  Fixed setNumVar issue in Function class - setting the number of x variables with `numVar` field is no longer required, simply updating  
+   the expression now works correctly
+# Model Import Improvements
+- Improved SWC morphology reader with clearer hierarchical naming scheme for dendritic compartments, making imported neuron structures easier to interpret and debug
 
 # Documentation
-INSTALL.md rewritten for clearer, up-to-date installation instructions (PyPI and from-source code installation).
+- Updated build instructions for macOS
+
+# Build and Packaging
+- Improved GitHub Actions workflows for release packages
+- Enabled manual triggering of release workflows
+- Fixed permission issues during GitHub release creation
    
 # LICENSE
 
