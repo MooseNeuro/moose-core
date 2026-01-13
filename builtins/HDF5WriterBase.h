@@ -6,9 +6,9 @@
 // Maintainer:
 // Created: Sat Feb 25 14:39:19 2012 (+0530)
 // Version:
-// Last-Updated: Tue Aug 25 23:11:28 2015 (-0400)
-//           By: subha
-//     Update #: 57
+// Last-Updated: Mon Jan 12 21:08:51 2026 (+0530)
+//           By: Subhasis Ray
+//     Update #: 58
 // URL:
 // Keywords:
 // Compatibility:
@@ -44,6 +44,7 @@ class HDF5WriterBase
     static const hssize_t CHUNK_SIZE;
     HDF5WriterBase();
     virtual ~HDF5WriterBase();
+    HDF5WriterBase& operator=(const HDF5WriterBase& other);
     void setFilename(string filename);
     string getFilename() const;
     bool isOpen() const;
