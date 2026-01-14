@@ -58,7 +58,6 @@ def makeGlobalBalanceNetwork():
     iv = moose.vec( insyn.path + '/synapse' )
     ov = moose.vec( outsyn.path + '/synapse' )
     oiv = moose.vec( outInhSyn.path + '/synapse' )
-
     assert len(iv) == 0
     assert len(ov) == 0
     assert len(oiv) == 0
@@ -109,7 +108,6 @@ def makeGlobalBalanceNetwork():
     assert numInhSyns == expected, "Expected %s, got %s" % (expected,numInhSyns)
 
     for i in moose.vec( outsyn ):
-        print('111', i)
         nov += i.synapse.num
         if i.synapse.num > 0:
             i.synapse.weight = params['wtStimToOut']

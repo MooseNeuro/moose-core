@@ -82,46 +82,31 @@ def test_veclookupfield_vector_set():
 
 
 def test_vecelementfield_scalar_set():
-    print('Testing VecElementField')
+    print('Testing VecElementField: scalar broadcast')
     num = 10
     numSyn = 5
     with make_container() as model:
         sh = moose.SimpleSynHandler('sh', n=num)
-        print('Z' * 10, sh)
-        # moose.showfield(sh)
-        print(sh.synapse)
-        print('Num', sh.synapse.num)
-        # print('delay', sh.synapse.delay)
         sh.synapse.num = numSyn
-        print('delay', sh.synapse.delay)
-        print('A' * 10)
         el = moose.element(sh.synapse.path)
-        value_field_dict = moose._moose.getFieldTypeDict(el.className, "valueFinfo")
-        print(value_field_dict)
-        print('#A' * 10, el.numData)
-        print('#B' * 10, el.numFields)
-        for field, dtype in sorted(value_field_dict.items()):
-            if (
-                (dtype == "bad")
-                or dtype.startswith("vector")
-                or ("ObjId" in dtype)
-            ):
-                continue
-            print('   ', 'X' * 10, field, dtype)
-            # print(' ' * 5, moose._moose.getField(el, field))
-        moose.showfield(sh.synapse.path)
-        print('B' * 10)
         sh.numSynapses = numSyn
-        print('C' * 10)
         assert len(sh.synapse.weight) == numSyn, 'Could not set num for elementfield'
-        print('D' * 10)
         assert sh.vec[1].synapse.num == 0, 'Should not have set num for other element'
-        print('&' * 10, sh.vec.synapse, type(sh.vec.synapse))
         sh.vec.synapse.num = numSyn
-        assert np.allclose(sh.vec.synapse.num, np.ones(num) * numSyn)
-        print('XXXX', sh.vec.synapse.weight)
+        assert np.allclose(sh.vec.synapse.num, np.ones(num) * numSyn), 'num not set correctly by scalar broadcast'
     print('test_vecelementfield_scalar_set', 'OK')
 
+def test_vecelementfield_seq_set():
+    print('Testing VecElementField: set field from sequence ')
+    num = 10
+    with make_container() as model:
+        sh = moose.SimpleSynHandler('sh', n=num)
+        sh.vec.synapse.num = np.arange(num)
+        assert np.allclose(sh.vec.synapse.num, np.arange(num)), 'num not set correctly from sequence'
+        sh.vec.synapse.delay = np.arange(num)
+        for ii, inner in enumerate(sh.vec.synapse.delay):
+            assert np.allclose(inner, ii), 'broadcast of inner scalars to field elements failed'
+    print('test_vecelementfield_seq_set', 'OK')
 
 if __name__ == '__main__':
     test_vec_wrapping()
@@ -131,3 +116,4 @@ if __name__ == '__main__':
     test_veclookupfield_scalar_set()
     test_veclookupfield_vector_set()
     test_vecelementfield_scalar_set()
+    test_vecelementfield_seq_set()

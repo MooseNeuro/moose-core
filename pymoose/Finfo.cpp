@@ -355,25 +355,27 @@ ElementFieldIterator ElementField::iter() const
 nb::object ElementField::getAttribute(const string& field)
 {
     unsigned int num = getNum();
-    if (field == "num"){
+    if((field == "num") || (field == "numField")) {
         return nb::cast(num);
     }
-    if (num > 0){
+    if(num > 0) {
         return vec_.getAttribute(field);
     }
-    throw nb::index_error("Trying to access attribute of an ElementField with 0 elements");
+    throw nb::index_error(
+        "Trying to access attribute of an ElementField with 0 elements");
 }
 
 bool ElementField::setAttribute(const string& field, nb::object value)
 {
     unsigned int num = getNum();
-    if (field == "num") {
+    if((field == "num") || (field == "numField")) {
         return setNum(nb::cast<unsigned int>(value));
     }
-    if (num > 0){
+    if(num > 0) {
         return vec_.setAttribute(field, value);
     }
-    throw nb::index_error("Trying to access attribute of an ElementField with 0 elements");
+    throw nb::index_error(
+        "Trying to access attribute of an ElementField with 0 elements");
 }
 
 ObjId ElementFieldIterator::next()
@@ -407,7 +409,7 @@ nb::object VecLookupField::get(const nb::object& key)
         auto typedKey = nb::cast<KT>(key);                                   \
         VT* data = new VT[numData];                                          \
         for(size_t ii = 0; ii < numData; ++ii) {                             \
-            ObjId oid(id_, ii);                                          \
+            ObjId oid(id_, ii);                                              \
             data[ii] =                                                       \
                 ::LookupField<KT, VT>::get(oid, finfo_->name(), typedKey);   \
         }                                                                    \
@@ -422,7 +424,7 @@ nb::object VecLookupField::get(const nb::object& key)
         auto typedKey = nb::cast<KT>(key);                                   \
         nb::list result;                                                     \
         for(size_t ii = 0; ii < numData; ++ii) {                             \
-            ObjId oid(id_, ii);                                          \
+            ObjId oid(id_, ii);                                              \
             result.append(nb::cast(                                          \
                 ::LookupField<KT, VT>::get(oid, finfo_->name(), typedKey))); \
         }                                                                    \
@@ -480,33 +482,33 @@ bool VecLookupField::set(const nb::object& key, const nb::object& val)
 
     // Macro for broadcasting single value to all elements
 
-#define VEC_LOOKUP_SET(KT, VT)                                               \
-    if(keyType_ == #KT && valueType_ == #VT) {                               \
-        auto typedKey = nb::cast<KT>(key);                                   \
-        if(isIterable) {                                                     \
-            auto vals = nb::cast<vector<VT>>(val);                           \
-            if(vals.size() != numData) {                                     \
-                throw nb::value_error(("Length mismatch: expected " +        \
-                                       to_string(numData) + ", got " +       \
-                                       to_string(vals.size()))               \
-                                          .c_str());                         \
-            }                                                                \
-            bool res = true;                                                 \
-            for(size_t ii = 0; ii < numData; ++ii) {                         \
-                res &= ::LookupField<KT, VT>::set(                           \
+#define VEC_LOOKUP_SET(KT, VT)                                           \
+    if(keyType_ == #KT && valueType_ == #VT) {                           \
+        auto typedKey = nb::cast<KT>(key);                               \
+        if(isIterable) {                                                 \
+            auto vals = nb::cast<vector<VT>>(val);                       \
+            if(vals.size() != numData) {                                 \
+                throw nb::value_error(("Length mismatch: expected " +    \
+                                       to_string(numData) + ", got " +   \
+                                       to_string(vals.size()))           \
+                                          .c_str());                     \
+            }                                                            \
+            bool res = true;                                             \
+            for(size_t ii = 0; ii < numData; ++ii) {                     \
+                res &= ::LookupField<KT, VT>::set(                       \
                     ObjId(id_, ii), finfo_->name(), typedKey, vals[ii]); \
-            }                                                                \
-            return res;                                                      \
-        }                                                                    \
-        else {                                                               \
-            auto typedVal = nb::cast<VT>(val);                               \
-            bool res = true;                                                 \
-            for(size_t ii = 0; ii < numData; ++ii) {                         \
-                res &= ::LookupField<KT, VT>::set(                           \
+            }                                                            \
+            return res;                                                  \
+        }                                                                \
+        else {                                                           \
+            auto typedVal = nb::cast<VT>(val);                           \
+            bool res = true;                                             \
+            for(size_t ii = 0; ii < numData; ++ii) {                     \
+                res &= ::LookupField<KT, VT>::set(                       \
                     ObjId(id_, ii), finfo_->name(), typedKey, typedVal); \
-            }                                                                \
-            return res;                                                      \
-        }                                                                    \
+            }                                                            \
+            return res;                                                  \
+        }                                                                \
     }
 
     VEC_LOOKUP_SET(unsigned int, double)
@@ -541,13 +543,10 @@ VecElementField::VecElementField(const Id& id, const Finfo* f)
 size_t VecElementField::size() const
 {
     size_t total = 0;
-    for (size_t i = 0; i < numParents_; ++i) {
+    for(size_t i = 0; i < numParents_; ++i) {
         ObjId parentOid(parentId_, i);
-        cerr << "DEBUG: AAAAAAAAAA " << parentOid << endl;
         string path = parentOid.path() + "/" + finfo_->name();
-        cerr << "DEBUG: BBBBBBBBBB " << path << endl;
         ObjId fieldOid(path);
-        cerr << "DEBUG: CCCCCCCCCC " << fieldOid << endl;
         total += Field<unsigned int>::get(fieldOid, "numField");
     }
     return total;
@@ -578,146 +577,106 @@ ElementField VecElementField::getParent(int index) const
 
 nb::object VecElementField::getAttribute(const string& name)
 {
-    // First, determine total size and collect all values
-    size_t totalSize = size();
-
-    // Get the type from the first element's finfo
-    ObjId firstParent(parentId_, 0);
-    ObjId firstField(firstParent.path() + "/" + finfo_->name());
-    auto* cinfo = firstField.element()->cinfo();
-    auto* attrFinfo = cinfo->findFinfo(name);
-    if(!attrFinfo) {
-        throw nb::attribute_error(("VecElementField::getAttribute(" + name + " not found").c_str());
+    // numField is common to the entire ElementField - return numpy ndarray
+    if((name == "numField") || name == "num") {
+        return nb::cast(sizes());
     }
 
-    string rttType = attrFinfo->rttiType();
-
-#define VEC_ELEM_GET_NUMPY(TYPE)                                               \
-    if(rttType == #TYPE) {                                                     \
-        TYPE* data = new TYPE[totalSize];                                      \
-        size_t offset = 0;                                                     \
-        for(size_t p = 0; p < numParents_; ++p) {                              \
-            ObjId parentOid(parentId_, p);                                           \
-            ObjId fieldOid(parentOid.path() + "/" + finfo_->name());           \
-            unsigned int num = Field<unsigned int>::get(fieldOid, "numField"); \
-            for(unsigned int f = 0; f < num; ++f) {                            \
-                ObjId elemOid(fieldOid.id, fieldOid.dataIndex, f);             \
-                data[offset++] = Field<TYPE>::get(elemOid, name);              \
-            }                                                                  \
-        }                                                                      \
-        nb::capsule owner(                                                     \
-            data, [](void* p) noexcept { delete[] static_cast<TYPE*>(p); });   \
-        return nb::cast(                                                       \
-            nb::ndarray<TYPE, nb::numpy>(data, {totalSize}, owner));           \
-    }
-
-    VEC_ELEM_GET_NUMPY(double)
-    VEC_ELEM_GET_NUMPY(int)
-    VEC_ELEM_GET_NUMPY(unsigned int)
-    VEC_ELEM_GET_NUMPY(bool)
-
-#undef VEC_ELEM_GET_NUMPY
-
-    // For complex types, return flat list
+    // Other attributes are specific to each entry in the ElementField
+    // - return a list of lists
     nb::list result;
     for(size_t p = 0; p < numParents_; ++p) {
         ObjId parentOid(parentId_, p);
         ObjId fieldOid(parentOid.path() + "/" + finfo_->name());
         unsigned int num = Field<unsigned int>::get(fieldOid, "numField");
+        nb::list innerList;  // Create inner list for this parent
         for(unsigned int f = 0; f < num; ++f) {
             ObjId elemOid(fieldOid.id, fieldOid.dataIndex, f);
-            result.append(getFieldGeneric(elemOid, name));
+            innerList.append(getFieldGeneric(elemOid, name));
         }
+        result.append(innerList);  // Append inner list to outer list
     }
     return result;
 }
 
 bool VecElementField::setAttribute(const string& name, const nb::object& val)
 {
-    bool isIterable =
-        nb::isinstance<nb::iterable>(val) && !nb::isinstance<nb::str>(val);
+    bool isSequence =
+        nb::isinstance<nb::sequence>(val) && !nb::isinstance<nb::str>(val);
+
+    nb::sequence seq;
+    if(isSequence) {
+        seq = nb::cast<nb::sequence>(val);
+        if(nb::len(seq) != numParents_) {
+            throw nb::value_error("Length must match numData of parent vec");
+        }
+    }
+
+    bool res = true;
 
     // num is a special field setting the number of elements in an
     // ElementField
-    if(name == "num") {
-        bool res = true;
-        vector<unsigned int> vals;
-        if (isIterable){
-            vals = nb::cast<vector<unsigned int>>(val);
+    if((name == "num") || (name == "numField")) {
+        if(isSequence) {
+            for(size_t i = 0; i < numParents_; ++i) {
+                ObjId parentOid(parentId_, i);
+                ObjId fieldOid(parentOid.path() + "/" + finfo_->name());
+                res &= Field<unsigned int>::set(fieldOid, "numField",
+                                                nb::cast<unsigned int>(seq[i]));
+            }
         }
         else {
-            vals.assign(numParents_, nb::cast<unsigned int>(val));
-        }
-        for(size_t i = 0; i < numParents_; ++i) {
-            ObjId parentOid(parentId_, i);
-            ObjId fieldOid(parentOid.path() + "/" + finfo_->name());
-            res &= Field<unsigned int>::set(fieldOid, "numField", vals[i]);
+            unsigned int numField = nb::cast<unsigned int>(val);
+            for(size_t i = 0; i < numParents_; ++i) {
+                ObjId parentOid(parentId_, i);
+                ObjId fieldOid(parentOid.path() + "/" + finfo_->name());
+                res &= Field<unsigned int>::set(fieldOid, "numField", numField);
+            }
         }
         return res;
     }
-
-    size_t totalSize = size();
-    // Get the type
-    ObjId firstParent(parentId_, 0);
-    ObjId firstField(firstParent.path() + "/" + finfo_->name());
-    auto* cinfo = firstField.element()->cinfo();
-    auto* attrFinfo = cinfo->findFinfo(name);
-    if(!attrFinfo) {
-        throw nb::attribute_error((name + " not found").c_str());
+    // All other fields::
+    // Scalar value - broadcast
+    if(!isSequence) {
+        for(size_t i = 0; i < numParents_; ++i) {
+            ObjId parentOid(parentId_, i);
+            ObjId fieldOid(parentOid.path() + "/" + finfo_->name());
+            unsigned int num = Field<unsigned int>::get(fieldOid, "numField");
+            for(unsigned int f = 0; f < num; ++f) {
+                ObjId elemOid(fieldOid.id, fieldOid.dataIndex, f);
+                res &= setFieldGeneric(elemOid, name, nb::borrow(val));
+            }
+        }
+        return res;
     }
+    // isSequence::
+    // Process inner lists if sequence
+    for(size_t p = 0; p < numParents_; ++p) {
+        ObjId parentOid(parentId_, p);
+        ObjId fieldOid(parentOid.path() + "/" + finfo_->name());
+        unsigned int num = Field<unsigned int>::get(fieldOid, "numField");
 
-    string rttType = attrFinfo->rttiType();
-
-#define VEC_ELEM_SET(TYPE)                                                  \
-    if(rttType == #TYPE) {                                                  \
-        if(isIterable) {                                                    \
-            auto vals = nb::cast<vector<TYPE>>(val);                        \
-            if(vals.size() != totalSize) {                                  \
-                throw nb::value_error(("Length mismatch: expected " +       \
-                                       to_string(totalSize) + ", got " +    \
-                                       to_string(vals.size()))              \
-                                          .c_str());                        \
-            }                                                               \
-            bool res = true;                                                \
-            size_t offset = 0;                                              \
-            for(size_t p = 0; p < numParents_; ++p) {                       \
-                ObjId parentOid(parentId_, p);                                    \
-                ObjId fieldOid(parentOid.path() + "/" + finfo_->name());    \
-                unsigned int num =                                          \
-                    Field<unsigned int>::get(fieldOid, "numField");         \
-                for(unsigned int f = 0; f < num; ++f) {                     \
-                    ObjId elemOid(fieldOid.id, fieldOid.dataIndex, f);      \
-                    res &= Field<TYPE>::set(elemOid, name, vals[offset++]); \
-                }                                                           \
-            }                                                               \
-            return res;                                                     \
-        }                                                                   \
-        else {                                                              \
-            auto typedVal = nb::cast<TYPE>(val);                            \
-            bool res = true;                                                \
-            for(size_t p = 0; p < numParents_; ++p) {                       \
-                ObjId parentOid(parentId_, p);                                    \
-                ObjId fieldOid(parentOid.path() + "/" + finfo_->name());    \
-                unsigned int num =                                          \
-                    Field<unsigned int>::get(fieldOid, "numField");         \
-                for(unsigned int f = 0; f < num; ++f) {                     \
-                    ObjId elemOid(fieldOid.id, fieldOid.dataIndex, f);      \
-                    res &= Field<TYPE>::set(elemOid, name, typedVal);       \
-                }                                                           \
-            }                                                               \
-            return res;                                                     \
-        }                                                                   \
+        if (nb::isinstance<nb::sequence>(seq[p]) && !nb::isinstance<nb::str>(seq[p])){
+            nb::sequence inner = nb::cast<nb::sequence>(seq[p]);
+            if(nb::len(inner) != num) {
+                throw nb::value_error(("Inner sequence " + to_string(p) +
+                        " length mismatch: expected " +
+                        to_string(num) + ", got " +
+                        to_string(nb::len(inner)))
+                    .c_str());
+            }
+            for(unsigned int f = 0; f < num; ++f) {
+                ObjId elemOid(fieldOid.id, fieldOid.dataIndex, f);
+                res &= setFieldGeneric(elemOid, name, nb::borrow(inner[f]));
+            }
+        } else { // broadcast scalar across parent's elements
+            for(unsigned int f = 0; f < num; ++f) {
+                ObjId elemOid(fieldOid.id, fieldOid.dataIndex, f);
+                res &= setFieldGeneric(elemOid, name, nb::borrow(seq[p]));
+            }
+        }
     }
-
-    VEC_ELEM_SET(double)
-    VEC_ELEM_SET(int)
-    VEC_ELEM_SET(unsigned int)
-    VEC_ELEM_SET(bool)
-    VEC_ELEM_SET(string)
-
-#undef VEC_ELEM_SET
-
-    throw nb::type_error(("Unsupported type: " + rttType).c_str());
-}
+    return res;
+} // VecElementField::setAttribute
 
 }  // namespace pymoose

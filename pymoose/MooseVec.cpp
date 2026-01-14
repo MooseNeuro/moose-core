@@ -29,7 +29,6 @@ MooseVec::MooseVec(const string& path, unsigned int n, const string& dtype)
     if(oid.bad()) {
         if(!dtype.empty()) {
             oid = createElementFromPath(dtype, path, n);
-            id_ = oid.id;
         }
         else {
             throw nb::value_error(
@@ -37,6 +36,7 @@ MooseVec::MooseVec(const string& path, unsigned int n, const string& dtype)
                     ": path does not exist. Pass `dtype=classname` to create.").c_str());
         }
     }
+    id_ = oid.id;
 }
 
 MooseVec::MooseVec(const ObjId& oid) : id_(oid.id)
@@ -54,8 +54,9 @@ const string MooseVec::dtype() const
 
 size_t MooseVec::size() const
 {
-    if(id_.element()->hasFields())
+    if(id_.element()->hasFields()){
         return Field<unsigned int>::get(id_, "numField");
+    }
     return id_.element()->numData();
 }
 
@@ -126,9 +127,9 @@ nb::object MooseVec::getAttribute(const string& name)
     if(name == "numData") {
         return nb::cast(Field<unsigned int>::get(id_, "numData"));
     }
-    if(name == "numField") {
-        return nb::cast(Field<unsigned int>::get(id_, "numField"));
-    }
+    // if(name == "numField") {
+    //     return nb::cast(Field<unsigned int>::get(id_, "numField"));
+    // }
 
     // If type is double, int, bool etc, then return the numpy array. else
     // return the list of python object.
