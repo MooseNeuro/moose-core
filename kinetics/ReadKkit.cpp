@@ -287,7 +287,7 @@ bool kineticsHasReactions( Id mgr ) {
 		auto const last = std::end( choices );
 		auto const pos = std::find( std::begin(choices), std::end(choices), childClass );
 		// cout << k->path() << "	" << childClass << endl;
-		if ( pos!= last) 
+		if ( pos!= last)
 			return true;
 	}
 	return false;
@@ -1280,20 +1280,21 @@ void ReadKkit::buildSumTotal( const string& src, const string& dest )
 
     Id srcId = findSumTotSrc( src );
     unsigned int numVars = Field< unsigned int >::get( sumId, "numVars" );
+
+    stringstream ss;
+    for ( unsigned int i = 0; i < numVars; ++i )
+        ss << "x" << i << "+";
+    ss << "x" << numVars;
+    Field<string>::set(sumId, "expr", ss.str());
+
     ObjId xi(sumId.value()+1, 0, numVars );
-    Field<unsigned int>::set( sumId, "numVars", numVars+1);
+    // Field<unsigned int>::set( sumId, "numVars", numVars+1);
 
     ObjId ret = shell_->doAddMsg( "single",
                                   ObjId( srcId, 0 ), "nOut",
                                   xi, "input" );
     assert( ret != ObjId() );
 
-
-    stringstream ss;
-    for ( unsigned int i = 0; i < numVars; ++i )
-        ss << "x" << i << "+";
-    ss << "x" << numVars;
-    Field< string >::set( sumId, "expr", ss.str() );
 }
 
 /**

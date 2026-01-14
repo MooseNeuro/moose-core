@@ -6,9 +6,9 @@
 // Maintainer:
 // Created: Thu Jun 18 23:16:11 2015 (-0400)
 // Version:
-// Last-Updated: Sat Jan 29 2022
-//           By: bhalla
-//     Update #: 50
+// Last-Updated: Mon Jan 12 21:29:43 2026 (+0530)
+//           By: Subhasis Ray
+//     Update #: 64
 // URL:
 // Keywords:
 // Compatibility:
@@ -102,7 +102,7 @@ const Cinfo * NSDFWriter::initCinfo()
 
     static ValueFinfo <NSDFWriter, string > modelRoot(
       "modelRoot",
-      "The moose element tree root to be saved under /model/modeltree. If blank, nothing is saved. Default: root object, '/'", 
+      "The moose element tree root to be saved under /model/modeltree. If blank, nothing is saved. Default: root object, '/'",
       &NSDFWriter::setModelRoot,
       &NSDFWriter::getModelRoot);
 
@@ -543,7 +543,7 @@ void NSDFWriter::reinit(const Eref& eref, const ProcPtr proc)
     // and open a new one in append mode? Or keep adding to the
     // current file?
     if (filename_.empty()){
-        filename_ = "moose_data.nsdf.h5";
+        throw invalid_argument("NSDFWriter::reinit: filename empty.");
     }
     openFile();
     writeScalarAttr<string>(filehandle_, "created", iso_time(0));
@@ -599,13 +599,21 @@ void NSDFWriter::process(const Eref& eref, ProcPtr proc)
 
 NSDFWriter& NSDFWriter::operator=( const NSDFWriter& other)
 {
+    if(this == &other) {
+        return *this;
+    }
+    HDF5DataWriter::operator=(other);
 	eventInputs_ = other.eventInputs_;
 	for ( vector< InputVariable >::iterator
-					i = eventInputs_.begin(); i != eventInputs_.end(); ++i )
-			i->setOwner( this );
-        for (unsigned int ii = 0; ii < getNumEventInputs(); ++ii){
-            events_[ii].clear();
-        }
+              i = eventInputs_.begin(); i != eventInputs_.end(); ++i ){
+        i->setOwner(this);
+    }
+    for (unsigned int ii = 0; ii < getNumEventInputs(); ++ii){
+        events_[ii].clear();
+    }
+    env_ = other.env_;
+    modelRoot_ = other.modelRoot_;
+    modelFileNames_ = other.modelFileNames_;
 	return *this;
 }
 
@@ -657,7 +665,7 @@ string NSDFWriter::getModelRoot() const
 
 void NSDFWriter::setModelFiles(string value)
 {
-	modelFileNames_.clear();	
+	modelFileNames_.clear();
     moose::tokenize( value, ", ", modelFileNames_);
 }
 
@@ -683,7 +691,7 @@ void NSDFWriter::writeStaticCoords()
         hid_t container = require_group(staticObjContainer, className);
         double * buffer = (double*)calloc(ii->second.size() * 7, sizeof(double));
 		// Ugly class checking stuff here: Both have a coord field
-		if ( className.find( "Pool" ) != string::npos || 
+		if ( className.find( "Pool" ) != string::npos ||
 			 className.find( "Compartment" ) != string::npos ) {
         	for (unsigned int jj = 0; jj < ii->second.size(); ++jj) {
             	vector< double > coords = Field< vector< double > >::get( src_[ii->second[jj]], fieldName.c_str() );
@@ -691,7 +699,7 @@ void NSDFWriter::writeStaticCoords()
 					for ( unsigned int kk = 0; kk < 6; ++kk) {
 						buffer[jj * 7 + kk] = coords[kk];
 					}
-					buffer[jj * 7 + 6] = coords[9]; // head Dia 
+					buffer[jj * 7 + 6] = coords[9]; // head Dia
 				} else if ( coords.size() == 4 ) { // for EndoMesh
 					for ( unsigned int kk = 0; kk < 3; ++kk) {
 						buffer[jj * 7 + kk] = coords[kk];

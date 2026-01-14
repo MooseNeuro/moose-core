@@ -6,9 +6,9 @@
 // Maintainer:
 // Created: Sat Feb 25 14:42:03 2012 (+0530)
 // Version:
-// Last-Updated: Sun Dec 20 23:20:44 2015 (-0500)
-//           By: subha
-//     Update #: 298
+// Last-Updated: Mon Jan 12 21:30:20 2026 (+0530)
+//           By: Subhasis Ray
+//     Update #: 312
 // URL:
 // Keywords:
 // Compatibility:
@@ -526,7 +526,7 @@ const hssize_t HDF5WriterBase::CHUNK_SIZE = 1024; // default chunk size
 
 HDF5WriterBase::HDF5WriterBase():
         filehandle_(-1),
-        filename_("moose_output.h5"),
+        filename_(""),
         openmode_(H5F_ACC_EXCL),
         chunkSize_(CHUNK_SIZE),
         compressor_("zlib"),
@@ -540,22 +540,41 @@ HDF5WriterBase::~HDF5WriterBase()
     close();
 }
 
+HDF5WriterBase& HDF5WriterBase::operator=(const HDF5WriterBase& other)
+{
+    if(this == &other) {
+        return* this;
+    }
+    // Close current file if open
+    if (filehandle_ >= 0) {
+        close();
+    }
+    filename_ = other.filename_;
+    openmode_ = other.openmode_;
+    chunkSize_ = other.chunkSize_;
+    compressor_ = other.compressor_;
+    compression_ = other.compression_;
+    // Copy attribute maps
+    sattr_ = other.sattr_;
+    dattr_ = other.dattr_;
+    lattr_ = other.lattr_;
+    svecattr_ = other.svecattr_;
+    dvecattr_ = other.dvecattr_;
+    lvecattr_ = other.lvecattr_;
+
+    // Don't copy runtime handles - they're instance-specific
+    // filehandle_ stays -1 (closed), will open on reinit
+    // nodemap_ stays empty, will populate when file opens
+    filehandle_ = -1;
+    nodemap_.clear();
+    return *this;
+}
 void HDF5WriterBase::setFilename(string filename)
 {
     if (filename_ == filename){
         return;
     }
-
-    // // If file is open, close it before changing filename
-    // if (filehandle_ >= 0){
-    //     status = H5Fclose(filehandle_);
-    //     if (status < 0){
-    //         cerr << "Error: failed to close HDF5 file handle for " << filename_ << ". Error code: " << status << endl;
-    //     }
-    // }
-    // filehandle_ = -1;
     filename_ = filename;
-    // status = openFile(filename);
 }
 
 string HDF5WriterBase::getFilename() const
@@ -579,6 +598,9 @@ herr_t HDF5WriterBase::openFile()
             cerr << "Error: failed to close currently open HDF5 file. Error code: " << status << endl;
             return status;
         }
+    }
+    if(filename_.empty()) {
+        throw invalid_argument("HDF5WriterBase:openFile: filename is empty.");
     }
     hid_t fapl_id = H5Pcreate(H5P_FILE_ACCESS);
     // Ensure that all open objects are closed before the file is closed

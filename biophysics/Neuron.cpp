@@ -788,14 +788,11 @@ static void setCompartmentParams(
         for ( unsigned int i = 0; i < elist.size(); ++i )
         {
             unsigned int j = i * nuParser::numVal;
-            if ( val[ j + nuParser::EXPR ] > 0 )
-            {
                 double len = val[j + nuParser::LEN ];
                 double dia = val[j + nuParser::DIA ];
                 double x = parser.eval( val.begin() + j );
                 assignSingleCompartmentParams( elist[i],
                                                x, field, len, dia );
-            }
         }
     }
     catch ( moose::Parser::exception_type& err )

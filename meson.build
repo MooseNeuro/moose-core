@@ -13,7 +13,7 @@
 project('pymoose', 'c', 'cpp',
         # The version is created dynamically based on git commit hash. For release, make this explicit string
         # version: run_command('git', 'rev-parse',  '--short', 'HEAD', check:false).stdout().strip(),
-        version: '4.1.3',  # cibuildwheel/meson crashes with github hash as version
+        version: '4.1.4',  # cibuildwheel/meson crashes with github hash as version
         meson_version: '>=1.1',
 	default_options: ['c_std=c17', 'cpp_std=c++17', 'b_ndebug=if-release'])
 
@@ -26,7 +26,7 @@ use_hdf5 = get_option('use_hdf5')
 ##################################
 # Add global arguments
 ##################################
-add_global_arguments('-DMOOSE_VERSION="4.1.3"', language: ['c', 'cpp'])
+add_global_arguments('-DMOOSE_VERSION="4.1.4"', language: ['c', 'cpp'])
 add_global_arguments('-DUSE_GSL', language: ['c', 'cpp'])
 
 if use_hdf5
