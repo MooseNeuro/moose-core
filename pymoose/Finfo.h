@@ -61,7 +61,6 @@ struct ElementField {
     ObjId oid_;  /// Owner ObjId
     const Finfo* finfo_;
     ObjId foid_;    /// Finfo ObjId
-    MooseVec vec_;  /// Easy access to field as vector
 
     ElementField(const ObjId& oid, const Finfo* f);
     unsigned int getNum() const;
@@ -106,7 +105,7 @@ struct VecElementField {
     bool setAttribute(const string& name, const nb::object& val);
 
     // Get the ElementField for a specific parent index
-    ElementField getParent(int index) const;
+    ElementField getItem(int index) const;
 };
 }  // namespace pymoose
 

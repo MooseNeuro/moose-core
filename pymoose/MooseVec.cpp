@@ -25,10 +25,10 @@ MooseVec::MooseVec(const string& path, unsigned int n, const string& dtype)
 {
     // If path is given and it does not exists, then create one. The old api
     // support it.
-    ObjId oid = ObjId(path);
-    if(oid.bad()) {
+    oid_ = ObjId(path);
+    if(oid_.bad()) {
         if(!dtype.empty()) {
-            oid = createElementFromPath(dtype, path, n);
+            oid_ = createElementFromPath(dtype, path, n);
         }
         else {
             throw nb::value_error(
@@ -36,49 +36,48 @@ MooseVec::MooseVec(const string& path, unsigned int n, const string& dtype)
                     ": path does not exist. Pass `dtype=classname` to create.").c_str());
         }
     }
-    id_ = oid.id;
 }
 
-MooseVec::MooseVec(const ObjId& oid) : id_(oid.id)
+MooseVec::MooseVec(const ObjId& oid) : oid_(oid)
 {
 }
 
-MooseVec::MooseVec(const Id& id) : id_(id)
+MooseVec::MooseVec(const Id& id) : oid_(id)
 {
 }
 
 const string MooseVec::dtype() const
 {
-    return id_.element()->cinfo()->name();
+    return oid_.element()->cinfo()->name();
 }
 
 size_t MooseVec::size() const
 {
-    if(id_.element()->hasFields()){
-        return Field<unsigned int>::get(id_, "numField");
+    if(oid_.element()->hasFields()){
+        return Field<unsigned int>::get(oid_, "numField");
     }
-    return id_.element()->numData();
+    return oid_.element()->numData();
 }
 
 const string MooseVec::name() const
 {
-    return id_.element()->getName();
+    return oid_.element()->getName();
 }
 
 const string MooseVec::path() const
 {
-    return id_.path();
+    return oid_.path();
 }
 
 ObjId MooseVec::parent() const
 {
-    return Neutral::parent(id_);
+    return Neutral::parent(oid_);
 }
 
 vector<MooseVec> MooseVec::children() const
 {
     vector<Id> childIds;
-    Neutral::children(id_.eref(), childIds);
+    Neutral::children(oid_.eref(), childIds);
     vector<MooseVec> res;
     res.reserve(childIds.size());
     for(const auto& id : childIds) {
@@ -94,7 +93,7 @@ ObjId MooseVec::getItem(const int index) const
     if(i >= size()) {
         throw nb::index_error(("Index " + to_string(i) + " out of range").c_str());
     }
-    if(id_.element()->hasFields()) {
+    if(oid_.element()->hasFields()) {
         return getFieldItem(i);
     }
     return getDataItem(i);
@@ -113,27 +112,27 @@ vector<ObjId> MooseVec::getItemRange(const nb::slice& slice) const
 
 ObjId MooseVec::getDataItem(const size_t dataIndex) const
 {
-    return ObjId(id_, dataIndex);
+    return ObjId(oid_.id, dataIndex, oid_.fieldIndex);
 }
 
 ObjId MooseVec::getFieldItem(const size_t fieldIndex) const
 {
-    return ObjId(id_, 0, fieldIndex);
+    return ObjId(oid_.id, oid_.dataIndex, fieldIndex);
 }
 
 nb::object MooseVec::getAttribute(const string& name)
 {
     // Special id level attributes
     if(name == "numData") {
-        return nb::cast(Field<unsigned int>::get(id_, "numData"));
+        return nb::cast(Field<unsigned int>::get(oid_, "numData"));
     }
-    // if(name == "numField") {
-    //     return nb::cast(Field<unsigned int>::get(id_, "numField"));
-    // }
+    if(name == "numField") {
+        return nb::cast(Field<unsigned int>::get(oid_, "numField"));
+    }
 
     // If type is double, int, bool etc, then return the numpy array. else
     // return the list of python object.
-    auto cinfo = id_.element()->cinfo();
+    auto cinfo = oid_.element()->cinfo();
     auto finfo = cinfo->findFinfo(name);
     if (!finfo) {
         throw nb::attribute_error((name + " not found on " + path()).c_str());
@@ -151,10 +150,10 @@ nb::object MooseVec::getAttribute(const string& name)
 
     string finfoType = cinfo->getFinfoType(finfo);
     if(finfoType == "LookupValueFinfo") {
-        return nb::cast(VecLookupField(id_, finfo));
+        return nb::cast(VecLookupField(oid_, finfo));
     }
     if(finfoType == "FieldElementFinfo") {
-        return nb::cast(VecElementField(id_, finfo));
+        return nb::cast(VecElementField(oid_, finfo));
     }
     cerr << "DEBUG: None of the simply handled types:  " << finfoType << endl;
     // For complex types, return list objects
@@ -178,7 +177,7 @@ nb::object MooseVec::getAttribute(const string& name)
 /* ----------------------------------------------------------------------------*/
 bool MooseVec::setAttribute(const string& name, const nb::object& val)
 {
-    auto cinfo = id_.element()->cinfo();
+    auto cinfo = oid_.element()->cinfo();
     auto finfo = cinfo->findFinfo(name);
     if (!finfo) {
         throw nb::attribute_error((name + " not found on " + path()).c_str());
@@ -223,7 +222,7 @@ bool MooseVec::setAttribute(const string& name, const nb::object& val)
 ObjId MooseVec::connectToSingle(const string& srcfield, const ObjId& tgt,
                                 const string& tgtfield, const string& msgtype)
 {
-    return connect(id_, srcfield, tgt, tgtfield, msgtype);
+    return connect(oid_, srcfield, tgt, tgtfield, msgtype);
 }
 
 ObjId MooseVec::connectToVec(const string& srcfield, const MooseVec& tgt,
@@ -233,12 +232,12 @@ ObjId MooseVec::connectToVec(const string& srcfield, const MooseVec& tgt,
         throw nb::value_error(
             ("Length mismatch. " + to_string(size()) +
                 " vs " + to_string(tgt.size())).c_str());
-    return connect(id_, srcfield, tgt.id_, tgtfield, msgtype);
+    return connect(oid_, srcfield, tgt.oid_, tgtfield, msgtype);
 }
 
 ObjId MooseVec::oid() const
 {
-    return ObjId(id_);
+    return oid_;
 }
 
 const vector<ObjId>& MooseVec::elements()
@@ -254,7 +253,7 @@ const vector<ObjId>& MooseVec::elements()
 
 size_t MooseVec::id() const
 {
-    return id_.value();
+    return oid_.id.value();
 }
 
 }

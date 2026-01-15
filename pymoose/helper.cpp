@@ -108,8 +108,8 @@ map<string, Finfo *> getFinfoDict(const Cinfo *cinfo, const string &fieldType)
         numFinfo = cinfo->getNumSharedFinfo();
         finfoGetter = &Cinfo::getSharedFinfo;
     }
-    else if(fieldType == "fieldElementFinfo" || fieldType == "field" ||
-            fieldType == "fieldElement") {
+    else if(fieldType == "element" || fieldType == "elementFinfo" || fieldType == "field" ||
+            fieldType == "fieldElement" || fieldType == "fieldElementFinfo") {
         numFinfo = cinfo->getNumFieldElementFinfo();
         finfoGetter = &Cinfo::getFieldElementFinfo;
     }
@@ -628,7 +628,7 @@ ObjId convertToObjId(const nb::object &arg)
     if(nb::isinstance<nb::str>(arg)) {
         ret = ObjId(nb::cast<string>(arg));
         if (ret.bad()){
-            throw std::runtime_error("object does not exist: " + nb::cast<string>(arg));
+            throw nb::value_error(("object does not exist: " + nb::cast<string>(arg)).c_str());
         }
     }
     else if(nb::isinstance<MooseVec>(arg)) {

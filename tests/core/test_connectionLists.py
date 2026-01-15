@@ -117,20 +117,10 @@ def makeGlobalBalanceNetwork():
         if i.synapse.num > 0:
             i.synapse.weight = params['wtInhToOut']
 
-    print("SUMS: ", sum( iv.numField ), sum( ov.numField ), sum( oiv.numField ))
-    assert [1, 64, 25] == [sum( iv.numField ), sum( ov.numField ), sum( oiv.numField )]
     print("SUMS2: ", niv, nov, noiv)
     assert [7, 62, 55] ==  [ niv, nov, noiv ]
     print("SUMS3: ", sum( insyn.vec.numSynapses ), sum( outsyn.vec.numSynapses ), sum( outInhSyn.vec.numSynapses ))
     assert [7,62,55] == [ sum( insyn.vec.numSynapses ), sum( outsyn.vec.numSynapses ), sum( outInhSyn.vec.numSynapses ) ]
-
-    # print(oiv.numField)
-    # print(insyn.vec[1].synapse.num)
-    # print(insyn.vec.numSynapses)
-    # print(sum( insyn.vec.numSynapses ))
-    # niv = iv.numSynapses
-    # ov = iv.numSynapses
-
     sv = moose.vec( stim )
     sv.rate = params['randInputRate']
     sv.refractT = params['randRefractTime']

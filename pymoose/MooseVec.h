@@ -70,7 +70,7 @@ public:
     template <typename T>
     bool setAttrOneToAll(const string& name, const T& val)
     {
-        auto cinfo = id_.element()->cinfo();
+        auto cinfo = oid_.element()->cinfo();
         auto finfo = cinfo->findFinfo(name);
         if(!finfo) {
             throw nb::attribute_error((name + " not found").c_str());
@@ -86,7 +86,7 @@ public:
     template <typename T>
     bool setAttrOneToOne(const string& name, const vector<T>& val)
     {
-        auto cinfo = id_.element()->cinfo();
+        auto cinfo = oid_.element()->cinfo();
         auto finfo = cinfo->findFinfo(name);
         if(!finfo) {
             throw nb::attribute_error((name + " not found").c_str());
@@ -115,7 +115,34 @@ public:
     size_t id() const;
 
 private:
-    Id id_;
+    // It may seem obvious to store an Id rather than ObjId here. That
+    // does not work because of the dichotomy of array elements and
+    // field elements. For an Id with multiple data elements, underlying field
+    // elements share the Id.
+    //
+    // For example, SimpleSynHandler with path '/synh', Id=490, numData=2, has
+    // two data elements:
+    //
+    // "/synh[0]", ObjId(id=490, dataIndex=0, fieldIndex=0)
+    // "/synh[1]", ObjId(id=490, dataIndex=1, fieldIndex=0)
+    //
+    // Also, "/synh" as a whole has a field element "synapse":
+    // path="/synh/synapse" (Id=491, numFields=0).
+    //
+    //  Each item in /synh appears to have a separate synapse field,
+    //  but they share the id.
+    //
+    // path="/synh[0]/synapse" ObjId(id=491, dataIndex=0, fieldIndex=0)
+    // path="/synh[1]/synapse" ObjId(id=491, dataIndex=1, fieldIndex=0)
+    //
+    // After setting numField, individual elements inside have changing fieldIndex:
+    //
+    // path="/synh[0]/synapse[0]" ObjId(id=491, dataIndex=0, fieldIndex=0)
+    // path="/synh[0]/synapse[1]" ObjId(id=491, dataIndex=0, fieldIndex=1)
+    //
+    // path="/synh[1]/synapse[0]" ObjId(id=491, dataIndex=1, fieldIndex=0)
+    // path="/synh[1]/synapse[1]" ObjId(id=491, dataIndex=1, fieldIndex=1)
+    ObjId oid_;
     vector<ObjId> elements_{};
 };
 

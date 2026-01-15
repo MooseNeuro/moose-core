@@ -52,8 +52,9 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
         .def("__setitem__", &pymoose::LookupField::set)
         .def("__call__", &pymoose::LookupField::get)  // also callable
         .def("__repr__", [](pymoose::LookupField &f) {
-            return "<LookupField " + f.finfo_->name() + "{" + f.keyType_ +
-                   ": " + f.valueType_ + "}:  of " + f.oid_.path() + ">";
+            return "<moose.LookupField " + f.finfo_->name() +
+                   " owner= " + f.oid_.path() + "keyType=" + f.keyType_ +
+                   " valueType=" + f.valueType_ + ">";
         });
 
     nb::class_<pymoose::ElementFieldIterator>(m, "ElementFieldIterator")
@@ -70,10 +71,29 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
             [](const pymoose::ElementField &f) { return f.foid_.path(); })
         .def("__repr__",
              [](pymoose::ElementField &f) {
-                 return "<ElementField: " + f.finfo_->name() +
-                        " size=" + std::to_string(f.size()) + " of " +
-                        f.oid_.path() + ">";
+                 return "<moose.ElementField " + f.finfo_->name() +
+                        " owner=" + f.oid_.path() +
+                        " size=" + std::to_string(f.size()) + ">";
              })
+        .def_prop_rw("num", &pymoose::ElementField::getNum,
+                     &pymoose::ElementField::setNum, docs::ElementField_num)
+        .def_prop_rw("numField", &pymoose::ElementField::getNum,
+                     &pymoose::ElementField::setNum, docs::ElementField_num)
+        .def_prop_ro(
+            "id", [](const pymoose::ElementField &f) { return f.foid_.id; },
+            docs::ElementField_id)
+        .def_prop_ro(
+            "oid", [](const pymoose::ElementField &f) { return f.foid_; },
+            docs::ElementField_oid)
+        .def_prop_ro(
+            "owner", [](const pymoose::ElementField &f) { return f.oid_; },
+            docs::ElementField_owner)
+        .def_prop_ro(
+            "vec",
+            [](const pymoose::ElementField &f) {
+                return pymoose::MooseVec(f.foid_);
+            },
+            docs::ElementField_vec)
         .def("__getattr__", &pymoose::ElementField::getAttribute)
         .def("__setattr__", &pymoose::ElementField::setAttribute);
 
@@ -82,14 +102,16 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
         .def("__getitem__", &pymoose::VecLookupField::get)
         .def("__setitem__", &pymoose::VecLookupField::set)
         .def("__repr__", [](pymoose::VecLookupField &f) {
-            return "<VecLookupField " + f.finfo_->name() + "{" + f.keyType_ +
-                   ": " + f.valueType_ + "}:  of " + f.id_.path() + ">";
+            return "<moose.VecLookupField " + f.finfo_->name() +
+                   " owner=" + f.id_.path() + " keyType=" + f.keyType_ +
+                   " valueType=" + f.valueType_ + ">";
         });
 
     nb::class_<pymoose::VecElementField>(m, "VecElementField")
         .def("__len__", &pymoose::VecElementField::size)
-        .def("__getitem__", &pymoose::VecElementField::getParent)
-        .def_prop_ro("sizes", &pymoose::VecElementField::sizes)
+        .def("__getitem__", &pymoose::VecElementField::getItem)
+        .def_prop_ro("sizes", &pymoose::VecElementField::sizes,
+            nb::rv_policy::automatic)
         .def_prop_ro("path",
                      [](const pymoose::VecElementField &f) {
                          return f.parentId_.path() + "/" + f.finfo_->name();
@@ -98,8 +120,8 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
         .def("__getattr__", &pymoose::VecElementField::getAttribute)
         .def("__setattr__", &pymoose::VecElementField::setAttribute)
         .def("__repr__", [](pymoose::VecElementField &f) {
-            return "<VecElementField " + f.finfo_->name() + " of " +
-                   f.parentId_.path() + ">";
+            return "<moose.VecElementField " + f.finfo_->name() +
+                   " owner=" + f.parentId_.path() + ">";
         });
 
     // Id class wrapper
@@ -118,8 +140,8 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
              })
         .def("__repr__",
              [](const Id &id) {
-                 return "<Id: id=" + to_string(id.value()) +
-                        " path=" + id.path() +
+                 return "<moose.Id  path=" + id.path() +
+                        " id=" + to_string(id.value()) +
                         " class=" + id.element()->cinfo()->name() + ">";
              })
         .def("__eq__", [](const Id &a, const Id &b) { return a == b; })
@@ -189,12 +211,21 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
             },
             nb::arg("srcfield"), nb::arg("dest"), nb::arg("destfield"),
             nb::arg("msgtype") = "Single", docs::ObjId_connect)
-        .def("__repr__", [](const ObjId &oid) {
-            return "<moose." + oid.element()->cinfo()->name() +
-                   " id=" + to_string(oid.id.value()) +
-                   " dataIndex=" + to_string(oid.eref().dataIndex()) +
-                   " path=" + oid.path() + ">";
-        });
+        .def("__repr__",
+             [](const ObjId &oid) {
+                 return "<moose." + oid.element()->cinfo()->name() +
+                        " path=" + oid.path() +
+                        " id=" + to_string(oid.id.value()) +
+                        " dataIndex=" + to_string(oid.dataIndex) +
+                        " fieldIndex=" + to_string(oid.fieldIndex) + ">";
+             })
+        .def(
+            "getFieldNames",
+            [](const ObjId &self, const string &finfoType) {
+                return pymoose::getFieldNames(self.element()->cinfo()->name(),
+                                              finfoType);
+            },
+            nb::arg("fieldtype") = "*", docs::getFieldNames);
 
     nb::class_<MooseVecIterator>(m, "MooseVecIterator")
         .def("__iter__", [](MooseVecIterator &self) { return self; })
@@ -239,7 +270,13 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
         .def_prop_ro("name", &MooseVec::name)
         .def_prop_ro("path", &MooseVec::path)
         // Wrapped object.
-        .def_prop_ro("oid", &MooseVec::oid);
+        .def_prop_ro("oid", &MooseVec::oid)
+        .def(
+            "getFieldNames",
+            [](const MooseVec &vec, const string &finfoType) {
+                return pymoose::getFieldNames(vec.dtype(), finfoType);
+            },
+            nb::arg("fieldtype") = "*", docs::getFieldNames);
 
     // Module functions
     m.def(
@@ -304,6 +341,19 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
 
     m.def("getFieldNames", &pymoose::getFieldNames, nb::arg("classname"),
           nb::arg("fieldtype") = "*", docs::getFieldNames);
+    m.def(
+        "getFieldNames",
+        [](const ObjId &oid, const string &finfoType) {
+            return pymoose::getFieldNames(oid.element()->cinfo()->name(),
+                                          finfoType);
+        },
+        nb::arg("obj"), nb::arg("fieldtype") = "*", docs::getFieldNames);
+    m.def(
+        "getFieldNames",
+        [](const MooseVec &vec, const string &finfoType) {
+            return pymoose::getFieldNames(vec.dtype(), finfoType);
+        },
+        nb::arg("vec"), nb::arg("fieldtype") = "*", docs::getFieldNames);
 
     m.def("getFieldTypeDict", &pymoose::getFieldTypeDict, nb::arg("classname"),
           nb::arg("fieldtype") = "*", docs::getFieldTypeDict);

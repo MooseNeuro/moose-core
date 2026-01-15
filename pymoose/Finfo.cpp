@@ -310,8 +310,7 @@ bool LookupField::set(const nb::object& key, const nb::object& value)
 ElementField::ElementField(const ObjId& oid, const Finfo* f)
     : oid_(oid),
       finfo_(f),
-      foid_(ObjId(oid.path() + "/" + f->name())),
-      vec_(MooseVec(foid_))
+      foid_(ObjId(oid.path() + "/" + f->name()))
 {
 }
 
@@ -354,12 +353,10 @@ ElementFieldIterator ElementField::iter() const
 
 nb::object ElementField::getAttribute(const string& field)
 {
+
     unsigned int num = getNum();
-    if((field == "num") || (field == "numField")) {
-        return nb::cast(num);
-    }
     if(num > 0) {
-        return vec_.getAttribute(field);
+        return MooseVec(foid_).getAttribute(field);
     }
     throw nb::index_error(
         "Trying to access attribute of an ElementField with 0 elements");
@@ -372,7 +369,7 @@ bool ElementField::setAttribute(const string& field, nb::object value)
         return setNum(nb::cast<unsigned int>(value));
     }
     if(num > 0) {
-        return vec_.setAttribute(field, value);
+        return MooseVec(foid_).setAttribute(field, value);
     }
     throw nb::index_error(
         "Trying to access attribute of an ElementField with 0 elements");
@@ -565,7 +562,7 @@ nb::ndarray<unsigned int, nb::numpy> VecElementField::sizes() const
     return nb::ndarray<unsigned int, nb::numpy>(data, {numParents_}, owner);
 }
 
-ElementField VecElementField::getParent(int index) const
+ElementField VecElementField::getItem(int index) const
 {
     size_t idx = (index < 0) ? numParents_ + index : static_cast<size_t>(index);
     if(idx >= numParents_) {

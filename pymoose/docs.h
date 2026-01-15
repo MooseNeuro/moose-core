@@ -96,6 +96,18 @@ ObjId
    Msg object for the connection
 )";
 
+
+constexpr const char* ElementField_num =
+    R"(number of entries in the field element)";
+constexpr const char* ElementField_id =
+    R"(Id of the field element)";
+constexpr const char* ElementField_oid =
+    R"(ObjId of the field element)";
+constexpr const char* ElementField_owner =
+    R"(ObjId of the owner of the field element)";
+constexpr const char* ElementField_vec =
+    R"(Access to the field element as a vec object)";
+
 // =============================
 // Utility functions
 // =============================
@@ -223,8 +235,8 @@ constexpr const char* getFieldNames =
 
 Parameters
 ----------
-classname : str
-    Name of the MOOSE class
+classname : str, ObjId, vec
+    Name of the MOOSE class or an element or a vec
 fieldtype : str, optional
     Types of fields: "value", "src", "dest", "loookup", "element", or
     "*" (default: "*"). If "*", all types of fields are included.
