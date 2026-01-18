@@ -111,7 +111,7 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
         .def("__len__", &pymoose::VecElementField::size)
         .def("__getitem__", &pymoose::VecElementField::getItem)
         .def_prop_ro("sizes", &pymoose::VecElementField::sizes,
-            nb::rv_policy::automatic)
+                     nb::rv_policy::automatic)
         .def_prop_ro("path",
                      [](const pymoose::VecElementField &f) {
                          return f.parentId_.path() + "/" + f.finfo_->name();
@@ -225,7 +225,14 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
                 return pymoose::getFieldNames(self.element()->cinfo()->name(),
                                               finfoType);
             },
-            nb::arg("fieldtype") = "*", docs::getFieldNames);
+            nb::arg("fieldtype") = "*", docs::getFieldNames)
+        .def(
+            "getFieldTypeDict",
+            [](const ObjId &self, const string &finfoType) {
+                return pymoose::getFieldTypeDict(
+                    self.element()->cinfo()->name(), finfoType);
+            },
+            nb::arg("fieldtype") = "*", docs::getFieldTypeDict);
 
     nb::class_<MooseVecIterator>(m, "MooseVecIterator")
         .def("__iter__", [](MooseVecIterator &self) { return self; })
@@ -276,7 +283,13 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
             [](const MooseVec &vec, const string &finfoType) {
                 return pymoose::getFieldNames(vec.dtype(), finfoType);
             },
-            nb::arg("fieldtype") = "*", docs::getFieldNames);
+            nb::arg("fieldtype") = "*", docs::getFieldNames)
+        .def(
+            "getFieldTypeDict",
+            [](const MooseVec &self, const string &finfoType) {
+                return pymoose::getFieldTypeDict(self.dtype(), finfoType);
+            },
+            nb::arg("fieldtype") = "*", docs::getFieldTypeDict);
 
     // Module functions
     m.def(
@@ -353,10 +366,23 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
         [](const MooseVec &vec, const string &finfoType) {
             return pymoose::getFieldNames(vec.dtype(), finfoType);
         },
-        nb::arg("vec"), nb::arg("fieldtype") = "*", docs::getFieldNames);
+        nb::arg("obj"), nb::arg("fieldtype") = "*", docs::getFieldNames);
 
     m.def("getFieldTypeDict", &pymoose::getFieldTypeDict, nb::arg("classname"),
           nb::arg("fieldtype") = "*", docs::getFieldTypeDict);
+    m.def(
+        "getFieldTypeDict",
+        [](const ObjId &oid, const string &finfoType) {
+            return pymoose::getFieldTypeDict(oid.element()->cinfo()->name(),
+                                             finfoType);
+        },
+        nb::arg("obj"), nb::arg("fieldtype") = "*", docs::getFieldTypeDict);
+    m.def(
+        "getFieldTypeDict",
+        [](const MooseVec &vec, const string &finfoType) {
+            return pymoose::getFieldTypeDict(vec.dtype(), finfoType);
+        },
+        nb::arg("obj"), nb::arg("fieldtype") = "*", docs::getFieldTypeDict);
 
     m.def("getField", &pymoose::getFieldGeneric, nb::arg("obj"),
           nb::arg("field"), docs::getFieldGeneric);

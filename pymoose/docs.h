@@ -252,8 +252,8 @@ constexpr const char* getFieldTypeDict =
 
 Parameters
 ----------
-classname : str
-    Name of the MOOSE class
+classname : str, ObjId, vec
+    Name of the MOOSE class or an element of a vec
 fieldtype : str, optional
     Type of fields: "value", "src", "dest", "*" (default: "*")
     If "*", all types of fields are included.
