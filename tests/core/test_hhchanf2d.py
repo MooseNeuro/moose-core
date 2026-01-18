@@ -10,66 +10,57 @@ Usage: pytest test_hhchanf2d.py
 """
 import moose
 import math
-import pytest
 from ephys import create_voltage_clamp, setup_step_command
 
 
-@pytest.fixture
-def container():
-    """
-    Setup:
-        Create a Neutral object as model container and ce to it before
-        yielding.
-
-    Teardown:
-        ce back to parent and delete the model
-        container.
-
-    """
-    ret = moose.Neutral('/test')
-    moose.ce(ret)
-    yield ret
-    moose.ce('..')
-    moose.delete(ret)
 
 
-@pytest.fixture
-def channel(container):
-    """
-    Setup:
-        Create a HHChannelF2D object.
-
-    Teardown:
-        Nothing. The container gets deleted
-    """
-    return moose.HHChannelF2D('ch')
 
 
-def test_hhgatef2d_creation(channel):
-    channel.Xpower = 1
-    channel.Ypower = 2
-    assert math.isclose(channel.Xpower, 1), 'Xpower not set'
-    assert moose.exists(f'{channel.path}/gateX'), 'gateX object does not exist'
-    assert math.isclose(channel.Ypower, 2), 'Ypower not set'
-    assert moose.exists(f'{channel.path}/gateY'), 'gateY object does not exist'
+def test_hhgatef2d_creation():
+    cwe = moose.getCwe()
+    container = moose.Neutral('/test')
+    moose.ce(container)
+    chan = moose.HHChannelF2D('ch')
+
+    chan.Xpower = 1
+    chan.Ypower = 2
+    assert math.isclose(chan.Xpower, 1), 'Xpower not set'
+    assert moose.exists(f'{chan.path}/gateX'), 'gateX object does not exist'
+    assert math.isclose(chan.Ypower, 2), 'Ypower not set'
+    assert moose.exists(f'{chan.path}/gateY'), 'gateY object does not exist'
+
+    moose.ce(cwe)
+    moose.delete(container)
 
 
-def test_alpha_beta(channel):
+def test_alpha_beta():
     """Test set/get alpha and beta expressions"""
-    channel.Xpower = 1
-    xgate = moose.element(f'{channel.path}/gateX')
-    # These are from KCa channel in Eric DeSchutter's granule cell model
+    cwe = moose.getCwe()
+    container = moose.Neutral('/test')
+    moose.ce(container)
+    chan = moose.HHChannelF2D('ch')
+    chan.Xpower = 1
+    xgate = moose.element(f'{chan.path}/gateX')
+    # These are from KCa chan in Eric DeSchutter's granule cell model
     alpha = '2500 / (1 + 1.5e-3 * exp(-85*v)/c)'
     beta = '1500 / (1 + c / (1.5e-4 * exp (-77*v)))'
-    xgate.alpha = alpha
-    xgate.beta = beta
-    assert xgate.alpha == alpha, 'alpha not set'
-    assert xgate.beta == beta, 'beta not set'
-    assert xgate.tau == '', 'tau not reset'
-    assert xgate.inf == '', 'inf not reset'
+    xgate.alphaExpr = alpha
+    xgate.betaExpr = beta
+    assert xgate.alphaExpr == alpha, 'alpha not set'
+    assert xgate.betaExpr == beta, 'beta not set'
+    assert xgate.tauExpr == '', 'tau not reset'
+    assert xgate.infExpr == '', 'inf not reset'
+    moose.ce(cwe)
+    moose.delete(container)
 
 
-def test_complex_expr(channel):    
+def test_complex_expr():
+    cwe = moose.getCwe()
+    container = moose.Neutral('/test')
+    moose.ce(container)
+    chan = moose.HHChannelF2D('ch')
+
     chan.Xpower = 3
     chan.Ypower = 1
     chan.Ek = 55e-3
@@ -89,25 +80,36 @@ def test_complex_expr(channel):
     assert mgate.inf == minf, 'inf not set'
     assert hgate.tau == htau, 'tau not set'
     assert hgate.inf == hinf, 'inf not set'
-    
-    
-def test_tau_inf(channel):
+
+    moose.ce(cwe)
+    moose.delete(container)
+
+
+def test_tau_inf():
     """Test set/get tau and inf expressions"""
-    channel.Xpower = 1
-    xgate = moose.element(f'{channel.path}/gateX')
+    cwe = moose.getCwe()
+    container = moose.Neutral('/test')
+    moose.ce(container)
+    chan = moose.HHChannelF2D('ch')
+
+    chan.Xpower = 1
+    xgate = moose.element(f'{chan.path}/gateX')
     alpha = '2500 / (1 + 1.5e-3 * exp(-85*v)/c)'
     beta = '1500 / (1 + c / (1.5e-4 * exp (-77*v)))'
     tau = f'1/({alpha} + {beta})'
     minf = f'({alpha}) / ({alpha} + {beta})'
-    xgate.tau = tau
-    xgate.inf = minf
-    assert xgate.tau == tau, 'tau not set'
-    assert xgate.inf == minf, 'inf not set'
-    assert xgate.alpha == '', 'alpha not reset'
-    assert xgate.beta == '', 'beta not reset'
+    xgate.tauExpr = tau
+    xgate.infExpr = minf
+    assert xgate.tauExpr == tau, 'tau not set'
+    assert xgate.infExpr == minf, 'inf not set'
+    assert xgate.alphaExpr == '', 'alpha not reset'
+    assert xgate.betaExpr == '', 'beta not reset'
+
+    moose.ce(cwe)
+    moose.delete(container)
 
 
-def test_vclamp(container, steptime=5.0):
+def test_vclamp(steptime=5.0):
     """Simulate a voltage clamp experiment with fixed Ca conc
 
     Parameters
@@ -115,6 +117,9 @@ def test_vclamp(container, steptime=5.0):
     steptime: float
         Time of the voltage step
     """
+    cwe = moose.getCwe()
+    container = moose.Neutral('/test')
+    moose.ce(container)
     comp = moose.Compartment('comp0')
     sarea = 4 * math.pi * (10e-3) ** 3 / 3
     chan = moose.HHChannelF2D(f'{comp.path}/K')
@@ -125,8 +130,8 @@ def test_vclamp(container, steptime=5.0):
     chan.Xpower = 1
     chan.Xindex = 'VOLT_C1_INDEX'
     n_gate = moose.element(f'{chan.path}/gateX')
-    n_gate.alpha = '2500 / (1 + 1.5e-3 * exp(-85*(v-0.01))/c)'
-    n_gate.beta = '1500 / (1 + c / (1.5e-4 * exp (-77*(v-0.01))))'
+    n_gate.alphaExpr = '2500 / (1 + 1.5e-3 * exp(-85*(v-0.01))/c)'
+    n_gate.betaExpr = '1500 / (1 + c / (1.5e-4 * exp (-77*(v-0.01))))'
     comp.Em = -65e-3  # Hodgkin and Huxley used resting voltage as 0
     comp.initVm = -65e-3
     comp.Cm = sarea * 1e-6 * 1e4  # 1 uS/cm^2
@@ -177,6 +182,8 @@ def test_vclamp(container, steptime=5.0):
             assert math.isclose(
                 gk, chan.Gk, abs_tol=1e-10
             ), f'Vm={vstep} [Ca]={ca} Gk={chan.Gk}, expected={gk}'
+    moose.ce(cwe)
+    moose.delete(container)
 
 
 if __name__ == '__main__':

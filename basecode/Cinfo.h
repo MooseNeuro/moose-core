@@ -229,7 +229,7 @@ public:
     /**
      * Return the specified SharedFinfo
      */
-    Finfo* getSharedFinfo(unsigned int i);
+    Finfo* getSharedFinfo(unsigned int i) const;
 
     /**
      * Return number of SharedFinfos

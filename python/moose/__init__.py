@@ -60,13 +60,15 @@ class melement(_moose.ObjId):
     __doc__ = ""
 
     def __init__(self, x, n=1, **kwargs):
-        obj = _moose.__create__(self.__type__, x, n)
-        if sys.version_info.major > 2:
-            super().__init__(obj)
-            for k, v in kwargs.items():
-                super().setField(k, v)
+        if isinstance(x, str):
+            obj = _moose.vec(x, n, self.__type__)
         else:
-            raise Exception('Python 2 support is deprecated.')
+            obj = _moose.vec(x.path)
+        # else:
+        #   raise TypeError(f"Expected str or ObjId, got {type(x)}")
+        super().__init__(obj.oid)
+        for k, v in kwargs.items():
+            super().setField(k, v)
 
 
 def __to_melement(obj):
@@ -75,16 +77,13 @@ def __to_melement(obj):
     return mc
 
 
-# Create MOOSE classes from available Cinfos.
+# # Create MOOSE classes from available Cinfos.
 for p in _moose.wildcardFind("/##[TYPE=Cinfo]"):
-    if sys.version_info.major > 2:
-        cls = type(
-            p.name,
-            (melement,),
-            {"__type__": p.name, "__doc__": _moose.__generatedoc__(p.name)},
-        )
-    else:
-        raise Exception('Python 2 support is deprecated.')
+    cls = type(
+        p.name,
+        (melement,),
+        {"__type__": p.name, "__doc__": _moose.getDoc(p.name)},
+    )
     setattr(_moose, cls.__name__, cls)
     __moose_classes__[cls.__name__] = cls
 
@@ -268,271 +267,6 @@ def connect(src, srcfield, dest, destfield, msgtype="Single"):
     return msg
 
 
-def delete(arg):
-    """Delete the underlying moose object(s). This does not delete any of the
-    Python objects referring to this vec but does invalidate them. Any
-    attempt to access them will raise a ValueError.
-
-    Parameters
-    ----------
-    arg : vec/str/melement
-        path of the object to be deleted.
-
-    Returns
-    -------
-    None, Raises ValueError if given path/object does not exists.
-    """
-    if isinstance(arg, str) and not exists(arg):
-        warnings.warn(
-            f'Attempt to delete nonexistent path {arg}: ignoring',
-            warnings.RuntimeWarning,
-        )
-        return
-    _moose.delete(arg)
-
-
-def element(arg):
-    """Convert a path or an object to the appropriate builtin moose class instance
-
-    Parameters
-    ----------
-    arg : str/vec/moose object
-        path of the moose element to be converted or another element (possibly
-        available as a superclass instance).
-
-    Returns
-    -------
-    melement
-        MOOSE element (object) corresponding to the `arg` converted to write
-        subclass.
-
-    Raises
-    ------
-    RunTimeError if `args` is a string path, but no such element exists.
-    """
-    return _moose.element(arg)
-
-
-def exists(path):
-    """Returns `True` if an object with given path already exists."""
-    return _moose.exists(path)
-
-
-def getCwe():
-    """Return current working elemement.
-
-    See also
-    --------
-    moose.setCwe
-    """
-    return _moose.getCwe()
-
-
-def getField(el, fieldname):
-    """Get field `fieldname` of element `el`.
-
-    Parameters
-    ----------
-    el: melement
-        object to retrieve field of.
-    fieldname: str
-        name of the field to be retrieved
-    Returns
-    -------
-    field value or a Finfo depending on the type of the field
-    """
-    return _moose.getField(el, fieldname)
-
-
-def getFieldDict(classname, finfoType=""):
-    """Get dictionary of field names and types for specified class.
-
-    Parameters
-    ----------
-    className : str
-        MOOSE class to find the fields of.
-    finfoType : str (default '')
-        Finfo type of the fields to find. If empty or not specified, allfields
-        will be retrieved.
-
-    Returns
-    -------
-    dict
-        field names and their respective types as key-value pair.
-
-    Notes
-    -----
-    This behaviour is different from `getFieldNames` where only `valueFinfo`s
-    are returned when `finfoType` remains unspecified.
-
-    Examples
-    --------
-    List all the source fields on class Neutral
-
-    >>> moose.getFieldDict('Neutral', 'srcFinfo')
-       {'childMsg': 'int'}
-    """
-    return _moose.getFieldDict(classname, finfoType)
-
-
-def getFieldNames(elem, fieldtype="*"):
-    """Get a tuple containing name of fields of a given fieldtype. If
-    fieldtype is set to '*', all fields are returned.
-
-    Parameters
-    ----------
-    elem : string,obj
-        Name of the class or a moose element to look up.
-    fieldtype : string
-        The kind of field. Possible values are:
-        -  'valueFinfo' or 'value'
-        -  'srcFinfo' or 'src'
-        -  'destFinfo' or 'dest'
-        -  'lookupFinfo' or 'lookup'
-        -  'fieldElementFinfo' or 'fieldElement'
-
-
-    Returns
-    -------
-    list
-        Names of the fields of type `finfoType` in class `className`.
-    """
-    clsname = elem if isinstance(elem, str) else elem.className
-    return _moose.getFieldNames(clsname, fieldtype)
-
-
-def isRunning():
-    """True if the simulation is currently running."""
-    return _moose.isRunning()
-
-
-def move(src, dest):
-    """Move a moose element `src` to destination"""
-    return _moose.move(src, dest)
-
-
-def reinit():
-    """Reinitialize simulation.
-
-    This function (re)initializes moose simulation. It must be called before
-    you start the simulation (see moose.start). If you want to continue
-    simulation after you have called moose.reinit() and moose.start(), you must
-    NOT call moose.reinit() again. Calling moose.reinit() again will take the
-    system back to initial setting (like clear out all data recording tables,
-    set state variables to their initial values, etc.
-    """
-    _moose.reinit()
-
-
-def start(runtime, notify=False):
-    """Run simulation for `t` time. Advances the simulator clock by `t` time. If
-    'notify = True', a message is written to terminal whenever 10% of
-    simulation time is over.
-
-    After setting up a simulation, YOU MUST CALL MOOSE.REINIT() before CALLING
-    MOOSE.START() TO EXECUTE THE SIMULATION. Otherwise, the simulator behaviour
-    will be undefined. Once moose.reinit() has been called, you can call
-    `moose.start(t)` as many time as you like. This will continue the
-    simulation from the last state for `t` time.
-
-    Parameters
-    ----------
-    t : float
-        duration of simulation.
-    notify: bool
-        default False. If True, notify user whenever 10% of simultion is over.
-
-    Returns
-    -------
-        None
-
-    See also
-    --------
-    moose.reinit : (Re)initialize simulation
-    """
-    _moose.start(runtime, notify)
-
-
-def stop():
-    """Stop simulation"""
-    _moose.stop()
-
-
-def setCwe(arg):
-    """Set the current working element.
-
-    Parameters
-    ----------
-    arg : str, melement, vec
-        moose element or path to be set as cwe.
-
-    See also
-    --------
-    getCwe
-    """
-    _moose.setCwe(arg)
-
-
-def ce(arg):
-    """Set the current element to `arg`
-
-    This is an alias for ``setCwe``
-    """
-    _moose.setCwe(arg)
-
-
-def useClock(tick, path, fn):
-    """Schedule `fn` function of every object that matches `path` on tick no
-    `tick`. Usually you don't have to use it.
-
-    (FIXME: Needs update) The sequence of clockticks with the same dt is
-    according to their number.  This is utilized for controlling the order of
-    updates in various objects where it matters.  The following convention
-    should be observed when assigning clockticks to various components of a
-    model: Clock ticks 0-3 are for electrical (biophysical) components, 4 and 5
-    are for chemical kinetics, 6 and 7 are for lookup tables and stimulus, 8
-    and 9 are for recording tables.
-
-    Parameters
-    ----------
-    tick : int
-        tick number on which the targets should be scheduled.
-    path : str
-        path of the target element(s). This can be a wildcard also.
-    fn : str
-        name of the function to be called on each tick. Commonly `process`.
-
-    Examples
-    --------
-    In multi-compartmental neuron model a compartment's membrane potential (Vm)
-    is dependent on its neighbours' membrane potential. Thus it must get the
-    neighbour's present Vm before computing its own Vm in next time step.  This
-    ordering is achieved by scheduling the `init` function, which communicates
-    membrane potential, on tick 0 and `process` function on tick 1.
-
-    >>> moose.useClock(0, '/model/compartment_1', 'init')
-    >>> moose.useClock(1, '/model/compartment_1', 'process'));
-    """
-    _moose.useClock(tick, path, fn)
-
-
-def setClock(clockid, dt):
-    """set the ticking interval of `tick` to `dt`.
-
-    A tick with interval `dt` will call the functions scheduled on that tick
-    every `dt` timestep.
-
-    Parameters
-    ----------
-    tick : int
-        tick number
-    dt : double
-        ticking interval
-
-    """
-    _moose.setClock(clockid, dt)
-
-
 def loadModel(filename, modelpath, solverclass="gsl"):
     """loadModel: Load model (genesis/cspace) from a file to a specified path.
 
@@ -561,129 +295,6 @@ def loadModel(filename, modelpath, solverclass="gsl"):
     return model_utils.mooseReadKkitGenesis(filename, modelpath, solverclass)
 
 
-def copy(src, dest, name="", n=1, toGlobal=False, copyExtMsg=False):
-    """Make copies of a moose object.
-
-    Parameters
-    ----------
-    src : vec, element or str
-        source object.
-    dest : vec, element or str
-        Destination object to copy into.
-    name : str
-        Name of the new object. If omitted, name of the original will be used.
-    n : int
-        Number of copies to make (default=1).
-    toGlobal : bool
-        Relevant for parallel environments only. If false, the copies will
-        reside on local node, otherwise all nodes get the copies.
-    copyExtMsg : bool
-        If true, messages to/from external objects are also copied.
-
-    Returns
-    -------
-    vec
-        newly copied vec
-    """
-    if isinstance(src, str):
-        src = element(src)
-    if isinstance(dest, str):
-        dest = element(dest)
-    if not name:
-        name = src.name
-    return _moose.copy(src.id, dest, name, n, toGlobal, copyExtMsg)
-
-
-def rand(a=0.0, b=1.0):
-    """Generate random number from the interval [0.0, 1.0)
-
-    Returns
-    -------
-    float in [0, 1) real interval generated by MT19937.
-
-    See also
-    --------
-    moose.seed() : reseed the random number generator.
-
-    Notes
-    -----
-    MOOSE does not automatically seed the random number generator. You
-    must explicitly call moose.seed() to create a new sequence of random
-    numbers each time.
-    """
-    return _moose.rand(a, b)
-
-
-def seed(seed=0):
-    """Reseed MOOSE random number generator.
-
-    Parameters
-    ----------
-    seed : int
-        Value to use for seeding.
-        default: random number generated using system random device
-
-    Notes
-    -----
-    All RNGs in moose except rand functions in moose.Function expression use
-    this seed.
-
-    By default (when this function is not called) seed is initializecd to some
-    random value using system random device (if available).
-
-    Returns
-    -------
-    None
-
-    See also
-    --------
-    moose.rand() : get a pseudorandom number in the [0,1) interval.
-    """
-    _moose.seed(seed)
-
-
-def pwe():
-    """Print present working element's path.
-
-    Convenience function for GENESIS users. If you want to retrieve the element
-    in stead of printing the path, use moose.getCwe().
-
-    Returns
-    ------
-    None
-
-    Example
-    -------
-    >>> pwe()
-    '/'
-    """
-    pwe_ = _moose.getCwe()
-    print(f'{pwe_.path}')
-
-
-def le(el=None):
-    """List elements under `el` or current element if no argument
-    specified.
-
-    Parameters
-    ----------
-    el : str/melement/vec/None
-
-        The element or the path under which to look. If `None`, children of
-        current working element are displayed.
-
-    Returns
-    -------
-    None
-    """
-    el = _moose.getCwe() if el is None else el
-    if isinstance(el, str):
-        el = element(el)
-    elif isinstance(el, _moose.vec):
-        el = el[0]
-    _moose.le(el)
-
-
 def showfields(el, field="*", showtype=False):
     """Show the fields of the element `el`, their data types and
     values in human readable format. Convenience function for GENESIS
@@ -705,17 +316,17 @@ def showfields(el, field="*", showtype=False):
     None
 
     """
-    el = element(el)
+    el = _moose.element(el)
     result = []
     if field == "*":
-        value_field_dict = _moose.getFieldDict(el.className, "valueFinfo")
+        value_field_dict = _moose.getFieldTypeDict(el.className, "valueFinfo")
         max_type_len = max(len(dtype) for dtype in value_field_dict.values())
         max_field_len = max(len(dtype) for dtype in value_field_dict.keys())
         result.append("\n[" + el.path + "]\n")
         # Maintain the common fields first
         common_fields = ['name', 'className', 'tick', 'dt']
         flist = [
-            (field, value_field_dict[field], el.getField(field))
+            (field, value_field_dict[field], _moose.getField(el, field))
             for field in common_fields
         ]
         for field, dtype in sorted(value_field_dict.items()):
@@ -727,7 +338,7 @@ def showfields(el, field="*", showtype=False):
                 or (field in common_fields)
             ):
                 continue
-            flist.append((field, dtype, el.getField(field)))
+            flist.append((field, dtype, _moose.getField(el, field)))
         # Extract the length of the longest type name
         max_type_len = len(max(flist, key=lambda x: len(x[1]))[1])
         # Extract the length of the longest field name
@@ -753,7 +364,7 @@ def sysfields(el, showtype=False):
     """This function shows system fields which are suppressed by `showfields`."""
     el = element(el)
     result = []
-    value_field_dict = _moose.getFieldDict(el.className, "valueFinfo")
+    value_field_dict = _moose.getFieldTypeDict(el.className, "valueFinfo")
     max_type_len = max(len(dtype) for dtype in value_field_dict.values())
     max_field_len = max(len(dtype) for dtype in value_field_dict.keys())
     result.append("\n[" + el.path + "]\n")
@@ -770,81 +381,6 @@ def sysfields(el, showtype=False):
             result.append(typestr + " ")
         result.append(key.ljust(max_field_len + 4) + "=" + str(value) + "\n")
     print("".join(result))
-
-
-def listmsg(arg, direction=ALLMSG):
-    """Return a list containing the incoming and outgoing messages of
-    `el`.
-
-    Parameters
-    ----------
-    arg : melement/vec/str
-        MOOSE object or path of the object to look into.
-    direction : int {ALLMSG=2, OUTMSG=0, INMSG=1}
-        0 (`OUTMSG`) for outgoing (and shared) messages
-        1 (`INMSG`) for incoming (and shared) messages
-        2 (`ALLMSG`) for all messages
-    Returns
-    -------
-    msg : list
-        List of Msg objects corresponding to incoming and outgoing connections
-        of `arg`.
-
-    """
-    obj = element(arg)
-    assert obj
-    return _moose.listmsg(obj, direction)
-
-
-def showmsg(el, direction=ALLMSG):
-    """Print the incoming and outgoing messages of `el`.
-
-    Parameters
-    ----------
-    el : melement/vec/str
-        Object whose messages are to be displayed.
-    direction : int {ALLMSG=2, OUTMSG=0, INMSG=1}
-        0 (`OUTMSG`) for outgoing (and shared) messages
-        1 (`INMSG`) for incoming (and shared) messages
-        2 (`ALLMSG`) for all messages
-    Returns
-    -------
-    None
-
-    """
-    print(_moose.showmsg(element(el), direction))
-
-
-def neighbors(el, field='*', msgtype='', direction=ALLMSG):
-    """Get a list of neighbors connected on the specifield field
-
-    Parameters
-    ----------
-    el: melement/vec/str
-    el : melement/vec/str
-        Object whose messages are to be displayed.
-    field: str {'*'}
-        Name of the field on which to look for connections. If  '*' (default)
-        get all neighbors connected on all fields.
-    msgtype: str {'', 'Single', 'OneToOne', 'OneToAll', 'Sparse', 'Diagonal'}
-        If specified, select neighbors connected by this type of message only.
-        This is case-insensitive.
-    direction : int {ALLMSG=2, OUTMSG=0, INMSG=1}
-        0 (`OUTMSG`) for outgoing (and shared) messages
-        1 (`INMSG`) for incoming (and shared) messages
-        2 (`ALLMSG`) for all messages
-    Returns
-    -------
-    list of melements
-        The elements that are connected to `el` by messages
-        in the direction spcified by `direction`.
-    """
-    return [
-        __to_melement(x)
-        for x in _moose.neighbors(
-            element(el), field, msgtype, direction
-        )
-    ]
 
 
 def doc(arg, paged=True):
@@ -878,7 +414,7 @@ def doc(arg, paged=True):
         If class or field does not exist.
 
     """
-    text = _moose.__generatedoc__(arg)
+    text = _moose.getDoc(arg)
     if pydoc.pager:
         pydoc.pager(text)
     else:

@@ -1,4 +1,4 @@
-#  Build folder 
+#  Build folder
 .svn
 tags
 *.plot
@@ -144,3 +144,8 @@ Session.vim
 /python/moose/neuroml2/schema/PyNN.xml
 /python/moose/neuroml2/schema/Simulation.xml
 /python/moose/neuroml2/schema/Synapses.xml
+# Skip locally downloaded repos for meson subprojects - just the wrap files should be committed
+subprojects/nanobind-*/
+subprojects/robin-map-*/
+subprojects/packagecache/
+subprojects/.*

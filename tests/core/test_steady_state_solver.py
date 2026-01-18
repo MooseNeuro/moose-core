@@ -21,7 +21,7 @@ def test_SS_solver():
     stoich = moose.Stoich( '/model/compartment/stoich' )
     stoich.compartment = compartment
     stoich.ksolve = ksolve
-    stoich.path = "/model/compartment/##"
+    stoich.reacSystemPath = "/model/compartment/##"
     state = moose.SteadyState( '/model/compartment/state' )
 
     moose.reinit()
@@ -52,7 +52,7 @@ def test_SS_solver():
     expected = 0.24899, 0.08660
     assert np.isclose(got, expected, atol = 1e-4).all(), "Got %s, expected %s" % (got, expected)
     print( "[INFO ] Test 1 PASSED" )
-    
+
 
     # Now go down.
     avec = []
@@ -70,7 +70,7 @@ def test_SS_solver():
     assert np.isclose(got, expected, atol = 1e-4).all(), "Got %s, expected %s" % (got, expected)
     print( "[INFO ] Test 2 PASSED" )
 
-    # Now aim for the middle. We do this by judiciously choosing a 
+    # Now aim for the middle. We do this by judiciously choosing a
     # start point that should be closer to the unstable fixed point.
     avec = []
     bvec = []
@@ -104,7 +104,7 @@ def makeModel():
     compartment = moose.CubeMesh( '/model/compartment' )
     compartment.volume = 1e-15
     # the mesh is created automatically by the compartment
-    mesh = moose.element( '/model/compartment/mesh' ) 
+    mesh = moose.element( '/model/compartment/mesh' )
 
     # create molecules and reactions
     a = moose.BufPool( '/model/compartment/a' )

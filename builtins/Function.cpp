@@ -135,9 +135,9 @@ const Cinfo * Function::initCinfo()
 
     static ValueFinfo< Function, bool > allowUnknownVariable(
         "allowUnknownVariable",
-        "When *false*, expression can only have ci, xi, yi and t."
+        "DEPRECATED: When *false*, expression can only have ci, xi, yi and t."
         "When set to *true*, expression can have arbitrary names."
-        "Defaults to *true*. \n",
+        "Defaults to *true*.\n",
         &Function::setAllowUnknownVariable,
         &Function::getAllowUnknowVariable
     );
@@ -318,63 +318,40 @@ It can parse mathematical expression defining a function and evaluate it and/or
 its derivative for specified variable values.  You can assign expressions of
 the form::
 
- f(t, x, y, var, p, q, Ca, CaMKII) 
+ f(t, x, y, var, p, q, Ca, CaMKII)
 
 NOTE: `t` represents time. You CAN NOT use to for any other purpose.
 
-The constants must be defined before setting the expression using 
+The constants must be defined before setting the expression using
 the lookup field `c`. Once set, their values cannot be changed.
 
-The interpretation of variable names in expression depends on 
-`allowUnknownVariables` flag::
+The interpretation of variable names in expression:
 
-When `allowUnknownVariables` is `True` (default):
-
-- Names of the form "x{n}", where n is a non-negative integer, 
+- Names of the form "x{n}", where n is a non-negative integer,
   are treated as input variables that are pushed from fields in
   other objects via incoming messages to the `input` dest of the
   corresponding `x` field.
 
-- Names of the form "y{n}" are treated as input variables, that 
+- Names of the form "y{n}" are treated as input variables, that
   are requested via the outgoing `requestOut` message from other
   objects' value fields.
 
-- Any name that has already been assigned as a constant (e.g., 
+- Any name that has already been assigned as a constant (e.g.,
   inserted with `Function.c['name'] = value` or predefined
   mathematical constants like `pi`, `e`) is treated as constant.
 
 - All other names are assumed to be variables and assigned successive
   entries in the `x` field.
 
-
-When `allowUnknownVariables` is `False`, the allowed names are 
-restricted:
-
-- Names of the form "x{n}", where n is a non-negative integer, 
-  are treated as input variables that are pushed from fields in
-  other objects via incoming messages to the `input` dest of the
-  corresponding `x` field.
-
-- Names of the form "y{n}" are treated as input variables, that 
-  are requested via the outgoing `requestOut` message from other
-  objects' value fields.
-
-- Any name that has already been assigned as a constant (e.g., 
-  inserted with `Function.c['name'] = value`), is treated 
-  as constant.
-
-- If the expression has any name that is not "t" (for time), or one of
-  the above, it throws an error.
-
 Input (independent) variables come from other elements, either pushed
 into entries in element field "x" through "input" dest field, or pulled via
 "requestOut" message to "get{Field}" dest field on the source element and
-collected in the "y" variables. 
+collected in the "y" variables.
 
 In pull-mode, the y-indices correspond to the order of connecting the
-messages. This is used when the input variable is not available as a source 
+messages. This is used when the input variable is not available as a source
 field, but is a value field. For any value field `{field}`, the object has
-a corresponding dest field `get{Field}`. The "requestOut" src field is 
+a corresponding dest field `get{Field}`. The "requestOut" src field is
 connected to this.
 
 This class handles only real numbers (C-double). Predefined constants
@@ -383,10 +360,10 @@ are: pi=3.141592..., e=2.718281...
 
 Example::
 
-The following python example illustrates a Function which has a user-defined 
-constant 'A', two pushed variables, 'Vm' and 'n', which come from a 
+The following python example illustrates a Function which has a user-defined
+constant 'A', two pushed variables, 'Vm' and 'n', which come from a
 compartment object, and one pulled variable 'y0', which is read from
-the 'diameter' field of the compartment. It also uses the global mathematical 
+the 'diameter' field of the compartment. It also uses the global mathematical
 constant 'pi'.
 
 
@@ -394,17 +371,17 @@ constant 'pi'.
   comp.diameter = 2.0
   pool = moose.Pool('pool')
   func = moose.Function('f')
-  
+
   # A made-up example to illustrate push, pull vars and constants
   func.c['A'] = 6.022e23   # constant
   func.expr = 'Vm + y0 * n * pi / A'
-  
+
   i_v = func.xindex['Vm']
   i_n = func.xindex['n']
-  
+
   # There should be two x vars, one for `Vm`, the other for `n`
-  assert func.x.num == 2 
-  
+  assert func.x.num == 2
+
   moose.connect(comp, 'VmOut', func.x[i_v], 'input')
   moose.conncet(pool, 'nOut', func.x[i_n], 'input')
   moose.connect(func, 'requestOut', comp, 'getDiameter')
@@ -436,7 +413,7 @@ Function::Function()
       mode_(1),
       useTrigger_(false),
       doEvalAtReinit_(false),
-      allowUnknownVar_(true),
+      // allowUnknownVar_(true),
       t_(0.0),
       independent_("t"),
       stoich_(nullptr),
@@ -461,7 +438,7 @@ Function& Function::operator=(const Function& rhs)
     mode_ = rhs.mode_;
     useTrigger_ = rhs.useTrigger_;
     doEvalAtReinit_ = rhs.doEvalAtReinit_;
-    allowUnknownVar_ = rhs.allowUnknownVar_;
+    // allowUnknownVar_ = rhs.allowUnknownVar_;
     t_ = rhs.t_;
     rate_ = rhs.rate_;
     num_xi_ = rhs.num_xi_;
@@ -547,7 +524,7 @@ void Function::setExpr(const Eref& eref, const string expression)
  * @Param dynamicLookup Whether to allow unknown variables in the expression.
  * (default to true in moose>=4.0.0)
  *
- * @Returns  True if compilation was successful. 
+ * @Returns  True if compilation was successful.
  */
 /* ----------------------------------------------------------------------------*/
 bool Function::innerSetExpr(const Eref& eref, const string expr)
@@ -585,7 +562,6 @@ bool Function::innerSetExpr(const Eref& eref, const string expr)
     std::sort(xs.begin(), xs.end());
     std::sort(ys.begin(), ys.end());
     std::sort(others.begin(), others.end());
-    // extract the constants from the parser
 
     // keep the existing variables aside for relocation
     vector<Variable *> old_xs(xs_);
@@ -596,22 +572,12 @@ bool Function::innerSetExpr(const Eref& eref, const string expr)
             new_xi_count = num_xi_new;
         }
     }
-    if (!allowUnknownVar_ && others.size() > 0) {
-        cerr << "Warning: allowUnknownVariables is false. These variables will "
-                "be ignored: \n";
-        for (auto &name : others) {
-            cerr << "  " << name << '\n';
-        }
-        cerr << endl;
-        clearVariables();
-        return false;
-    }
     // collect the known named variables for relocation
     vector<string> known;
     for (unsigned int ii = num_xi_; ii < xs_.size(); ++ii) {
         known.push_back(xs_[ii]->getName());
     }
-    // find the variables do not already exist
+    // find the variables that do not already exist
     vector<string> new_named;
     std::set_difference(others.begin(), others.end(), known.begin(),
                         known.end(), std::back_inserter(new_named));
@@ -632,7 +598,7 @@ bool Function::innerSetExpr(const Eref& eref, const string expr)
     }
 
     // Now re-fill the known named variables
-    for (unsigned int ii = 0; ii < old_xs.size() - num_xi_; ++ii) {
+    for (unsigned int ii = 0; ii < known.size(); ++ii) {
         Variable *var = old_xs[ii + num_xi_];
         xs_[ii + new_xi_count] = var;
         varIndex_[var->getName()] = ii + new_xi_count;
@@ -643,7 +609,7 @@ bool Function::innerSetExpr(const Eref& eref, const string expr)
     // Add x variable by name (anything but "x{digits}" and "y{digits}").
 
     for (unsigned int ii = 0; ii < new_named.size(); ++ii) {
-        unsigned int idx = num_xi_ + ii;
+        unsigned int idx = num_xi_ + known.size() + ii;
         xs_[idx] = new Variable(new_named[ii]);
         parser_->DefineVar(new_named[ii], xs_[idx]->ptr());
         varIndex_[new_named[ii]] = idx;
@@ -660,10 +626,8 @@ bool Function::innerSetExpr(const Eref& eref, const string expr)
             }
         }
     }
-    if (others.size() > 0 && allowUnknownVar_) {
-    }
     parser_->DefineVar("t", &t_);
-    return parser_->SetExpr(expr, allowUnknownVar_);
+    return parser_->SetExpr(expr);
 }
 
 string Function::getExpr( const Eref& e ) const
@@ -709,12 +673,13 @@ bool Function::getDoEvalAtReinit() const
 
 void Function::setAllowUnknownVariable(bool value )
 {
-    allowUnknownVar_ = value;
+    cerr << "Function::setAllowUnknownVariable: deprecated" << endl;
 }
 
 bool Function::getAllowUnknowVariable() const
 {
-    return allowUnknownVar_;
+    cerr << "Function::getAllowUnknownVariable: deprecated" << endl;
+    return true;
 }
 
 
@@ -789,7 +754,7 @@ void Function::setVar(unsigned int index, double value)
     MOOSE_WARN("Function: index " << index << " out of bounds.");
 }
 
-Variable* Function::getX(unsigned int ii) 
+Variable* Function::getX(unsigned int ii)
 {
     static Variable dummy("DUMMY");
     if(ii >= xs_.size())
@@ -872,7 +837,7 @@ void Function::process(const Eref &e, ProcPtr p)
         valueOut()->send(e, value_);
         derivativeOut()->send(e, getDerivative());
         rateOut()->send(e, rate_);
-        lastValue_ = value_;	
+        lastValue_ = value_;
     }
     }
 }
@@ -975,9 +940,9 @@ void Function::setSolver( const Eref& e, ObjId newStoich )
 		auto x = reinterpret_cast< Stoich* >( stoich_ );
 		x->notifyRemoveFunc( e );
 	}
-	
+
 	stoich_ = stoichPtr;
 	// stoich_->installFunction(;) This is done within the stoich because
 	// there are multiple options for where a function may be placed.
-	
+
 }

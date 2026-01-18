@@ -5,7 +5,7 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}    
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -19,7 +19,7 @@ jobs:
           - os: macos-14
             brew: 20  # macOS will install the latest GSL version
           - os: macos-15
-            brew: 20  
+            brew: 20
           - os: windows-latest
             winget: 30
             gsl_version: "2.6"
@@ -56,9 +56,9 @@ jobs:
             meson-python
             gsl
           post-cleanup: all
-          generate-run-shell: false            
+          generate-run-shell: false
       - name: Display Python version
-        run: |          
+        run: |
           python -c "import sys; print(sys.version)"
       - if: ${{ matrix.apt }}
         run: |
@@ -67,12 +67,11 @@ jobs:
       - if: ${{ matrix.brew }}
         run: |
           brew list pkg-config && brew uninstall pkg-config || echo "pkg-config not installed, skipping uninstall."
-          brew install gsl  # Always install the latest GSL version on macOS
-          brew install hdf5
+          brew install gsl hdf5   # Always install the latest GSL version on macOS
       - name: checkout
-        uses: actions/checkout@v4          
+        uses: actions/checkout@v4
       - name: Build and install (non-windows)
-        if: runner.os != 'Windows' 
+        if: runner.os != 'Windows'
         run: |
           eval "$(micromamba shell hook --shell bash)"
           micromamba activate moose
@@ -81,7 +80,7 @@ jobs:
           pip install .
           python -c "import moose; moose.le()"
       - name: Build and install (windows)
-        if: runner.os == 'Windows' 
+        if: runner.os == 'Windows'
         run: |
           micromamba shell hook -s powershell | Out-String | Invoke-Expression
           micromamba activate moose

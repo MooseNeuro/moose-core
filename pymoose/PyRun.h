@@ -3,34 +3,29 @@
 // Author: subha
 // Created: Sat Oct 11 14:40:45 2014 (+0530)
 
-#ifndef _PYCALL_H
-#define _PYCALL_H
+#pragma once
 
 #include <climits>
+#include <string>
 
-#if PY_MAJOR_VERSION >= 3
-#define PYCODEOBJECT PyObject
-
-string get_program_name()
-{
-    wchar_t * progname = Py_GetProgramName();
-    char buffer[PATH_MAX+1];
-    size_t ret = wcstombs(buffer, progname, PATH_MAX);
-    buffer[ret] = '\0';
-    return string(buffer);
-}
+#ifdef _DEBUG
+#undef _DEBUG
+#include <Python.h>
+#define _DEBUG
 #else
-#define PYCODEOBJECT PyCodeObject
-
-string get_program_name()
-{
-    char * progname = Py_GetProgramName();
-    return string(progname);
-}
+#include <Python.h>
 #endif
 
+#include <nanobind/nanobind.h>
+#include <nanobind/eval.h>
+#include <nanobind/stl/string.h>
+
+
+namespace nb = nanobind;
+
+
 /**
-   PyRun allows caling Python functions from moose.
+   PyRun allows running Python statements from moose.
  */
 class PyRun
 {
@@ -42,30 +37,44 @@ public:
     PyRun();
     ~PyRun();
 
-    void setInitString(string str);
-    string getInitString() const;
+    // Note: because of template limitations in ValueFinfo, we cannot
+    // use const std::string&, instead use std::string everywhere. As
+    // these are infrequently used, the performance penalty is not
+    // much.
+    void setInitString(std::string str);
+    std::string getInitString() const;
 
-    void setRunString(string str);
-    string getRunString() const;
+    void setRunString(std::string str);
+    std::string getRunString() const;
 
-    void setGlobals(PyObject *globals);
-    PyObject * getGlobals() const;
+    void setGlobals(nb::dict globals);
+    nb::dict getGlobals() const;
 
-    void setLocals(PyObject *locals);
-    PyObject * getLocals() const;
+    void setLocals(nb::dict locals);
+    nb::dict getLocals() const;
 
     void setMode(int flag);
     int getMode() const;
 
-    void setInputVar(string name);
-    string getInputVar() const;
+    void setEvalOnReinit(bool flag);
+    bool getEvalOnReinit() const;
 
-    void setOutputVar(string name);
-    string getOutputVar() const;
+    /// Specify which variable should be used as input
+    void setInputVar(std::string name);
+    std::string getInputVar() const;
 
-    void run(const Eref& e, string statement);
+    /// Specify which variable should be used as output
+    void setOutputVar(std::string name);
+    std::string getOutputVar() const;
 
-     // this is a way to trigger execution via incoming message - can be useful for debugging
+    /// Get value of `outputVar` set in Python
+    double getOutputValue() const;
+
+    /// Run specified Python statement
+    // Note: this uses string instead of const string& because
+    void run(const Eref& e, std::string statement);
+
+     /// Way to trigger execution via incoming message
     void trigger(const Eref& e, double input);
 
     void process(const Eref& e, ProcPtr p);
@@ -74,15 +83,14 @@ public:
     static const Cinfo * initCinfo();
 
 protected:
+    bool evalOnReinit_;  // flag to indicate if runString should be evaluated on reinit
     int mode_;                    // flag to decide when to run the Python string
-    string initstr_;              // statement str for running at reinit
-    string runstr_;               // statement str for running in each process call
-    PyObject * globals_;          // global env dict
-    PyObject * locals_;           // local env dict
-    PYCODEOBJECT * runcompiled_;  // compiled form of procstr_
-    PYCODEOBJECT * initcompiled_; // coimpiled form of initstr_
-    string inputvar_;             // identifier for input variable.
-    string outputvar_;            // identifier for output variable
+    std::string initstr_;              // statement str for running at reinit
+    std::string runstr_;               // statement str for running in each process call
+    nb::dict globals_;          // global env dict
+    nb::dict locals_;           // local env dict
+    nb::object runcompiled_;      // compiled form of procstr_
+    nb::object initcompiled_;     // coimpiled form of initstr_
+    std::string inputvar_;             // identifier for input variable.
+    std::string outputvar_;            // identifier for output variable
 };
-
-#endif
