@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
-
 ####################################################################
 # fixXreacs.py
 # The program is meant to take a model and reconfigure any cross-compartment
@@ -22,7 +20,7 @@ def findCompt(elm):
     elm = moose.element(elm)
     pa = elm.parent
     while pa.path != '/':
-        if moose.Neutral(pa).isA['ChemCompt']:
+        if pa.isA['ChemCompt']:
             return pa.path
         pa = pa.parent
     print('Error: No compartment parent found for ' + elm.path)

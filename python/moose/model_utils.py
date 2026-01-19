@@ -76,7 +76,7 @@ def mooseReadSBML(filepath, loadpath, solver="ee", validate="on"):
 
 
 def mooseWriteSBML(modelpath, filepath, sceneitems={}):
-    """Writes loaded model under modelpath to a file in SBML format. 
+    """Writes loaded model under modelpath to a file in SBML format.
     (helper function for writeSBML).
     """
     global sbmlImport_, sbmlError_
@@ -155,7 +155,7 @@ def mooseReadKkitGenesis(filename, modelpath, solverclass="gsl"):
     """
 
     if not os.path.isfile(os.path.realpath(filename)):
-        raise FileNotFoundError("Model file '%s' found." % filename)
+        raise FileNotFoundError("Model file '%s' not found." % filename)
 
     ext = os.path.splitext(filename)[1]
     sc = solverclass.lower().replace(" ", "")

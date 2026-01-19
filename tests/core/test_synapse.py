@@ -1,7 +1,7 @@
 # Modified from moose-example/synapse_tutorial.py ---
 
 import moose
-import random  
+import random
 import numpy as np
 
 def test_synapse():
@@ -44,28 +44,23 @@ def test_synapse():
     # with each element set to `thresh/2.0`, which is 0.4. You can index into
     # the `vec` to access individual elements' field:
 
-    print(net.vec[1].Vm)
-    assert net.vec[1].Vm == 0.4
+    assert net.vec[1].Vm == 0.4, 'Failed to set Vm of vec element'
 
     # `SimpleSynHandler` class has an `ElementField` called `synapse`. It is
     # just like a `vec` above in terms of field access, but by default its size
     # is 0.
 
-    assert len(synh.synapse) == 0
-    print(len(synh.synapse))
+    assert len(synh.synapse) == 0, f"Length of synapse={len(synh.synapse)}, should be 0"
 
     # To actually create synapses, you can explicitly assign the `num` field of
     # this, or set the `numSynapses` field of the `IntFire` element. There are
     # some functions which can implicitly set the size of the `ElementField`.
 
     synh.numSynapses = 3
-    assert len(synh.synapse) == 3
-    print(len(synh.synapse))
+    assert len(synh.synapse) == 3, f"Length of synapses: {len(synh.synapse)}, expected 3"
 
     synh.numSynapses = 4
-    print(synh.synapse, 111)
-    assert len(synh.synapse) == 4, (4, len(synh.synapse))
-    print(len(synh.synapse))
+    assert len(synh.synapse) == 4, f"Length of synapses: {len(synh.synapse)}, expected 4"
 
     # Now you can index into `net.synapse` as if it was an array.
     print("Before:", synh.synapse[0].delay)
@@ -76,26 +71,25 @@ def test_synapse():
 
     # You could do the same vectorized assignment as with `vec` directly:
 
-    syns = synh.synapse.vec
-    syns.weight = [0.2] * len(syns)
+    syns = synh.synapse
+    syns.weight = 0.2
     assert np.allclose(syns.weight, 0.2), syns.weight
-    print(syns.weight)
 
     # You can create the synapses and assign the weights and delays using loops:
-    for syn in synh.vec:
-        syn.numSynapses = random.randint(1, 10) 
+    for ii, syn in enumerate(synh.vec):
+        syn.numSynapses = ii + 1
 
-        # create synapse fields with random size between 1 and 10, end points
+        # create n synapses in the n-th synh element
         # included. Below is one (inefficient) way of setting the individual weights of
         # the elements in 'synapse'
         syns  = syn.synapse
-        for ii in range(len(syns)):
-            syns[ii].weight = random.random() * weightMax
+        for kk in range(len(syns)):
+            syns[kk].weight = random.random() * weightMax
 
         # This is a more efficient way - rhs of `=` is list comprehension in
         # Python and rather fast.
         syns.delay = [
-            delayMin + random.random() * delayMax for ii in range(len(syn.synapse))
+            delayMin + random.random() * delayMax for jj in range(len(syn.synapse))
         ]
 
         # An even faster way will be to use numpy.random.rand(size) which

@@ -11,42 +11,39 @@
 # python -m build
 
 project('pymoose', 'c', 'cpp',
-        # The version is created dynamically based on git commit hash. For release, make this explicit string        
+        # The version is created dynamically based on git commit hash. For release, make this explicit string
         # version: run_command('git', 'rev-parse',  '--short', 'HEAD', check:false).stdout().strip(),
         version: '4.1.4',  # cibuildwheel/meson crashes with github hash as version
+        meson_version: '>=1.1',
 	default_options: ['c_std=c17', 'cpp_std=c++17', 'b_ndebug=if-release'])
 
-pybind_dep = dependency('pybind11')
-gsl_dep = dependency('gsl', version: '>=1.16')
-# sundial_dep = dependency('sundial', version: '>=7.1.1')
-
-# HDF5 cannot be found via pkg-config. Skip for now. TODO: fix this in next release
-use_hdf5 = get_option('use_hdf5')
-if use_hdf5
-  hdf5_dep = dependency('hdf5', version: '>=1.8')
-  add_global_arguments('-DUSE_HDF5', language: ['c', 'cpp'])
-  add_global_arguments('-DH5_BUILT_AS_DYNAMIC_LIB', language: ['c', 'cpp'])  # to fix this issue: https://github.com/conda-forge/hdf5-feedstock/issues/58
-else
-  hdf5_dep = []
-endif
-
+##################################
+# Check the options
+##################################
 use_mpi = get_option('use_mpi')
-if use_mpi
-  mpi_dep = dependency('mpi', required: true)
-  add_global_arguments('-DUSE_MPI', language: ['c', 'cpp'])
-else
-  mpi_dep = []
-endif  
+use_hdf5 = get_option('use_hdf5')
 
+##################################
+# Add global arguments
+##################################
 add_global_arguments('-DMOOSE_VERSION="4.1.4"', language: ['c', 'cpp'])
 add_global_arguments('-DUSE_GSL', language: ['c', 'cpp'])
+
+if use_hdf5
+  add_global_arguments('-DUSE_HDF5', language: ['c', 'cpp'])
+  add_global_arguments('-DH5_BUILT_AS_DYNAMIC_LIB', language: ['c', 'cpp'])  # to fix this issue: https://github.com/conda-forge/hdf5-feedstock/issues/58
+endif
+
+if use_mpi
+  add_global_arguments('-DUSE_MPI', language: ['c', 'cpp'])
+endif
 
 ##############################################################
 # Credit: Borrowed from SciPy
 ##############################################################
 python = import('python')
 py = python.find_installation(pure: false)
-python_dep = py.dependency()
+# python_dep = py.dependency()
 
 min_numpy_version = '1.23.5'  # keep in sync with pyproject.toml
 
@@ -92,12 +89,11 @@ endif
 
 
 _global_c_args = cc.get_supported_arguments(
-  '-Wno-unused-but-set-variable',
-  '-Wno-unused-function',
+  '-Wno-unused',
   '-Wno-conversion',
   '-Wno-misleading-indentation',
 )
-add_project_arguments(_global_c_args, language : 'c')
+add_project_arguments(_global_c_args, language : ['c', 'cpp'])
 
 # We need -lm for all C code (assuming it uses math functions, which is safe to
 # assume for SciPy). For C++ it isn't needed, because libstdc++/libc++ is
@@ -130,7 +126,7 @@ if is_windows
   # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
   add_global_arguments('-D_USE_MATH_DEFINES', language: ['c', 'cpp'])
   if cc.get_id() == 'gcc'  # Workaround for mingw64/ucrt64 issue with `fmt` lib and `limit`
-    add_global_arguments('-std=gnu++11', language: ['c', 'cpp']) 
+    add_global_arguments('-std=gnu++11', language: ['c', 'cpp'])
   endif
 endif
 
@@ -194,12 +190,33 @@ conf_data.set('PYTHON_VERSION', py.language_version())
 
 # End Credit: SciPy
 # ============================================================
+
+#########################################################################################
+# All dependencies should come after add_global_arguments or newer
+# meson throws error. But the dependencies are used in subdirs, so
+# they must be defined byfore adding subdirs
+#########################################################################################
+hdf5_dep = []
+if use_hdf5
+  hdf5_dep = dependency('hdf5', version: '>=1.8')
+endif
+
+mpi_dep = []
+if use_mpi
+  mpi_dep = dependency('mpi', required: true)
+endif
+
+# GSL is required
+gsl_dep = dependency('gsl', version: '>=1.16')
+
+
 # libsoda = static_library('lsoda', 'external/libsoda/LSODA.cpp',
 #                           include_directories: 'external/libsoda',
 #                           install: false)
 # libsoda_dep = declare_dependency(include_directories: 'external/libsoda',
 #                                  link_with: libsoda)
 
+nanobind_dep = dependency('nanobind')
 
 subdir(join_paths('external', 'libsoda'))
 subdir(join_paths('external', 'fmt'))
@@ -219,7 +236,8 @@ subdir('ksolve')
 subdir('mesh')
 subdir('mpi')
 subdir('msg')
-subdir('pybind11')
+subdir('pymoose')
+# subdir('pybind11')
 subdir('randnum')
 subdir('scheduling')
 subdir('shell')
@@ -244,7 +262,8 @@ sublibs = [
     mesh_lib,
     mpi_lib,
     msg_lib,
-    pybind11_lib,
+    # pybind11_lib,
+    pymoose_lib,
     randnum_lib,
     scheduling_lib,
     shell_lib,
@@ -272,10 +291,18 @@ else
   rename_cmd = 'mv'
 endif
 
-pymoose = py.extension_module('_moose', join_paths('pybind11', 'pymoose.cpp'),
+
+# pymoose = py.extension_module('_moose', join_paths('pymoose', 'pymoose.cpp'),
+#                               link_whole: sublibs,
+#                               link_args: link_args,
+#                               dependencies: [gsl_dep, mpi_dep, hdf5_dep], #, libsoda_dep],
+#                               include_directories: include_dirs,
+#                               install: true,
+#                               subdir: 'moose')
+pymoose = py.extension_module('_moose',
                               link_whole: sublibs,
                               link_args: link_args,
-                              dependencies: [gsl_dep, mpi_dep, pybind_dep, hdf5_dep], #, libsoda_dep],
+                              dependencies: [gsl_dep, mpi_dep, hdf5_dep], #, libsoda_dep],
                               include_directories: include_dirs,
                               install: true,
                               subdir: 'moose')

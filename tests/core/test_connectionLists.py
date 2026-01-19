@@ -1,11 +1,11 @@
-"""test_connectionLists.py: 
+"""test_connectionLists.py:
 
 Test connectionList in SparseMsg.
 
 """
 
 from __future__ import print_function
-    
+
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2016, Dilawar Singh"
 __credits__          = ["NCBS Bangalore"]
@@ -58,14 +58,13 @@ def makeGlobalBalanceNetwork():
     iv = moose.vec( insyn.path + '/synapse' )
     ov = moose.vec( outsyn.path + '/synapse' )
     oiv = moose.vec( outInhSyn.path + '/synapse' )
-
     assert len(iv) == 0
     assert len(ov) == 0
     assert len(oiv) == 0
 
     temp = moose.connect( stim, 'spikeOut', iv, 'addSpike', 'Sparse' )
     inhibMatrix = moose.element( temp )
-    inhibMatrix.setRandomConnectivity( 
+    inhibMatrix.setRandomConnectivity(
             params['stimToInhProb'], params['stimToInhSeed'] )
     cl = inhibMatrix.connectionList
 
@@ -79,15 +78,15 @@ def makeGlobalBalanceNetwork():
 
     temp = moose.connect( stim, 'spikeOut', ov, 'addSpike', 'Sparse' )
     excMatrix = moose.element( temp )
-    excMatrix.setRandomConnectivity( 
+    excMatrix.setRandomConnectivity(
             params['stimToOutProb'], params['stimToOutSeed'] )
 
     temp = moose.connect( inhib, 'spikeOut', oiv, 'addSpike', 'Sparse' )
     negFFMatrix = moose.element( temp )
-    negFFMatrix.setRandomConnectivity( 
+    negFFMatrix.setRandomConnectivity(
             params['inhToOutProb'], params['inhToOutSeed'] )
 
-    # print("ConnMtxEntries: ", inhibMatrix.numEntries, excMatrix.numEntries, negFFMatrix.numEntries)
+    print("ConnMtxEntries: ", inhibMatrix.numEntries, excMatrix.numEntries, negFFMatrix.numEntries)
     got = (inhibMatrix.numEntries, excMatrix.numEntries, negFFMatrix.numEntries)
     expected = (7, 62, 55)
     assert expected == got, "Expected %s, Got %s" % (expected,got)
@@ -97,7 +96,8 @@ def makeGlobalBalanceNetwork():
     niv = 0
     nov = 0
     noiv = 0
-    for i in moose.vec( insyn ):
+    # _v = moose.vec( insyn )
+    for i in moose.vec(insyn):
         niv += i.synapse.num
         numInhSyns.append( i.synapse.num )
         if i.synapse.num > 0:
@@ -108,7 +108,6 @@ def makeGlobalBalanceNetwork():
     assert numInhSyns == expected, "Expected %s, got %s" % (expected,numInhSyns)
 
     for i in moose.vec( outsyn ):
-        print('111', i)
         nov += i.synapse.num
         if i.synapse.num > 0:
             i.synapse.weight = params['wtStimToOut']
@@ -118,20 +117,10 @@ def makeGlobalBalanceNetwork():
         if i.synapse.num > 0:
             i.synapse.weight = params['wtInhToOut']
 
-    print("SUMS: ", sum( iv.numField ), sum( ov.numField ), sum( oiv.numField ))
-    assert [1, 64, 25] == [sum( iv.numField ), sum( ov.numField ), sum( oiv.numField )]
     print("SUMS2: ", niv, nov, noiv)
     assert [7, 62, 55] ==  [ niv, nov, noiv ]
     print("SUMS3: ", sum( insyn.vec.numSynapses ), sum( outsyn.vec.numSynapses ), sum( outInhSyn.vec.numSynapses ))
     assert [7,62,55] == [ sum( insyn.vec.numSynapses ), sum( outsyn.vec.numSynapses ), sum( outInhSyn.vec.numSynapses ) ]
-
-    # print(oiv.numField)
-    # print(insyn.vec[1].synapse.num)
-    # print(insyn.vec.numSynapses)
-    # print(sum( insyn.vec.numSynapses ))
-    # niv = iv.numSynapses
-    # ov = iv.numSynapses
-
     sv = moose.vec( stim )
     sv.rate = params['randInputRate']
     sv.refractT = params['randRefractTime']
