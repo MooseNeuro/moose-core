@@ -108,8 +108,9 @@ map<string, Finfo *> getFinfoDict(const Cinfo *cinfo, const string &fieldType)
         numFinfo = cinfo->getNumSharedFinfo();
         finfoGetter = &Cinfo::getSharedFinfo;
     }
-    else if(fieldType == "element" || fieldType == "elementFinfo" || fieldType == "field" ||
-            fieldType == "fieldElement" || fieldType == "fieldElementFinfo") {
+    else if(fieldType == "element" || fieldType == "elementFinfo" ||
+            fieldType == "field" || fieldType == "fieldElement" ||
+            fieldType == "fieldElementFinfo") {
         numFinfo = cinfo->getNumFieldElementFinfo();
         finfoGetter = &Cinfo::getFieldElementFinfo;
     }
@@ -249,6 +250,13 @@ string getDoc(const string &query)
 bool setFieldGeneric(const ObjId &oid, const string &fieldName,
                      const nb::object &val)
 {
+    if(fieldName == "dt") {
+        throw nb::attribute_error(
+            "Read-only property. Use `moose.setcClock(...)`");
+    }
+    else if(fieldName == "tick") {
+        throw nb::attribute_error("Read-only property. Use `moose.useClock(...)`);
+    }
     auto cinfo = oid.element()->cinfo();
     auto finfo = cinfo->findFinfo(fieldName);
     if(!finfo) {
@@ -296,17 +304,20 @@ bool setFieldGeneric(const ObjId &oid, const string &fieldName,
                                          nb::cast<vector<ObjId>>(val));
     if(fieldType == "ObjId")
         return Field<ObjId>::set(oid, fieldName, nb::cast<ObjId>(val));
-    if (fieldType == "Id") {
-      // NB: Handle MooseVec as well. Note that we send ObjId to the set
-      // function. The C++ implicit conversion takes care of the rest.
-      // Id tgt;
-      if (nb::isinstance<MooseVec>(val)) {
-          return Field<Id>::set(oid.id, fieldName, nb::cast<MooseVec>(val).id());
-      } else if (nb::isinstance<ObjId>(val)) {
-        return Field<Id>::set(oid.id, fieldName, nb::cast<ObjId>(val).id);
-      } else if (nb::isinstance<Id>(val)) {
-        return Field<Id>::set(oid.id, fieldName, nb::cast<Id>(val));
-      }
+    if(fieldType == "Id") {
+        // NB: Handle MooseVec as well. Note that we send ObjId to the set
+        // function. The C++ implicit conversion takes care of the rest.
+        // Id tgt;
+        if(nb::isinstance<MooseVec>(val)) {
+            return Field<Id>::set(oid.id, fieldName,
+                                  nb::cast<MooseVec>(val).id());
+        }
+        else if(nb::isinstance<ObjId>(val)) {
+            return Field<Id>::set(oid.id, fieldName, nb::cast<ObjId>(val).id);
+        }
+        else if(nb::isinstance<Id>(val)) {
+            return Field<Id>::set(oid.id, fieldName, nb::cast<Id>(val));
+        }
     }
     if(fieldType == "vector<double>") {
         // NB: Note that we cast to ObjId here and not to Id.
@@ -406,21 +417,18 @@ nb::object getFieldValue(const ObjId &oid, const Finfo *f)
     return r;
 }
 
+nb::object createDestFunction(const ObjId &oid, const Finfo *finfo)
+{
+    auto rttiType = finfo->rttiType();
+    auto fname = finfo->name();
 
+    // Zero parameters
+    if(rttiType == "void") {
+        return nb::cpp_function(
+            [oid, fname]() { return SetGet0::set(oid, fname); });
+    }
 
-
-nb::object createDestFunction(const ObjId& oid, const Finfo* finfo) {
-      auto rttiType = finfo->rttiType();
-      auto fname = finfo->name();
-
-      // Zero parameters
-      if (rttiType == "void") {
-          return nb::cpp_function([oid, fname]() {
-              return SetGet0::set(oid, fname);
-          });
-      }
-
-      // One parameter
+    // One parameter
 // Shorthand for defining single arg dest function
 #define DEST_FUNC_1(TYPE)                                   \
     if(rttiType == #TYPE) {                                 \
@@ -431,102 +439,106 @@ nb::object createDestFunction(const ObjId& oid, const Finfo* finfo) {
             nb::arg("value"));                              \
     }
 
-
-      DEST_FUNC_1(double)
-      DEST_FUNC_1(unsigned int)
-      DEST_FUNC_1(int)
-      DEST_FUNC_1(long)
-      DEST_FUNC_1(unsigned long)
-      DEST_FUNC_1(bool)
-      DEST_FUNC_1(string)
-      DEST_FUNC_1(Id)
-      DEST_FUNC_1(ObjId)
-      DEST_FUNC_1(vector<double>)
-      DEST_FUNC_1(vector<int>)
-      DEST_FUNC_1(vector<unsigned int>)
-      DEST_FUNC_1(vector<Id>)
-      DEST_FUNC_1(vector<ObjId>)
-      DEST_FUNC_1(vector<string>)
+    DEST_FUNC_1(double)
+    DEST_FUNC_1(unsigned int)
+    DEST_FUNC_1(int)
+    DEST_FUNC_1(long)
+    DEST_FUNC_1(unsigned long)
+    DEST_FUNC_1(bool)
+    DEST_FUNC_1(string)
+    DEST_FUNC_1(Id)
+    DEST_FUNC_1(ObjId)
+    DEST_FUNC_1(vector<double>)
+    DEST_FUNC_1(vector<int>)
+    DEST_FUNC_1(vector<unsigned int>)
+    DEST_FUNC_1(vector<Id>)
+    DEST_FUNC_1(vector<ObjId>)
+    DEST_FUNC_1(vector<string>)
 #undef DEST_FUNC_1
 
+    vector<string> types;
+    moose::tokenize(rttiType, ",", types);
 
-      vector<string> types;
-      moose::tokenize(rttiType, ",", types);
+    // Two parameters
+    // Short hand for 2-arg functions
+#define DEST_FUNC_2(T1, T2, TOKENS)                            \
+    if(TOKENS[0] == #T1 && TOKENS[1] == #T2) {                 \
+        return nb::cpp_function(                               \
+            [oid, fname](const T1 &a, const T2 &b) {           \
+                return SetGet2<T1, T2>::set(oid, fname, a, b); \
+            },                                                 \
+            nb::arg("a"), nb::arg("b"));                       \
+    }
 
-      // Two parameters
-      // Short hand for 2-arg functions
-#define DEST_FUNC_2(T1, T2, TOKENS)                                     \
-      if (TOKENS[0] == #T1 && TOKENS[1] == #T2) {                       \
-          return nb::cpp_function([oid, fname](const T1& a, const T2& b) { \
-              return SetGet2<T1, T2>::set(oid, fname, a, b);            \
-          }, nb::arg("a"), nb::arg("b"));                               \
-      }
-
-      if(types.size() == 2) {
-          DEST_FUNC_2(double, double, types)
-              DEST_FUNC_2(unsigned int, unsigned int, types)
-              DEST_FUNC_2(double, unsigned int, types)
-              DEST_FUNC_2(unsigned int, unsigned int, types)
-              DEST_FUNC_2(unsigned int, double, types)
-              DEST_FUNC_2(double, long, types)
-              DEST_FUNC_2(string, string, types)
-              DEST_FUNC_2(ObjId, ObjId, types)
-              DEST_FUNC_2(Id, double, types)
-              DEST_FUNC_2(vector<double>, string, types)
-              }
+    if(types.size() == 2) {
+        DEST_FUNC_2(double, double, types)
+        DEST_FUNC_2(unsigned int, unsigned int, types)
+        DEST_FUNC_2(double, unsigned int, types)
+        DEST_FUNC_2(unsigned int, unsigned int, types)
+        DEST_FUNC_2(unsigned int, double, types)
+        DEST_FUNC_2(double, long, types)
+        DEST_FUNC_2(string, string, types)
+        DEST_FUNC_2(ObjId, ObjId, types)
+        DEST_FUNC_2(Id, double, types)
+        DEST_FUNC_2(vector<double>, string, types)
+    }
 #undef DEST_FUNC_2
 
-      // Three param destFinfo - rarely used (just the 6 specific cases)
-      //
-      //
-      // | CompartmentBase | displace     | double, double, double                                           |
-      // | SparseMsg       | setEntry     | unsigned int, unsigned int, unsigned int                         |
-      // | SparseMsg       | tripletFill  | vector<unsigned int>, vector<unsigned int>, vector<unsigned int> |
-      // | TableBase       | compareXplot | string, string, string                                           |
-      // | MarkovRateTable | set2d        | unsigned int, unsigned int, Id                                   |
-      // | MarkovRateTable | setconst     | unsigned int, unsigned int, double                               |
+    // Three param destFinfo - rarely used (just the 6 specific cases)
+    //
+    // | CompartmentBase | displace     | double, double, double                                          |
+    // | SparseMsg       | setEntry     | unsigned int, unsigned int, unsigned int                        |
+    // | SparseMsg       | tripletFill  | vector<unsigne int>, vector<unsigned int>, vector<unsigned int> |
+    // | TableBase       | compareXplot | string, string, string                                          |
+    // | MarkovRateTable | set2d        | unsigned int, unsigned int, Id                                  |
+    // | MarkovRateTable | setconst     | unsigned int, unsigned int, double                              |
 
-#define DEST_FUNC_3(T1, T2, T3, TYPES)                       \
-          if (TYPES[0] == #T1 && TYPES[1] == #T2 && TYPES[2] == #T3) { \
-              return nb::cpp_function([oid, fname](const T1& a, const T2& b, const T3& c) { \
-                  return SetGet3<T1, T2, T3>::set(oid, fname, a, b, c); \
-              }, nb::arg("a"), nb::arg("b"), nb::arg("c")); \
-          }
-      if (types.size() == 3){
-      DEST_FUNC_3(double, double, double, types)
-      DEST_FUNC_3(unsigned int, unsigned int, unsigned int, types)
-      DEST_FUNC_3(unsigned int, unsigned int, double, types)
-      DEST_FUNC_3(unsigned int, unsigned int, Id, types)
-      DEST_FUNC_3(string, string, string, types)
-      DEST_FUNC_3(vector<unsigned int>, vector<unsigned int>,
-                  vector<unsigned int>, types)
-          }
+#define DEST_FUNC_3(T1, T2, T3, TYPES)                                \
+    if(TYPES[0] == #T1 && TYPES[1] == #T2 && TYPES[2] == #T3) {       \
+        return nb::cpp_function(                                      \
+            [oid, fname](const T1 &a, const T2 &b, const T3 &c) {     \
+                return SetGet3<T1, T2, T3>::set(oid, fname, a, b, c); \
+            },                                                        \
+            nb::arg("a"), nb::arg("b"), nb::arg("c"));                \
+    }
+    if(types.size() == 3) {
+        DEST_FUNC_3(double, double, double, types)
+        DEST_FUNC_3(unsigned int, unsigned int, unsigned int, types)
+        DEST_FUNC_3(unsigned int, unsigned int, double, types)
+        DEST_FUNC_3(unsigned int, unsigned int, Id, types)
+        DEST_FUNC_3(string, string, string, types)
+        DEST_FUNC_3(vector<unsigned int>, vector<unsigned int>,
+                    vector<unsigned int>, types)
+    }
 #undef DEST_FUNC_3
 
-          // 4-arg (just the 4 specific cases)
-          //
-          //  | Class           | Function   | Types                                        |
-          //  |-----------------|------------|----------------------------------------------|
-          //  | CubeMesh        | buildMesh  | Id, double, double, double                   |
-          //  | TableBase       | loadCSV    | string, int, int, char                       |
-          //  | TableBase       | compareVec | string, string, unsigned int, unsigned int   |
-          //  | MarkovRateTable | set1d      | unsigned int, unsigned int, Id, unsigned int |
-          //
-#define DEST_FUNC_4(T1, T2, T3, T4, TYPES)                           \
-          if (TYPES[0] == #T1 && TYPES[1] == #T2 && TYPES[2] == #T3 && TYPES[3] == #T4) { \
-              return nb::cpp_function([oid, fname](const T1& a, const T2& b, const T3& c, const T4& d) { \
-                  return SetGet4<T1, T2, T3, T4>::set(oid, fname, a, b, c, d); \
-              }, nb::arg("a"), nb::arg("b"), nb::arg("c"), nb::arg("d")); \
-          }
+    // 4-arg (just the 4 specific cases)
+    //
+    //  | Class           | Function   | Types                                        |
+    //  |-----------------|------------|----------------------------------------------|
+    //  | CubeMesh        | buildMesh  | Id, double, double, double                   |
+    //  | TableBase       | loadCSV    | string, int, int, char                       |
+    //  | TableBase       | compareVec | string, string, unsigned int, unsigned int   |
+    //  | MarkovRateTable | set1d      | unsigned int, unsigned int, Id, unsigned int |
+    //
+#define DEST_FUNC_4(T1, T2, T3, T4, TYPES)                                     \
+    if(TYPES[0] == #T1 && TYPES[1] == #T2 && TYPES[2] == #T3 &&                \
+       TYPES[3] == #T4) {                                                      \
+        return nb::cpp_function(                                               \
+            [oid, fname](const T1 &a, const T2 &b, const T3 &c, const T4 &d) { \
+                return SetGet4<T1, T2, T3, T4>::set(oid, fname, a, b, c, d);   \
+            },                                                                 \
+            nb::arg("a"), nb::arg("b"), nb::arg("c"), nb::arg("d"));           \
+    }
 
-      DEST_FUNC_4(Id, double, double, double, types)
-      DEST_FUNC_4(string, int, int, char, types)
-      DEST_FUNC_4(string, string, unsigned int, unsigned int, types)
-      DEST_FUNC_4(unsigned int, unsigned int, Id, unsigned int, types)
+    DEST_FUNC_4(Id, double, double, double, types)
+    DEST_FUNC_4(string, int, int, char, types)
+    DEST_FUNC_4(string, string, unsigned int, unsigned int, types)
+    DEST_FUNC_4(unsigned int, unsigned int, Id, unsigned int, types)
 #undef DEST_FUNC_4
 
-      throw nb::type_error(("Unsupported DestFinfo type: " + rttiType).c_str());
-  }
+    throw nb::type_error(("Unsupported DestFinfo type: " + rttiType).c_str());
+}
 
 nb::object getFieldGeneric(const ObjId &oid, const string &fieldName)
 {
@@ -588,7 +600,9 @@ ObjId createElementFromPath(const string &type, const string &p,
     auto pp = moose::splitPath(path);
     string name(pp.second);
     if(name.empty()) {
-        throw nb::value_error(("path= " + path + ": path must not end with '/' except for root.").c_str());
+        throw nb::value_error(
+            ("path= " + path + ": path must not end with '/' except for root.")
+                .c_str());
     }
     if(name.back() == ']')
         name = name.substr(0, name.find_last_of('['));
@@ -627,8 +641,9 @@ ObjId convertToObjId(const nb::object &arg)
     ObjId ret;
     if(nb::isinstance<nb::str>(arg)) {
         ret = ObjId(nb::cast<string>(arg));
-        if (ret.bad()){
-            throw nb::value_error(("object does not exist: " + nb::cast<string>(arg)).c_str());
+        if(ret.bad()) {
+            throw nb::value_error(
+                ("object does not exist: " + nb::cast<string>(arg)).c_str());
         }
     }
     else if(nb::isinstance<MooseVec>(arg)) {
@@ -902,7 +917,7 @@ void start(double runtime, bool notify)
 }
 
 ObjId loadModelInternal(const string &fname, const string &modelpath,
-                   const string &solverclass)
+                        const string &solverclass)
 {
     Id model;
     if(solverclass.empty()) {

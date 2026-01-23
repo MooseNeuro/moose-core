@@ -31,6 +31,16 @@ constexpr const char* ObjId_dataIndex =
 
 constexpr const char* ObjId_fieldIndex =
     "If this is a FieldElement, the index of this element within that";
+
+constexpr const char* ObjId_dt =
+    "Timestep for this object. This is a readonly property. To "
+    "modify the timestep, use `moose.setClock(...)` to set `dt` of the "
+    "clock-tick assigned to this object.";
+
+constexpr const char* ObjId_tick =
+    "Clock-tick # assigned to this object. This is a readonly property. To "
+    "change the tick, use `moose.useClock(...)`.";
+
 constexpr const char* ObjId_connect = R"(Connect to another object"
 
 Parameters
