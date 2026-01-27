@@ -159,7 +159,6 @@ def mooseReadKkitGenesis(filename, modelpath, solverclass="gsl"):
 
     ext = os.path.splitext(filename)[1]
     sc = solverclass.lower().replace(" ", "")
-
     if ext in [".swc", ".p"]:
         return _moose.loadModelInternal(filename, modelpath, solverclass)
 
@@ -176,4 +175,20 @@ def mooseReadKkitGenesis(filename, modelpath, solverclass="gsl"):
         if method != "ee":
             _chemUtil.add_Delete_ChemicalSolver.mooseAddChemSolver(modelpath, method)
         return ret
-    raise NameError("Unknown model extenstion '%s'" % ext)
+
+    if ext in (".xml", ".sbml"):
+        try:
+            model, _ = mooseReadSBML(filename, modelpath, solverclass)
+            return model
+        except:
+            pass
+
+    if ext in (".xml", ".nml"):
+        try:
+            print('Loading NeuroML2 file', filename)
+            return mooseReadNML2(filename, modelpath)
+        except:
+            pass
+
+
+    raise NameError(f"Unknown model type: {filename}'. Supported formats: GENESIS KKIT (.g), GENESIS CSPACE (.cspace), GENESIS PROTO (.p), SWC (.swc), SBML (.xml, .sbml), NeuroML (.xml, .nml)")

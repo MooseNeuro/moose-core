@@ -188,6 +188,18 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
         .def_ro("id", &ObjId::id, docs::ObjId_id)
         .def_ro("dataIndex", &ObjId::dataIndex, docs::ObjId_dataIndex)
         .def_ro("fieldIndex", &ObjId::fieldIndex, docs::ObjId_fieldIndex)
+        .def_prop_ro(
+            "dt",
+            [](const ObjId &oid) {
+                return pymoose::getFieldGeneric(oid, "dt");
+            },
+            docs::ObjId_dt)
+        .def_prop_ro(
+            "tick",
+            [](const ObjId &oid) {
+                return pymoose::getFieldGeneric(oid, "tick");
+            },
+            docs::ObjId_tick)
         .def("__eq__", [](const ObjId &a, const ObjId &b) { return a == b; })
         .def("__ne__", [](const ObjId &a, const ObjId &b) { return a != b; })
         .def("__hash__", [](const ObjId &oid) { return oid.id.value(); })
