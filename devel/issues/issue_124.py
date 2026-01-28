@@ -20,7 +20,7 @@ def main():
     stoich = moose.Stoich( '/model/kinetics/stoich' )
     stoich.compartment = compt
     stoich.ksolve = ksolve
-    stoich.path = "/model/kinetics/##"
+    stoich.reacSystemPath = "/model/kinetics/##"
     print(" before reinit")
     moose.reinit()
     print(" After reinit")
@@ -30,4 +30,3 @@ def main():
 # Run the 'main' if this script is executed standalone.
 if __name__ == '__main__':
 	main()
-
