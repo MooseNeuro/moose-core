@@ -255,7 +255,7 @@ bool setFieldGeneric(const ObjId &oid, const string &fieldName,
             "Read-only property. Use `moose.setcClock(...)`");
     }
     else if(fieldName == "tick") {
-        throw nb::attribute_error("Read-only property. Use `moose.useClock(...)`);
+        throw nb::attribute_error("Read-only property. Use `moose.useClock(...)`");
     }
     auto cinfo = oid.element()->cinfo();
     auto finfo = cinfo->findFinfo(fieldName);
