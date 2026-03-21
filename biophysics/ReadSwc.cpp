@@ -65,6 +65,7 @@ ReadSwc::ReadSwc( const string& fname )
     if ( valid )
     {
         assignKids();
+        cleanMultipointSoma();
         cleanZeroLength();
         parseBranches();
     }
@@ -165,8 +166,47 @@ void ReadSwc::cleanZeroLength()
     }
 }
 
-void ReadSwc::traverseBranch( const SwcSegment& s,
-                              double& len, double& L, vector< int >& cable ) const
+void ReadSwc::cleanMultipointSoma()
+{
+    // Find the root soma segment (parent == ~0U)
+    int rootIdx = -1;
+    for (unsigned int i = 0; i < segs_.size(); ++i) {
+        if (segs_[i].parent() == ~0U) {
+            rootIdx = static_cast<int>(i);
+            break;
+        }
+    }
+    if (rootIdx < 0 || segs_[rootIdx].type() != SwcSegment::SOMA)
+        return;
+
+    SwcSegment& soma = segs_[rootIdx];
+    // Use a queue to handle chained soma segments (e.g. 1->2->3->dendrite)
+    // not just direct children of root.
+    vector<int> toProcess = soma.kids();
+    vector<int> newKids;
+    while ( !toProcess.empty() ) {
+        vector<int> nextToProcess;
+        for (int k : toProcess) {
+            SwcSegment& kid = segs_[k - 1];
+            if (kid.type() == SwcSegment::SOMA) {
+                for (int grandkid : kid.kids()) {
+                    segs_[grandkid - 1].setParent(soma.myIndex());
+                    nextToProcess.push_back(grandkid);
+                }
+                kid.setBad();
+                cout << "ReadSwc:: Merged multi-point soma segment " << k
+                     << " into root soma" << endl;
+            } else {
+                newKids.push_back(k);
+            }
+        }
+        toProcess = nextToProcess;
+    }
+    soma.replaceKids(newKids);
+}
+
+void ReadSwc::traverseBranch(const SwcSegment& s, double& len, double& L,
+                             vector<int>& cable) const
 {
     const SwcSegment* prev = &s;
     cable.resize( 1, s.myIndex() ); // Always include the starting seg.
@@ -198,7 +238,9 @@ void ReadSwc::parseBranches()
     for ( unsigned int i = 0; i < segs_.size(); ++i )
     {
         const SwcSegment& s = segs_[i];
-        if ( s.OK() && s.kids().size() != 1 )   // Either use a fork or an end.
+        // Branch endpoints: root soma (always), forks (≥2 kids), or leaves (0 kids).
+        // Root must be explicit: after soma chain cleanup it may have exactly 1 kid.
+        if ( s.OK() && (s.parent() == ~0U || s.kids().size() != 1) )
         {
             vector< int > cable;
             // int branchIndex = branches_.
@@ -221,7 +263,10 @@ void ReadSwc::parseBranches()
         reverseSeg[ branches_[i].segs_.back() ] = i;
     for ( unsigned int i = 0; i < branches_.size(); ++i )
     {
-        int parentSeg = segs_[ branches_[i].segs_[0] - 1 ].parent();
+        int parentSeg = segs_[branches_[i].segs_[0] - 1].parent();
+        if (parentSeg == ~0U) // root - no parent
+            continue;
+
         assert( parentSeg != 0 ); // Note that segment indices start from 1
         branches_[i].setParent( reverseSeg[ parentSeg ] );
     }
@@ -238,7 +283,7 @@ void ReadSwc::diagnostics() const
     }
 
     for ( int i = 0; i < 14; ++i )
-        cout << "ReadSwc::diagnostics: " << setw(12) << 
+        cout << "ReadSwc::diagnostics: " << setw(12) <<
             ": " << setw(5) << diag[i] << endl;
 
 }
@@ -333,7 +378,7 @@ bool ReadSwc::build( Id parent,
                 compt = makeCompt( parent, "soma", seg, seg, RM, RA, CM );
 				numSomas++;
             }
-            else if ( seg.type() == SwcSegment::SOMA) 
+            else if ( seg.type() == SwcSegment::SOMA)
             {
    				ss << "soma" << numSomas;
 				segName = ss.str();

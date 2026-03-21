@@ -6,9 +6,9 @@
 // Maintainer:
 // Created: Mon Dec 29 16:01:22 2008 (+0530)
 // Version:
-// Last-Updated: Tue Jun 11 17:00:33 2013 (+0530)
-//           By: subha
-//     Update #: 290
+// Last-Updated: Mon Mar 16 14:49:28 2026 (+0530)
+//           By: Subhasis Ray
+//     Update #: 291
 // URL:
 // Keywords:
 // Compatibility:
@@ -82,7 +82,7 @@ const Cinfo* DiffAmp::initCinfo()
 
     static DestFinfo minusIn( "minusIn",
                       "Negative input terminal of the amplifier. All the messages connected"
-                      " here are summed up to get total positive input.",
+                      " here are summed up to get total negative input.",
                       new OpFunc1<DiffAmp, double> (&DiffAmp::minusFunc));
     ///////////////////////////////////////////////////////////////////
     // Shared messages
