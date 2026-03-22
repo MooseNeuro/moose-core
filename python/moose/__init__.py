@@ -28,6 +28,7 @@ import atexit
 
 import moose._moose as _moose
 from moose import model_utils
+from moose.moose_constants import *
 
 
 __moose_classes__ = {}
@@ -44,13 +45,6 @@ _sys_fields = {
     'this',
     'me',
 }
-
-# ==============================================
-# CONSTANTS
-# ==============================================
-OUTMSG = 0  #: Outgoing messages
-INMSG = 1  #: Incoming messages
-ALLMSG = 2  #: All messages"""
 
 
 class melement(_moose.ObjId):
@@ -276,7 +270,7 @@ def loadModel(filename, modelpath, solverclass="gsl"):
         model description file.
     modelpath: str
         moose path for the top level element of the model to be created.
-    method: str
+    solverclass: str
         solver type to be used for simulating the model.
         TODO: Link to detailed description of solvers?
 
@@ -291,6 +285,51 @@ def loadModel(filename, modelpath, solverclass="gsl"):
     moose.writeNML2 (NotImplemented)
     moose.readSBML
     moose.writeSBML
+    """
+    return model_utils._loadModel(filename, modelpath, solverclass)
+
+
+def loadSwc(filename, modelpath, RM=1.0, RA=1.0, CM=0.01):
+    """Load SWC morphology file with explicit biophysical parameters.
+
+    Parameters
+    ----------
+    filename: str
+        model description file.
+    modelpath: str
+        moose path for the top level element of the model to be created.
+    RM : float
+        Specific membrane resistance (Ohm·m²), default 1.0
+    RA : float
+        Specific axial resistance (Ohm·m), default 1.0
+    CM : float
+        Specific membrane capacitance (F/m²), default 0.01
+
+    Returns
+    -------
+    melement
+        moose.element if succcessful else None.
+    """
+    return _moose.loadSwcInternal(filename, modelpath, RM, RA, CM)
+
+def loadKkit(filename, modelpath, solverclass="gsl"):
+    """Load Kkit model
+
+    Parameters
+    ----------
+    filename: str
+        model description file.
+    modelpath: str
+        moose path for the top level element of the model to be created.
+    solverclass: str
+        solver type to be used for simulating the model.
+        TODO: Link to detailed description of solvers?
+
+    Returns
+    -------
+    melement
+        moose.element if succcessful else None.
+
     """
     return model_utils.mooseReadKkitGenesis(filename, modelpath, solverclass)
 

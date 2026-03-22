@@ -31,6 +31,13 @@ __email__            = "dilawars@ncbs.res.in"
 # from cadecay.mod : 1/(2*96154.0) = 5.2e-6 which is the Book of Genesis / readcell value
 FARADAY = 96485.3415 # Coulombs/mol # from Wikipedia
 
+# Constants for message direction
+OUTMSG = 0  #: Outgoing messages
+INMSG = 1  #: Incoming messages
+ALLMSG = 2  #: All messages"""
+
+
+
 ## Table step_mode
 # table acts as lookup - default mode
 TAB_IO = 0

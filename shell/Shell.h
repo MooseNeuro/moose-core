@@ -192,7 +192,7 @@ public:
      * Later to learn NineML
      */
     Id doLoadModel( const string& fname, const string& modelpath,
-                    const string& solverClass = "" );
+        const string& solverClass = "",  double RM=1.0, double RA=1.0, double CM=0.01);
 
     /**
      * Saves specified model to specified file, using filetype

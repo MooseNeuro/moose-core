@@ -38,7 +38,7 @@ def morphologyToGraphviz(filename=None, pat='/##[TYPE=Compartment]'):
 
     compList = _moose.wildcardFind(pat)
     if not compList:
-        logger_.warn("No compartment found")
+        logger_.warning("No compartment found")
 
     dot = []
     dot.append("digraph G {")

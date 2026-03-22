@@ -405,6 +405,14 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
           nb::arg("fn"), docs::useClock);
 
     m.def("loadModelInternal", &pymoose::loadModelInternal);
+    m.def(
+        "loadSwcInternal",
+        [](const string &file, const string &path, double RM, double RA,
+           double CM) {
+            return pymoose::getShellPtr()->doLoadModel(file, path, "", RM, RA, CM);
+        },
+        nb::arg("file"), nb::arg("path"), nb::arg("RM") = 1.0,
+        nb::arg("RA") = 1.0, nb::arg("CM") = 0.01);
 
     m.def("getDoc", &pymoose::getDoc, docs::getDoc);
 

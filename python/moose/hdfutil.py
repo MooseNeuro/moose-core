@@ -7,9 +7,9 @@
 # Maintainer:
 # Created: Thu Aug 23 17:34:55 2012 (+0530)
 # Version:
-# Last-Updated: Mon Sep  3 17:55:03 2012 (+0530)
-#           By: subha
-#     Update #: 618
+# Last-Updated: Sun Mar 22 13:25:22 2026 (+0530)
+#           By: Subhasis Ray
+#     Update #: 621
 # URL:
 # Keywords:
 # Compatibility:
@@ -84,11 +84,15 @@
 #
 
 # Code:
-from __future__ import print_function, division, absolute_import
-try:
-    from future_builtins import zip
-except ImportError:
-    pass
+
+import warnings
+
+warnings.warn(
+    "This submodule is deprecated and will be removed in a future release.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 import moose
 import numpy as np
 import h5py as h5

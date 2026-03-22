@@ -102,8 +102,8 @@ sys.stdout.flush()
     world_runner.run('print( "World: current time:", datetime.now().isoformat())')
     moose.setClock(0, 3e-4)
     moose.setClock(1, 3e-4)
-    hello_runner.tick = 0
-    world_runner.tick = 1
+    moose.useClock(0, hello_runner.path, 'process')
+    moose.useClock(1, world_runner.path, 'process')
     with io.StringIO() as buf, redirect_stdout(buf):
         moose.reinit()
         moose.start(1e-3)  # 1e-3//3e-4 = 3

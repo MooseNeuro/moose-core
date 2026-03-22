@@ -180,6 +180,41 @@ void ReadSwc::cleanMultipointSoma()
         return;
 
     SwcSegment& soma = segs_[rootIdx];
+
+    // Warn if the soma does not match the NeuroMorpho.org 3-point convention:
+    // exactly 2 direct soma children, all sharing x,z,radius with root,
+    // and y-offsets of exactly ±radius.
+    {
+        static const double EPS = 1e-3; // microns
+        vector<int> directSomaKids;
+        for (int k : soma.kids()) {
+            if (segs_[k - 1].type() == SwcSegment::SOMA)
+                directSomaKids.push_back(k);
+        }
+        if (directSomaKids.size() == 2) {
+            const SwcSegment& s2 = segs_[directSomaKids[0] - 1];
+            const SwcSegment& s3 = segs_[directSomaKids[1] - 1];
+            double xs = soma.vec().a0(), ys = soma.vec().a1(), zs = soma.vec().a2(), rs = soma.radius();
+            bool xzMatch = fabs(s2.vec().a0()-xs) < EPS && fabs(s2.vec().a2()-zs) < EPS &&
+                           fabs(s3.vec().a0()-xs) < EPS && fabs(s3.vec().a2()-zs) < EPS;
+            bool radiiMatch = fabs(s2.radius()-rs) < EPS && fabs(s3.radius()-rs) < EPS;
+            bool yMatch = (fabs(s2.vec().a1()-(ys-rs)) < EPS && fabs(s3.vec().a1()-(ys+rs)) < EPS) ||
+                          (fabs(s3.vec().a1()-(ys-rs)) < EPS && fabs(s2.vec().a1()-(ys+rs)) < EPS);
+            if (!xzMatch || !radiiMatch || !yMatch)
+                cout << "ReadSwc::cleanMultipointSoma: Warning: 3-point soma does not match "
+                     << "NeuroMorpho.org convention"
+                     << (!xzMatch   ? " [x,z coords differ]" : "")
+                     << (!radiiMatch ? " [radii differ]"      : "")
+                     << (!yMatch     ? " [y-offsets != ±r]"   : "")
+                     << endl;
+        } else if (!directSomaKids.empty()) {
+            cout << "ReadSwc::cleanMultipointSoma: Warning: soma has "
+                 << directSomaKids.size() << " direct soma-type children "
+                 << "(NeuroMorpho.org standard expects 2); "
+                 << "may be a chained or contour soma." << endl;
+        }
+    }
+
     // Use a queue to handle chained soma segments (e.g. 1->2->3->dendrite)
     // not just direct children of root.
     vector<int> toProcess = soma.kids();

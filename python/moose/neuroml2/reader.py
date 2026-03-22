@@ -347,7 +347,7 @@ class NML2Reader(object):
         self.lib = moose.Neutral(
             "/library"
         )  # Keeps the prototypes: not simulated
-        self.model = moose.Neutral("/model")  # Actual model: simulated
+        self.model = None
         self.id_to_ionChannel = {}
         self._cell_to_sg = (
             {}
@@ -362,6 +362,7 @@ class NML2Reader(object):
     def read(
         self,
         filename,
+        modelpath,
         symmetric=True,
         vmin=-150e-3,
         vmax=100e-3,
@@ -376,6 +377,8 @@ class NML2Reader(object):
         ----------
         filename : str
             Path of NeuroML2 file
+        modelpath: str
+            Path of the moose model
         symmetric : bool
             If `True` use symmetric compartments (axial resistance is
             split with neighboring compartments on both sides)
@@ -415,6 +418,8 @@ class NML2Reader(object):
         if len(self.doc.networks) >= 1:
             self.network = self.doc.networks[0]
             moose.celsius = self._getTemperature()
+
+        self.model = moose.Neutral(modelpath)
 
         self.importConcentrationModels(self.doc)
         self.importIonChannels(
