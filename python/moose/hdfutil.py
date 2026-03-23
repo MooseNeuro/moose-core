@@ -85,6 +85,7 @@
 
 # Code:
 
+import ast
 import warnings
 
 warnings.warn(
@@ -322,7 +323,7 @@ def restorestate(filename):
         sorted_paths = sorted(typeinfo['path'], key=lambda x: x.count('/'))
         for path in sorted_paths:
             name = path.rpartition('/')[-1].partition('[')[0]
-            moose.vec(parentdict[path] + '/' + name, eval(dimsdict[path]), classdict[path])
+            moose.vec(parentdict[path] + '/' + name, ast.literal_eval(dimsdict[path]), classdict[path])
         for key in fd['/elements']:
             dset = fd['/elements/'][key][:]
             fieldnames = dset.dtype.names

@@ -2,7 +2,6 @@
 # Utilties for loading NML and SBML models.
 # Authored and maintained by Harsha Rani
 
-from __future__ import absolute_import, print_function, division
 
 import os
 import moose._moose as _moose
@@ -88,7 +87,7 @@ def mooseWriteSBML(modelpath, filepath, sceneitems={}):
 
 
 def mooseWriteKkit(modelpath, filepath, sceneitems={}):
-    """Writes  loded model under modelpath to a file in Kkit format. (inner
+    """Writes  loaded model under modelpath to a file in Kkit format. (inner
     helper function for moose.writeKkit)"""
     global kkitImport_, kkitImportErr_
     if not kkitImport_:
@@ -232,14 +231,14 @@ def _loadModel(filename, modelpath, solverclass="gsl"):
         try:
             model, _ = mooseReadSBML(filename, modelpath, solverclass)
             return model
-        except:
+        except Exception:
             pass
 
     if ext in (".xml", ".nml"):
         try:
             print('Loading NeuroML2 file', filename)
             return mooseReadNML2(filename, modelpath)
-        except:
+        except Exception:
             pass
 
 

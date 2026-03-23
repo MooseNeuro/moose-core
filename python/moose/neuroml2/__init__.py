@@ -57,7 +57,6 @@ available in converter.py. But the complete cell-model writing is not
 fully implemented. Hence this is not included in __all__.
 
 """
-from __future__ import absolute_import, division, print_function
 import moose.utils as mu
 
 __author__ = 'Subhasis Ray'

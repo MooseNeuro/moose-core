@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, division, absolute_import
 
 # Description: NeuroML2 reader.
 #     Implementation of reader for NeuroML 2 models.

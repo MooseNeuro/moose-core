@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
 
 # Author: Subhasis Ray
 # Maintainer: Dilawar Singh, Harsha Rani, Upi Bhalla
@@ -317,7 +316,7 @@ def _getMooseDoc(tokens, inherited=False):
         if not inherited:
             return docstring.getvalue()
 
-        mro = eval('_moose.%s' % (tokens[0])).mro()
+        mro = getattr(_moose, tokens[0]).mro()
         for class_ in mro[1:]:
             if class_ == _moose.melement:
                 break
@@ -613,7 +612,7 @@ def printCellTree(cell):
     it displays the same for subelements of compartments only one level below the compartments.
     Thus NMDA synapses' mgblock-s will be left out.
 
-    FIXME: no lenght cound on compartment.
+    FIXME: no length count on compartment.
     """
     for compartmentid in cell.children:  # compartments
         comp = moose.Compartment(compartmentid)

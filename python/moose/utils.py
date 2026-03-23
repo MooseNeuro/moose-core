@@ -18,7 +18,7 @@ from moose.print_utils import *
 try:
     from moose.network_utils import *
 except Exception as e:
-    logger_.warning("Netowrk utilities are not loaded due to %s" % e)
+    logger_.warning("Network utilities are not loaded due to %s" % e)
 
 # Print and Plot utilities.
 try:
@@ -119,9 +119,8 @@ def apply_to_tree(moose_wildcard, python_filter=None, value=None):
     if isinstance(value, types.LambdaType):
         if isinstance(python_filter, str):
             for moose_id in id_list:
-                moose_obj = eval(
-                    "moose.%s(moose_id)" % (moose.Neutral(moose_id).className)
-                )
+                cls = getattr(moose, moose.Neutral(moose_id).className)
+                moose_obj = cls(moose_id)
                 setattr(moose_obj, python_filter, value(moose_id))
         else:
             for moose_id in id_list:
@@ -129,9 +128,8 @@ def apply_to_tree(moose_wildcard, python_filter=None, value=None):
     else:
         if isinstance(python_filter, str):
             for moose_id in id_list:
-                moose_obj = eval(
-                    "moose.%s(moose_id)" % (moose.Neutral(moose_id).className)
-                )
+                cls = getattr(moose, moose.Neutral(moose_id).className)
+                moose_obj = cls(moose_id)
                 setattr(moose_obj, python_filter, value)
         else:
             raise TypeError(

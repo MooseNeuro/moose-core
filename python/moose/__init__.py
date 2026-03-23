@@ -503,7 +503,7 @@ def writeSBML(modelpath, filepath, sceneitems={}):
 
 
 def writeKkit(modelpath, filepath, sceneitems={}):
-    """Writes  loded model under modelpath to a file in Kkit format.
+    """Writes  loaded model under modelpath to a file in Kkit format.
 
     Parameters
     ----------

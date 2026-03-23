@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
 
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2013, NCBS Bangalore"
@@ -96,10 +95,10 @@ def scaleAxis(xvec, yvec, scaleX, scaleY):
 def reformatTable(table, kwargs):
     """ Given a table return x and y vectors with proper scaling """
     clock = moose.Clock('/clock')
-    if type(table) == moose.Table:
+    if isinstance(table, moose.Table):
         vecY = table.vector
         vecX = np.arange(0, clock.currentTime, len(vecY))
-    elif type(table) == tuple:
+    elif isinstance(table, tuple):
         vecX, vecY = table
     return (vecX, vecY)
 
@@ -112,7 +111,7 @@ def plotTable(table, **kwargs):
     Pass 'xscale' and/or 'yscale' argument to function to modify scales.
 
     """
-    if not type(table) == moose.Table:
+    if not isinstance(table, moose.Table):
         msg = "Expected moose.Table, got {}".format( type(table) )
         raise TypeError(msg)
 
@@ -121,7 +120,7 @@ def plotTable(table, **kwargs):
     # This may not be available on older version of matplotlib.
     try:
         plt.legend(loc='best', framealpha=0.4)
-    except:
+    except TypeError:
         plt.legend(loc='best')
 
 def plotTables(tables, outfile=None, **kwargs):
@@ -134,13 +133,13 @@ def plotTables(tables, outfile=None, **kwargs):
     :param grid: A tuple with (cols, rows), default is (len(tables)//2+1, 2)
     :param figsize: Size of figure (W, H) in inches. Default (10, 1.5*len(tables))
     """
-    assert type(tables) == dict, "Expected a dict of moose.Table"
+    if not isinstance(tables, dict): raise TypeError("Expected a dict of moose.Table")
     plt.figure(figsize=kwargs.get('figsize', (10, 1.5*len(tables))))
     subplot = kwargs.get('subplot', True)
     gridSize = kwargs.get('grid', (len(tables)//2+1, 2))
     for i, tname in enumerate(tables):
         if subplot:
-            assert gridSize[0] <= 9
+            if gridSize[0] > 9: raise ValueError("gridSize rows must be <= 9, got %d" % gridSize[0])
             plt.subplot(100*gridSize[0]+10*gridSize[1]+(i+1))
         yvec = tables[tname].vector
         xvec = np.linspace(0, moose.Clock('/clock').currentTime, len(yvec))
@@ -149,8 +148,8 @@ def plotTables(tables, outfile=None, **kwargs):
         # This may not be available on older version of matplotlib.
         try:
             plt.legend(loc='best', framealpha=0.4)
-        except:
-            plt.legend(loc = 'best')
+        except TypeError:
+            plt.legend(loc='best')
 
     plt.tight_layout()
     if outfile:
@@ -170,7 +169,7 @@ def plotVector(vec, xvec = None, **options):
     :param **kwargs: Optional to pass to maplotlib.
     """
 
-    assert type(vec) == np.ndarray, "Expected type %s" % type(vec)
+    if not isinstance(vec, np.ndarray): raise TypeError("Expected np.ndarray, got %s" % type(vec))
     legend = options.get('legend', True)
 
     if xvec is None:
@@ -179,14 +178,14 @@ def plotVector(vec, xvec = None, **options):
     else:
         xx = xvec[:]
 
-    assert len(xx) == len(vec), "Expecting %s got %s" % (len(vec), len(xvec))
+    if len(xx) != len(vec): raise ValueError("Expecting %d points, got %d" % (len(vec), len(xx)))
 
     plt.plot(xx, vec, label=options.get('label', ''))
     if legend:
         # This may not be available on older version of matplotlib.
         try:
             plt.legend(loc='best', framealpha=0.4)
-        except:
+        except TypeError:
             plt.legend(loc='best')
 
     if xvec is None:
@@ -200,7 +199,7 @@ def plotVector(vec, xvec = None, **options):
     if(options.get('legend', True)):
         try:
             plt.legend(loc='best', framealpha=0.4, prop={'size' : 9})
-        except:
+        except TypeError:
             plt.legend(loc='best', prop={'size' : 9})
 
 
@@ -220,7 +219,7 @@ def saveRecords(records, xvec = None, **kwargs):
 
     outfile = kwargs.get('outfile', 'data.moose')
     clock = moose.Clock('/clock')
-    assert clock.currentTime > 0
+    if clock.currentTime <= 0: raise RuntimeError("Simulation has not been run (currentTime=%g)" % clock.currentTime)
     yvecs = [ ]
     text = "time," + ",".join([ str(x) for x in records ])
     for k in records:
