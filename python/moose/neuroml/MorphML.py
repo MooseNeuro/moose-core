@@ -15,8 +15,7 @@ It is assumed that any channels and synapses referred to by above MorphML
 have already been loaded under that same name in /library in MOOSE (use ChannelML loader).
 """
 
-from __future__ import print_function
-from xml.etree import cElementTree as ET # cELementTree is mostly API-compatible but faster than ElementTree
+from xml.etree import ElementTree as ET
 import string
 import sys
 import math
@@ -272,7 +271,7 @@ class MorphML():
                     moosechannelval = moose.Mstring(moosechannel.path+'/thresh')
                     moosecomp.thresh = float( moosechannelval.value )
                     moosechannelval = moose.Mstring(moosechannel.path+'/refracT')
-                    moosecomp.refractoryPeriod = eval(moosechannelval.value)
+                    moosecomp.refractoryPeriod = float(moosechannelval.value)
                     ## refracG is currently not supported by moose.LIF
                     ## when you implement it, check if refracG or g_refrac
                     ## is a conductance density or a conductance, I think the former

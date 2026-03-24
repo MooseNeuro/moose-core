@@ -1275,7 +1275,7 @@ def createSpecies(basePath, model, comptSbmlidMooseIdMap,
                 "comptId": comptSbmlidMooseIdMap[comptId]["MooseId"]}
             initvalue = 0.0
             unitfactor, unitset, unittype = transformUnit(spe, hasonlySubUnit)
-            if hasonlySubUnit == True:
+            if hasonlySubUnit:
                 if spe.isSetInitialAmount():
                     initvalue = spe.getInitialAmount()
                     # populating nInit, will automatically calculate the
@@ -1292,7 +1292,7 @@ def createSpecies(basePath, model, comptSbmlidMooseIdMap,
                     print(" Since hasonlySubUnit is true and concentration is set units are not checked")
                 poolId.nInit = initvalue
 
-            elif hasonlySubUnit == False:
+            elif not hasonlySubUnit:
                 # ToDo : check 00976
                 if spe.isSetInitialAmount():
                     initvalue = spe.getInitialAmount()
@@ -1358,13 +1358,13 @@ def transformUnit(unitForObject, hasonlySubUnit=False):
                     scale = unitType.getScale()
                     offset = unitType.getOffset()
                     # if hasOnlySubstanceUnit = True, then assuming Amount
-                    if hasonlySubUnit == True:
+                    if hasonlySubUnit:
                         lvalue *= pow(multiplier *
                                       pow(10.0, scale), exponent) + offset
                         # If SBML units are in mole then convert to number by
                         # multiplying with avogadro's number
                         lvalue = lvalue * pow(6.0221409e23, 1)
-                    elif hasonlySubUnit == False:
+                    elif not hasonlySubUnit:
                         # Pool units in moose is mM
 
                         lvalue = lvalue * pow(multiplier*pow(10.0,scale+3),exponent)+offset
@@ -1384,12 +1384,12 @@ def transformUnit(unitForObject, hasonlySubUnit=False):
                     scale = unitType.getScale()
                     offset = unitType.getOffset()
                     # if hasOnlySubstanceUnit = True, then assuming Amount
-                    if hasonlySubUnit == True:
+                    if hasonlySubUnit:
                         # If SBML units are in Item then amount is populate as
                         # its
                         lvalue *= pow(multiplier *
                                       pow(10.0, scale), exponent) + offset
-                    if hasonlySubUnit == False:
+                    if not hasonlySubUnit:
                         # hasonlySubUnit is False, which is assumed concentration,
                         # Here Item is converted to mole by dividing by
                         # avogadro and at initiavalue divided by volume"

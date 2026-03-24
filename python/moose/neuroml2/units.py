@@ -7,7 +7,6 @@ Author:
     Subhasis Ray (Please check commit history for more details).
 """
 
-from __future__ import print_function, division
 import os
 import re
 from xml.etree import ElementTree
@@ -27,7 +26,7 @@ magnitude_regex = re.compile(r'^[\+-]?\d*\.?\d*([eE][\+-]?\d+)?')
 def SI(expression):
     try:
         return float(expression)
-    except:
+    except ValueError:
         pass
     expression=expression.replace(" ", "")
     match = magnitude_regex.match(expression)

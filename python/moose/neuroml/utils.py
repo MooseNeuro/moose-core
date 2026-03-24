@@ -12,9 +12,7 @@ while still including certain others.
 indent(...) is an in-place prettyprint formatter copied from http://effbot.org/zone/element-lib.htm
 """
 
-from __future__ import print_function
-from xml.etree import cElementTree as ET
-from xml.etree import ElementTree as slowET
+from xml.etree import ElementTree as ET
 import math
 import os
 
@@ -32,13 +30,13 @@ xsi_ns='http://www.w3.org/2001/XMLSchema-instance'
 ### BUT it doesn't keep the original namespaces,
 ## from http://effbot.org/zone/element-namespaces.htm , I got _namespace_map
 ## neuroml_ns, bio_ns, mml_ns, etc are defined above
-slowET._namespace_map[neuroml_ns] = 'neuroml'
-slowET._namespace_map[nml_ns] = 'nml'
-slowET._namespace_map[mml_ns] = 'mml'
-slowET._namespace_map[bio_ns] = 'bio'
-slowET._namespace_map[cml_ns] = 'cml'
-slowET._namespace_map[meta_ns] = 'meta'
-slowET._namespace_map[xsi_ns] = 'xsi'
+ET._namespace_map[neuroml_ns] = 'neuroml'
+ET._namespace_map[nml_ns] = 'nml'
+ET._namespace_map[mml_ns] = 'mml'
+ET._namespace_map[bio_ns] = 'bio'
+ET._namespace_map[cml_ns] = 'cml'
+ET._namespace_map[meta_ns] = 'meta'
+ET._namespace_map[xsi_ns] = 'xsi'
 
 ### cElementTree is much faster than ElementTree and is API compatible with the latter,
 ### but instead of _namespace_map above, use register_namespace below ...

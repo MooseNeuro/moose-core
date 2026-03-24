@@ -67,7 +67,7 @@ def test_hsolve_calcium():
     moose.connect(sktab,'requestOut', moose.element('/neuron/soma/SK'),'getGk')
 
     hsolve = moose.HSolve('/neuron/hsolve')
-    hsolve.dt = 10e-6
+    # hsolve.dt = 10e-6
     hsolve.target = ('/neuron/soma')
     t_stop = 10.
     moose.reinit()

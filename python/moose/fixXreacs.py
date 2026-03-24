@@ -185,7 +185,7 @@ def restoreOldRates(oldRates, msgs):
         if elm.isA['Reac']:
             elm.numKf = oldRates[0]
             elm.numKb = oldRates[1]
-        elif elm.isA['enzBase']:
+        elif elm.isA['EnzBase']:
             elm.numKm = oldRates[0]
 
 

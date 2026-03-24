@@ -13,8 +13,7 @@ readChannelMLFromFile(...) to load a standalone ChannelML file (synapse/channel)
 readChannelML(...) / readSynapseML to load from an xml.etree xml element (could be part of a larger NeuroML file).
 """
 
-from __future__ import print_function, division
-from xml.etree import cElementTree as ET
+from xml.etree import ElementTree as ET
 import string
 import os
 import sys
