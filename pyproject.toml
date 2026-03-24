@@ -4,7 +4,9 @@ requires = [
          'meson>=1.4',
          'ninja',
          'meson-python>=0.14',
-         'pybind11[global]']
+         #'pybind11[global]']
+         'nanobind']
+         
 
 [project]
 name = 'pymoose'
@@ -58,7 +60,7 @@ maintainers = [
     {name = 'G.V. Harsharani', email = 'hrani@ncbs.res.in'},
     ]
 
-dependencies = ['numpy>=1.23', 'matplotlib', 'vpython', 'python-libsbml', 'pyneuroml']
+dependencies = ['numpy>=1.23', 'matplotlib', 'vpython', 'python-libsbml', 'pyneuroml', 'pint', 'scipy']
 
 [project.urls]
 homepage = 'https://mooseneuro.github.io/'
