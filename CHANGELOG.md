@@ -4,6 +4,65 @@
 ## Unreleased
 *Unreleased changes go here*
 
+## [4.2.0] - 2026-03-25
+
+Kaju Katli
+
+### Breaking Changes
+
+- The Python interface has been significantly overhauled in this
+release. While most user-facing functionality remains the same,
+scripts relying on internal or undocumented pymoose features may
+need to be updated.
+- Setting `dt` or `tick` directly on a MOOSE object from Python will
+now raise an error. Refer to the documentation on how to correctly
+configure simulation timesteps.
+- Some legacy and unused Python utility modules have been removed.
+If your scripts import from `moose.recording`, `moose.constants`, or
+`moose.method_utils`, you will need to update them.
+- `getFieldDict` has been renamed to `getFieldTypeDict`. If your
+scripts use this function, update the name accordingly.
+
+### Neuron Morphology (SWC) Improvements
+
+- Improved support for loading neuron morphologies — SWC files with
+2-point soma (as used by Arbor) and 3-point soma formats are now
+handled correctly
+- Added a dedicated `moose.loadSwc()` function for loading SWC files
+with optional electrical parameters (RM, RA, CM)
+- A warning is shown when the soma format is not compatible with the
+[neuromorpho.org](http://neuromorpho.org/) convention
+
+### Model Loading Improvements
+
+- SBML and NeuroML2 models can now be loaded directly using
+`moose.loadModel()` without needing separate format-specific function
+calls
+- NeuroML2 model path is now configurable instead of being hardcoded
+
+### Python Interface Improvements
+
+- Consistent and informative string representation for all MOOSE Python
+objects, making debugging and interactive use easier
+- Accessing and inspecting MOOSE object fields from Python is now more
+consistent and predictable
+- `getFieldNames()` is now available directly on MOOSE objects
+
+### Bug Fixes
+
+- Fixed incorrect behaviour when setting attributes on element fields
+via Python
+- Fixed an intermittent issue where expression evaluation could fail
+unpredictably under certain conditions
+
+### Build and Packaging
+
+- Python bindings rebuilt on nanobind, replacing pybind11, resulting
+in a cleaner and more maintainable codebase
+- Building MOOSE from source is now simpler, with fewer manual setup
+steps required
+- Updated CI workflows for the new build system
+
 ## [4.1.4] - 2026-01-12
 Jhangri
 
