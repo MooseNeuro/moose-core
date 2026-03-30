@@ -1,11 +1,15 @@
-[![Python package](https://github.com/MooseNeuro/moose-core/actions/workflows/pymoose.yml/badge.svg)](https://github.com/MooseNeuro/moose-core/actions/workflows/pymoose.yml)
+![Python package](https://github.com/MooseNeuro/moose-core/actions/workflows/pymoose.yml/badge.svg)
+
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
+
+![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-lightgrey)
 
 # MOOSE
 
 MOOSE is the Multiscale Object-Oriented Simulation Environment. It is designed
 to simulate neural systems ranging from subcellular components and biochemical
-reactions to complex models of single neurons, circuits, and large networks. 
-MOOSE can operate at many levels of detail, from stochastic chemical 
+reactions to complex models of single neurons, circuits, and large networks.
+MOOSE can operate at many levels of detail, from stochastic chemical
 computations, to multicompartment single-neuron models, to spiking neuron
 network models.
 
@@ -15,13 +19,13 @@ MOOSE is object-oriented. Biological concepts are mapped into classes, and
 a model is built by creating instances of these classes and connecting them
 by messages. MOOSE also has classes whose job is to take over difficult
 computations in a certain domain, and do them fast. There are such solver
-classes for stochastic and deterministic chemistry, for diffusion, and for 
+classes for stochastic and deterministic chemistry, for diffusion, and for
 multicompartment neuronal models.
 
 MOOSE is a simulation environment, not just a numerical engine: It provides
 data representations and solvers (of course!), but also a scripting interface
-with Python, graphical displays with Matplotlib, PyQt, and VPython, and 
-support for many model formats. These include SBML, NeuroML, GENESIS kkit 
+with Python, graphical displays with Matplotlib, PyQt, and VPython, and
+support for many model formats. These include SBML, NeuroML, GENESIS kkit
 and cell.p formats, HDF5 and NSDF for data writing.
 
 This is the core computational engine of [MOOSE
@@ -29,82 +33,128 @@ simulator](https://github.com/BhallaLab/moose). This repository
 contains C++ codebase and python interface called `pymoose`. For more
 details about MOOSE simulator, visit https://moose.ncbs.res.in .
 
+---
 
--------------
-  
 # Installation
 
 See [docs/source/install/INSTALL.md](docs/source/install/INSTALL.md) for instructions on installation.
 
 # Examples and Tutorials
+
 - Have a look at examples, tutorials and demo scripts here
 https://github.com/MooseNeuro/moose-examples.
-
 - A set of jupyter notebooks with step by step examples with explanation are available here:
 https://github.com/MooseNeuro/moose-notebooks.
 
-# v4.1.4 – Incremental Release over v4.1.0 "Jhangri"
-Patch release focusing on accurate version reporting, bug fixes, and documentation improvements.
+# v4.2.0 – Major Release "Kalakand"
+[`Kalakand`](https://en.wikipedia.org/wiki/Kalakand) is a popular
+Indian sweet made from solidified sweetened milk and cottage cheese
+(paneer), with a soft, grainy texture and a rich, mildly sweet
+flavour. It is often garnished with cardamom and pistachios and is
+a favourite at festivals and celebrations across India.
 
-# ABOUT VERSION 4.1.4, `Jhangri`
+# What's New in 4.2.0
 
-[`Jhangri`](https://en.wikipedia.org/wiki/Imarti) is an Indian sweet
-in the shape of a flower. It is made of white-lentil (*Vigna mungo*)
-batter, deep-fried in ornamental shape to form the crunchy, golden
-body, which is then soaked in sugar syrup lightly flavoured with
-spices.
+## Quick Install
 
-This release has the following changes:
-
-# Installation
 Installing released version from PyPI using `pip`
 
-This version is available for installation via `pip`. To install the latest release, run
+This version is available for installation via `pip`. To install the
+latest release, we recommend creating a separate environment using
+conda, mamba, micromamba, or miniforge to manage dependencies cleanly
+and avoid conflicts with other Python packages. The `conda-forge`
+channel has all the required libraries available for Linux, macOS,
+and Windows.
 
 ```
 conda create -n moose python=3.13 gsl hdf5 numpy vpython matplotlib -c conda-forge
+```
+```
 conda activate moose
 ```
+
 ```
 pip install pymoose
 ```
+
 ## Post installation
 
 You can check that moose is installed and initializes correctly by running:
+
 ```
 $ python -c "import moose; ch = moose.HHChannel('ch'); moose.le()"
 ```
-This should show 
+
+This should show
+
 ```
 Elements under /
     /Msgs
     /clock
     /classes
     /postmaster
-    /ch	
+    /ch
 ```
 
 Now you can import moose in a Python script or interpreter with the statement:
 
-    >>> import moose
+```
+>>> import moose
+```
 
-# Bug Fixes
--  Fixed a crash (segmentation fault) that could occur when deleting function objects  
--  Fixed incorrect evaluation order in function objects that could lead to wrong results in some models
--  Improved stability of expression parsing when working with dynamically changing expressions  
--  Fixed setNumVar issue in Function class - setting the number of x variables with `numVar` field is no longer required, simply updating  
-   the expression now works correctly
-# Model Import Improvements
-- Improved SWC morphology reader with clearer hierarchical naming scheme for dendritic compartments, making imported neuron structures easier to interpret and debug
+## Breaking Changes
+- Setting `dt` or `tick` directly on a MOOSE object from Python will
+now raise an error. Refer to the documentation on how to correctly
+configure simulation timesteps.
+- Some legacy and unused Python utility modules have been removed.
+If your scripts import from `moose.recording`, `moose.constants`, or
+`moose.method_utils`, you will need to update them.
+- `getFieldDict` has been renamed to `getFieldTypeDict`. If your
+scripts use this function, update the name accordingly.
+- `mooseReadKkitGenesis` has been renamed to `_loadModel` (internal). Use `moose.loadModel()` or `moose.loadKkit()` instead.
 
-# Documentation
-- Updated build instructions for macOS
+## Neuron Morphology (SWC) Improvements
 
-# Build and Packaging
-- Improved GitHub Actions workflows for release packages
-- Enabled manual triggering of release workflows
-- Fixed permission issues during GitHub release creation
-   
+- Improved support for loading neuron morphologies SWC files with
+2-point soma (as used by Arbor) and 3-point soma formats are now
+handled correctly
+- Added a dedicated `moose.loadSwc()` function for loading SWC files
+with optional electrical parameters (RM, RA, CM)
+- A warning is shown when the soma format is not compatible with the
+neuromorpho.org convention
+
+## Model Loading Improvements
+
+- SBML and NeuroML2 models can now be loaded directly using
+`moose.loadModel()` without needing separate format-specific function
+calls
+- Added explicit `moose.loadKkit()` function for loading GENESIS Kkit models
+- NeuroML2 model path is now configurable instead of being hardcoded
+
+## Python Interface Improvements
+
+- Consistent and informative string representation for all MOOSE Python
+objects, making debugging and interactive use easier
+- Accessing and inspecting MOOSE object fields from Python is now more
+consistent and predictable
+- `getFieldNames()` is now available directly on MOOSE objects
+
+## Bug Fixes
+
+- Fixed incorrect behaviour when setting attributes on element fields
+via Python
+- Fixed an intermittent issue where expression evaluation could fail
+unpredictably under certain conditions
+- Fixed missing runtime dependencies for NeuroML2 module (pint, scipy)
+
+## Build and Packaging
+
+- Python bindings rebuilt on nanobind, replacing pybind11, resulting
+in a cleaner and more maintainable codebase
+- Building MOOSE from source is now simpler, with fewer manual setup
+steps required
+- Updated CI workflows for the new build system
+
 # LICENSE
 
 MOOSE is released under GPLv3.
