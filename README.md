@@ -37,7 +37,7 @@ details about MOOSE simulator, visit https://moose.ncbs.res.in .
 
 # Installation
 
-See [docs/source/install/INSTALL.md](https://claude.ai/chat/docs/source/install/INSTALL.md) for instructions on installation.
+See [docs/source/install/INSTALL.md](docs/source/install/INSTALL.md) for instructions on installation.
 
 # Examples and Tutorials
 
