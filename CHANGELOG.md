@@ -4,18 +4,18 @@
 ## Unreleased
 *Unreleased changes go here*
 
-## [4.2.0] - 2026-03-30
+## [4.2.0] - 2026-03-31
 
 Kalakand
 
 ### Breaking Changes
-- Setting `dt` or `tick` directly on a MOOSE object from Python will now raise an error. Use the clock scheduling API to configure timesteps.
 - Some legacy and unused Python utility modules have been removed. If your scripts import from `moose.recording`, `moose.constants`, or `moose.method_utils`, you will need to update them.
 - `getFieldDict` has been renamed to `getFieldTypeDict` to better reflect what it returns.
 - `mooseReadKkitGenesis` has been renamed to `_loadModel` (internal). Use `moose.loadModel()` or `moose.loadKkit()` instead.
 
 ### Neuron Morphology (SWC) Improvements
 - Improved support for loading neuron morphologies — SWC files with 2-point soma (as used by Arbor) and 3-point soma formats are now handled correctly
+- Simplified SWC compartmentalization using uniform RA and RM (based on ShapeShifter)
 - Added a dedicated `moose.loadSwc()` function for loading SWC files explicitly, with optional electrical parameters (RM, RA, CM)
 - A warning is shown when the soma format is not compatible with the [neuromorpho.org](http://neuromorpho.org/) convention
 
@@ -26,6 +26,7 @@ Kalakand
 
 ### Python Interface Improvements
 - Consistent and informative string representation for all MOOSE Python objects, making debugging and interactive use easier
+- Clarified dt/tick behavior: dt is read-only for Neutral but read/write for other classes
 - Element fields now behave more like regular MOOSE vectors, with direct access to `id`, `oid`, and `owner` properties
 - `getFieldNames()` is now available directly on MOOSE objects
 

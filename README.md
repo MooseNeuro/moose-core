@@ -103,9 +103,6 @@ Now you can import moose in a Python script or interpreter with the statement:
 ```
 
 ## Breaking Changes
-- Setting `dt` or `tick` directly on a MOOSE object from Python will
-now raise an error. Refer to the documentation on how to correctly
-configure simulation timesteps.
 - Some legacy and unused Python utility modules have been removed.
 If your scripts import from `moose.recording`, `moose.constants`, or
 `moose.method_utils`, you will need to update them.
@@ -118,6 +115,7 @@ scripts use this function, update the name accordingly.
 - Improved support for loading neuron morphologies SWC files with
 2-point soma (as used by Arbor) and 3-point soma formats are now
 handled correctly
+- Simplified SWC compartmentalization using uniform RA and RM (based on ShapeShifter)
 - Added a dedicated `moose.loadSwc()` function for loading SWC files
 with optional electrical parameters (RM, RA, CM)
 - A warning is shown when the soma format is not compatible with the
@@ -135,6 +133,7 @@ calls
 
 - Consistent and informative string representation for all MOOSE Python
 objects, making debugging and interactive use easier
+- Clarified dt/tick behavior: dt is read-only for Neutral but read/write for other classes
 - Accessing and inspecting MOOSE object fields from Python is now more
 consistent and predictable
 - `getFieldNames()` is now available directly on MOOSE objects
