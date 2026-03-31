@@ -2,11 +2,10 @@
 # Utilties for loading NML and SBML models.
 # Authored and maintained by Harsha Rani
 
-from __future__ import absolute_import, print_function, division
 
 import os
 import moose._moose as _moose
-import moose.utils as mu
+from moose import neuroml2
 
 import logging
 
@@ -76,7 +75,7 @@ def mooseReadSBML(filepath, loadpath, solver="ee", validate="on"):
 
 
 def mooseWriteSBML(modelpath, filepath, sceneitems={}):
-    """Writes loaded model under modelpath to a file in SBML format. 
+    """Writes loaded model under modelpath to a file in SBML format.
     (helper function for writeSBML).
     """
     global sbmlImport_, sbmlError_
@@ -88,7 +87,7 @@ def mooseWriteSBML(modelpath, filepath, sceneitems={}):
 
 
 def mooseWriteKkit(modelpath, filepath, sceneitems={}):
-    """Writes  loded model under modelpath to a file in Kkit format. (inner
+    """Writes  loaded model under modelpath to a file in Kkit format. (inner
     helper function for moose.writeKkit)"""
     global kkitImport_, kkitImportErr_
     if not kkitImport_:
@@ -131,16 +130,70 @@ def mooseMergeChemModel(src, des):
     return _chemMerge.merge.mergeChemModel(src, des)
 
 
+def readcell_scrambled(filename, target, method="ee"):
+    """A special version for handling cases where a .p file has a line
+    with specified parent yet to be defined.
+
+    It creates a temporary file with a sorted version based on
+    connectivity, so that parent is always defined before child."""
+    pfile = open(filename, "r")
+    tmpfilename = filename + ".tmp"
+    graph = defaultdict(list)
+    data = {}
+    error = None
+    root = None
+    ccomment_started = False
+    current_compt_params = []
+    for line in pfile:
+        tmpline = line.strip()
+        if not tmpline or tmpline.startswith("//"):
+            continue
+        elif tmpline.startswith("/*"):
+            ccomment_started = True
+        if tmpline.endswith("*/"):
+            ccomment_started = False
+        if ccomment_started:
+            continue
+        if tmpline.startswith("*set_compt_param"):
+            current_compt_params.append(tmpline)
+            continue
+        node, parent, rest, = tmpline.partition(" ")
+        if parent == "none":
+            if root is None:
+                root = node
+            else:
+                raise ValueError(
+                    "Duplicate root elements: ",
+                    root,
+                    node,
+                    "> Cannot process any further.",
+                )
+                break
+        graph[parent].append(node)
+        data[node] = "\n".join(current_compt_params)
+
+    tmpfile = open(tmpfilename, "w")
+    stack = [root]
+    while stack:
+        current = stack.pop()
+        children = graph[current]
+        stack.extend(children)
+        tmpfile.write(data[current])
+    tmpfile.close()
+    ret = moose.loadModel(tmpfilename, target, method)
+    return ret
+
+
 # NML2 reader and writer function.
-def mooseReadNML2(modelpath, verbose=False):
+def mooseReadNML2(filepath, modelpath, verbose=False):
     """Read NeuroML model (version 2) and return reader object.
     """
     global nml2Import_, nml2ImportError_
     if not nml2Import_:
         raise RuntimeError("Could not load NML2 support:\n %s" % nml2ImportError_)
 
-    reader = _neuroml2.NML2Reader(verbose=verbose)
-    reader.read(modelpath)
+    reader = neuroml2.NML2Reader(verbose=verbose)
+    reader.read(filepath, modelpath)
     return reader
 
 
@@ -148,18 +201,15 @@ def mooseWriteNML2(outfile):
     raise NotImplementedError("Writing to NML2 is not supported yet")
 
 
-def mooseReadKkitGenesis(filename, modelpath, solverclass="gsl"):
-    """helper function. Called by `loadModel` function.
-
-    Only for genesis and cspace.
+def _loadModel(filename, modelpath, solverclass="gsl"):
+    """Private dispatcher
     """
 
     if not os.path.isfile(os.path.realpath(filename)):
-        raise FileNotFoundError("Model file '%s' found." % filename)
+        raise FileNotFoundError("Model file '%s' not found." % filename)
 
     ext = os.path.splitext(filename)[1]
     sc = solverclass.lower().replace(" ", "")
-
     if ext in [".swc", ".p"]:
         return _moose.loadModelInternal(filename, modelpath, solverclass)
 
@@ -176,4 +226,20 @@ def mooseReadKkitGenesis(filename, modelpath, solverclass="gsl"):
         if method != "ee":
             _chemUtil.add_Delete_ChemicalSolver.mooseAddChemSolver(modelpath, method)
         return ret
-    raise NameError("Unknown model extenstion '%s'" % ext)
+
+    if ext in (".xml", ".sbml"):
+        try:
+            model, _ = mooseReadSBML(filename, modelpath, solverclass)
+            return model
+        except Exception:
+            pass
+
+    if ext in (".xml", ".nml"):
+        try:
+            print('Loading NeuroML2 file', filename)
+            return mooseReadNML2(filename, modelpath)
+        except Exception:
+            pass
+
+
+    raise NameError(f"Unknown model type: {filename}'. Supported formats: GENESIS KKIT (.g), GENESIS CSPACE (.cspace), GENESIS PROTO (.p), SWC (.swc), SBML (.xml, .sbml), NeuroML (.xml, .nml)")

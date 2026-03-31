@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division
 
 # Description: class NeuroML for loading NeuroML from single file into MOOSE
 # Version 1.0 by Aditya Gilra, NCBS, Bangalore, India, 2011 for serial MOOSE
@@ -51,7 +50,7 @@ In [3]: moose.neuroml.loadNeuroML_L123('Generated.net.xml')
 
 import moose
 import moose.utils as mu
-from xml.etree import cElementTree as ET
+from xml.etree import ElementTree as ET
 from moose.neuroml.ChannelML import ChannelML
 from moose.neuroml.MorphML import MorphML
 from moose.neuroml.NetworkML import NetworkML

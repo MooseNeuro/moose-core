@@ -5,15 +5,15 @@
 // Author: subha
 // Created: Sat Oct 11 14:47:22 2014 (+0530)
 
-#include "Python.h"
 #include "../basecode/header.h"
+
 #include "PyRun.h"
 
-const int PyRun::RUNPROC = 1;
-const int PyRun::RUNTRIG = 2;
-const int PyRun::RUNBOTH = 0;
+const int PyRun::RUNPROC = 0;
+const int PyRun::RUNTRIG = 1;
+const int PyRun::RUNBOTH = 2;
 
-static SrcFinfo1<double> *outputOut()
+static SrcFinfo1<double>* outputOut()
 {
     static SrcFinfo1<double> outputOut(
         "output",
@@ -24,37 +24,46 @@ static SrcFinfo1<double> *outputOut()
     return &outputOut;
 }
 
-const Cinfo *PyRun::initCinfo()
+const Cinfo* PyRun::initCinfo()
 {
     static ValueFinfo<PyRun, string> runstring(
-        "runString", "String to be executed at each time step.", &PyRun::setRunString, &PyRun::getRunString);
+        "runString", "String to be executed at each time step.",
+        &PyRun::setRunString, &PyRun::getRunString);
 
     static ValueFinfo<PyRun, string> initstring(
-        "initString",
-        "String to be executed at initialization (reinit).",
-        &PyRun::setInitString,
-        &PyRun::getInitString);
+        "initString", "String to be executed at initialization (reinit).",
+        &PyRun::setInitString, &PyRun::getInitString);
 
     static ValueFinfo<PyRun, string> inputvar(
         "inputVar",
         "Name of local variable in which input balue is to be stored. Default"
         " is `input_` (to avoid conflict with Python's builtin function"
         " `input`).",
-        &PyRun::setInputVar,
-        &PyRun::getInputVar);
+        &PyRun::setInputVar, &PyRun::getInputVar);
 
     static ValueFinfo<PyRun, string> outputvar(
         "outputVar",
         "Name of local variable for storing output. Default is `output`.",
-        &PyRun::setOutputVar,
-        &PyRun::getOutputVar);
+        &PyRun::setOutputVar, &PyRun::getOutputVar);
 
-    static ValueFinfo<PyRun, int> mode("mode",
-                                       "Flag to indicate whether runString "
-                                       "should be executed for both trigger "
-                                       "and process, or one of them.",
-                                       &PyRun::setMode,
-                                       &PyRun::getMode);
+    static ValueFinfo<PyRun, int> mode(
+        "mode",
+        "Flag to indicate whether runString "
+        "should be executed for both trigger "
+        "and process, or one of them.  0: run only process, 1: run only "
+        "trigger, and 2: run both (default 0)",
+        &PyRun::setMode, &PyRun::getMode);
+
+    static ValueFinfo<PyRun, bool> evalOnReinit(
+        "evalOnReinit",
+        "Flag to indicate whether runString should be executed upon reinit().",
+        &PyRun::setEvalOnReinit, &PyRun::getEvalOnReinit);
+
+    static ReadOnlyValueFinfo<PyRun, double> outputValue(
+        "outputValue",
+        "Get the (computed) value stored in output variable (named "
+        "in `outputVar` field).",
+        &PyRun::getOutputValue);
 
     static DestFinfo trigger(
         "trigger",
@@ -62,8 +71,7 @@ const Cinfo *PyRun::initCinfo()
         " the incoming value in local variable named"
         " `input_`, which can be used in the"
         " `runString` (the underscore is added to avoid conflict with Python's"
-        " builtin function `input`). If debug is True, it prints the input"
-        " value.",
+        " builtin function `input`).",
         new EpFunc1<PyRun, double>(&PyRun::trigger));
 
     static DestFinfo run("run",
@@ -72,15 +80,14 @@ const Cinfo *PyRun::initCinfo()
                          new EpFunc1<PyRun, string>(&PyRun::run));
 
     static DestFinfo process(
-        "process",
-        "Handles process call. Runs the current runString.",
+        "process", "Handles process call. Runs the current runString.",
         new ProcOpFunc<PyRun>(&PyRun::process));
 
     static DestFinfo reinit("reinit",
                             "Handles reinit call. Runs the current initString.",
                             new ProcOpFunc<PyRun>(&PyRun::reinit));
 
-    static Finfo *processShared[] = {&process, &reinit};
+    static Finfo* processShared[] = {&process, &reinit};
     static SharedFinfo proc(
         "proc",
         "This is a shared message to receive Process messages "
@@ -90,60 +97,43 @@ const Cinfo *PyRun::initCinfo()
         "ProcInfo, which holds lots of information about current "
         "time, thread, dt and so on. The second entry is a MsgDest "
         "for the Reinit operation. It also uses ProcInfo. ",
-        processShared,
-        sizeof(processShared) / sizeof(Finfo *));
+        processShared, sizeof(processShared) / sizeof(Finfo*));
 
-    static Finfo *pyRunFinfos[] = {&runstring,  &initstring, &mode,
-                                   &inputvar,   &outputvar,  &trigger,
-                                   outputOut(), &run,        &proc, };
+    static Finfo* pyRunFinfos[] = {
+        &runstring,  &initstring, &mode,        &evalOnReinit,
+        &inputvar,   &outputvar,  &outputValue, &trigger,
+        outputOut(), &run,        &proc,
+    };
 
     static string doc[] = {
         "Name",        "PyRun",
         "Author",      "Subhasis Ray",
         "Description", "Runs Python statements from inside MOOSE."};
     static Dinfo<PyRun> dinfo;
-    static Cinfo pyRunCinfo("PyRun",
-                            Neutral::initCinfo(),
-                            pyRunFinfos,
-                            sizeof(pyRunFinfos) / sizeof(Finfo *),
-                            &dinfo,
-                            doc,
+    static Cinfo pyRunCinfo("PyRun", Neutral::initCinfo(), pyRunFinfos,
+                            sizeof(pyRunFinfos) / sizeof(Finfo*), &dinfo, doc,
                             sizeof(doc) / sizeof(string));
     return &pyRunCinfo;
 }
 
-static const Cinfo *pyRunCinfo = PyRun::initCinfo();
+static const Cinfo* pyRunCinfo = PyRun::initCinfo();
 
 PyRun::PyRun()
-    : mode_(0),
+    : evalOnReinit_(false),
+      mode_(0),
       initstr_(""),
       runstr_(""),
-      globals_(0),
-      locals_(0),
-      runcompiled_(0),
-      initcompiled_(0),
+      globals_(),
+      locals_(),
+      runcompiled_(),
+      initcompiled_(),
       inputvar_("input_"),
       outputvar_("output")
 {
-    locals_ = PyDict_New();
-    if (!locals_) {
-        cerr << "Could not initialize locals dict" << endl;
-        return;
-    }
-    PyObject *value = PyFloat_FromDouble(0.0);
-    if (!value && PyErr_Occurred()) {
-        PyErr_Print();
-        return;
-    }
-    if (PyDict_SetItemString(locals_, inputvar_.c_str(), value)) {
-        PyErr_Print();
-    }
 }
 
 PyRun::~PyRun()
 {
-    Py_XDECREF(globals_);
-    Py_XDECREF(locals_);
 }
 
 void PyRun::setRunString(string statement)
@@ -168,7 +158,6 @@ string PyRun::getInitString() const
 
 void PyRun::setInputVar(string name)
 {
-    PyDict_DelItemString(locals_, inputvar_.c_str());
     inputvar_ = name;
 }
 
@@ -179,13 +168,22 @@ string PyRun::getInputVar() const
 
 void PyRun::setOutputVar(string name)
 {
-    PyDict_DelItemString(locals_, outputvar_.c_str());
     outputvar_ = name;
 }
 
 string PyRun::getOutputVar() const
 {
     return outputvar_;
+}
+
+void PyRun::setEvalOnReinit(bool flag)
+{
+    evalOnReinit_ = flag;
+}
+
+bool PyRun::getEvalOnReinit() const
+{
+    return evalOnReinit_;
 }
 
 void PyRun::setMode(int flag)
@@ -198,150 +196,164 @@ int PyRun::getMode() const
     return mode_;
 }
 
-void PyRun::trigger(const Eref &e, double input)
+double PyRun::getOutputValue() const
 {
-    if (!runcompiled_) {
-        return;
+    if(locals_.contains(outputvar_.c_str())) {
+        return nb::cast<double>(locals_[outputvar_.c_str()]);
     }
-    if (mode_ == 1) {
+    throw runtime_error("Output variable `" + outputvar_ +
+                        "` not set in Python statements.");
+}
+void PyRun::setGlobals(nb::dict globals)
+{
+    globals_ = globals;
+}
+
+nb::dict PyRun::getGlobals() const
+{
+    return globals_;
+}
+
+void PyRun::setLocals(nb::dict locals)
+{
+    locals_ = locals;
+}
+
+nb::dict PyRun::getLocals() const
+{
+    return locals_;
+}
+
+void PyRun::trigger(const Eref& e, double input)
+{
+    if(!runcompiled_.is_valid() || mode_ == RUNPROC) {
         return;
     }
 
-    PyObject *value = PyDict_GetItemString(locals_, inputvar_.c_str());
-    if (value) {
-        Py_DECREF(value);
-    }
-    value = PyFloat_FromDouble(input);
-    if (!value && PyErr_Occurred()) {
-        PyErr_Print();
-    }
-    if (PyDict_SetItemString(locals_, inputvar_.c_str(), value)) {
-        PyErr_Print();
-    }
-    PyEval_EvalCode(runcompiled_, globals_, locals_);
-    if (PyErr_Occurred()) {
-        PyErr_Print();
-    }
-    value = PyDict_GetItemString(locals_, outputvar_.c_str());
-    if (value) {
-        double output = PyFloat_AsDouble(value);
-        if (PyErr_Occurred()) {
-            PyErr_Print();
-        } else {
+    try {
+        locals_[inputvar_.c_str()] = nb::cast(input);
+
+        // Execute the compiled code
+        PyObject* result =
+            PyEval_EvalCode(runcompiled_.ptr(), globals_.ptr(), locals_.ptr());
+        if(!result) {
+            throw nb::python_error();
+        }
+        Py_DECREF(result);
+
+        // Get output variable
+        if(locals_.contains(outputvar_.c_str())) {
+            double output = nb::cast<double>(locals_[outputvar_.c_str()]);
             outputOut()->send(e, output);
         }
     }
-}
-
-void PyRun::run(const Eref &e, string statement)
-{
-    PyRun_SimpleString(statement.c_str());
-    PyObject *value = PyDict_GetItemString(locals_, outputvar_.c_str());
-    if (value) {
-        double output = PyFloat_AsDouble(value);
-        if (PyErr_Occurred())
-            PyErr_Print();
-        else
-            outputOut()->send(e, output);
+    catch(nb::python_error& err) {
+        std::cerr << "ERROR: PyRun::trigger(): " << err.what() << std::endl;
+        throw;
     }
 }
 
-void PyRun::process(const Eref &e, ProcPtr p)
+void PyRun::run(const Eref& e, string statement)
 {
-    // Make sure the get the GIL. Ksolve/Gsolve can be multithreaded.
-    PyGILState_STATE gstate = PyGILState_Ensure();
+    try {
+        nb::exec(nb::str(statement.c_str()), globals_, locals_);
+        if(locals_.contains(outputvar_.c_str())) {
+            double output = nb::cast<double>(locals_[outputvar_.c_str()]);
+            outputOut()->send(e, output);
+        }
+    }
+    catch(nb::python_error& err) {
+        cerr << "ERROR: PyRun::run(): " << err.what() << endl;
+        throw;
+    }
+}
 
-    // PyRun_String(runstr_.c_str(), 0, globals_, locals_);
-    // PyRun_SimpleString(runstr_.c_str());
-    if (!runcompiled_ || mode_ == 2) {
+void PyRun::process(const Eref& e, ProcPtr p)
+{
+    if(!runcompiled_.is_valid() || mode_ == RUNTRIG) {
         return;
     }
 
-    PyEval_EvalCode(runcompiled_, globals_, locals_);
-    if (PyErr_Occurred()) {
-        PyErr_Print();
-        return;
-    }
+    // RAII-based GIL acquisition - released when scope exits
+    nb::gil_scoped_acquire gil;
 
-    PyObject *value = PyDict_GetItemString(locals_, outputvar_.c_str());
-    if (value) {
-        double output = PyFloat_AsDouble(value);
-        if (PyErr_Occurred()) {
-            PyErr_Print();
-            return;
-        } else
+    try {
+        PyObject* result =
+            PyEval_EvalCode(runcompiled_.ptr(), globals_.ptr(), locals_.ptr());
+        if(!result) {
+            throw nb::python_error();
+        }
+        Py_DECREF(result);
+
+        if(locals_.contains(outputvar_.c_str())) {
+            double output = nb::cast<double>(locals_[outputvar_.c_str()]);
             outputOut()->send(e, output);
+        }
     }
-
-    PyGILState_Release(gstate);
+    catch(nb::python_error& err) {
+        std::cerr << "ERROR: PyRun::process(): " << err.what() << std::endl;
+        throw;
+    }
+    // GIL automatically released here when 'gil' goes out of scope
 }
 
-/**
-   This is derived from:
-   http://effbot.org/pyfaq/how-do-i-tell-incomplete-input-from-invalid-input.htm
- */
-void handleError(bool syntax)
+void PyRun::reinit(const Eref& e, ProcPtr p)
 {
-    PyObject *exc, *val, *trb;
-    char *msg;
 
-    if (syntax && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
-        PyErr_Fetch(&exc, &val, &trb); /* clears exception! */
+    nb::gil_scoped_acquire gil;
 
-        if (PyArg_ParseTuple(val, "sO", &msg, &trb) &&
-            !strcmp(msg, "unexpected EOF while parsing")) /* E_EOF */
-        {
-            Py_XDECREF(exc);
-            Py_XDECREF(val);
-            Py_XDECREF(trb);
-        } else /* some other syntax error */
-        {
-            PyErr_Restore(exc, val, trb);
-            PyErr_Print();
+    try {
+        // Initialize globals from __main__ if not set
+        if(!globals_.is_valid() || globals_.empty()) {
+            nb::object main_module = nb::module_::import_("__main__");
+            globals_ =
+                nb::borrow<nb::dict>(PyModule_GetDict(main_module.ptr()));
         }
-    } else /* some non-syntax error */
-    {
-        PyErr_Print();
-    }
-}
+        if(!globals_.contains("__builtins__")) {
+            globals_["__builtins__"] = nb::borrow(PyEval_GetBuiltins());
+        }
+        // Initialize locals if not set
+        if(!locals_.is_valid()) {
+            locals_ = nb::dict();
+        }
+        // Compile and run init string
+        if(!initstr_.empty()) {
+            PyObject* compiled = Py_CompileString(
+                initstr_.c_str(), "moose.PyRun::reinit", Py_file_input);
+            if(!compiled) {
+                std::cerr << "Error compiling initString" << std::endl;
+                throw nb::python_error();
+            }
+            initcompiled_ = nb::steal(compiled);
 
-void PyRun::reinit(const Eref &e, ProcPtr p)
-{
-    PyObject *main_module;
-    if (globals_ == NULL) {
-        main_module = PyImport_AddModule("__main__");
-        globals_ = PyModule_GetDict(main_module);
-        Py_XINCREF(globals_);
-    }
-    if (locals_ == NULL) {
-        locals_ = PyDict_New();
-        if (!locals_) {
-            cerr << "Could not initialize locals dict" << endl;
+            PyObject* result = PyEval_EvalCode(initcompiled_.ptr(),
+                                               globals_.ptr(), locals_.ptr());
+            if(!result) {
+                throw nb::python_error();
+            }
+            Py_DECREF(result);
+        }
+
+        // Compile and run runString
+        PyObject* compiled = Py_CompileString(
+            runstr_.c_str(), "moose.PyRun::reinit", Py_file_input);
+        if(!compiled) {
+            std::cerr << "Error compiling runString" << std::endl;
+            throw nb::python_error();
+        }
+        runcompiled_ = nb::steal(compiled);
+        /// init should only run `initStr`
+        if(evalOnReinit_) {
+            PyObject* result = PyEval_EvalCode(initcompiled_.ptr(),
+                                               globals_.ptr(), locals_.ptr());
+            if(!result) {
+                throw nb::python_error();
+            }
+            Py_DECREF(result);
         }
     }
-    initcompiled_ = (PYCODEOBJECT *)Py_CompileString(
-        initstr_.c_str(), get_program_name().c_str(), Py_file_input);
-    if (!initcompiled_) {
-        cerr << "Error compiling initString" << endl;
-        handleError(true);
-    } else {
-        PyEval_EvalCode(initcompiled_, globals_, locals_);
-        if (PyErr_Occurred()) {
-            PyErr_Print();
-        }
-    }
-
-    assert(runstr_.size() > 0);
-
-    runcompiled_ = (PYCODEOBJECT *)Py_CompileString(
-        runstr_.c_str(), get_program_name().c_str(), Py_file_input);
-    if (!runcompiled_) {
-        cerr << "Error compiling runString" << endl;
-        handleError(true);
-    } else {
-        PyEval_EvalCode(runcompiled_, globals_, locals_);
-        if (PyErr_Occurred()) {
-            PyErr_Print();
-        }
+    catch(nb::python_error& err) {
+        std::cerr << "ERROR: PyRun::reinit(): " << err.what() << std::endl;
+        throw;
     }
 }

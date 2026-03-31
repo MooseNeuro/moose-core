@@ -34,7 +34,7 @@ def test_ksolve():
     stoich.compartment = compt
     stoich.ksolve = ksolve
     ksolve.numThreads = 2
-    stoich.path = '/compt/##'
+    stoich.reacSystemPath = '/compt/##'
     moose.reinit()
     print( '[INFO] Using method = %s' % ksolve.method )
     t1 = time.time()

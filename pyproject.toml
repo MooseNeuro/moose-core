@@ -4,12 +4,14 @@ requires = [
          'meson>=1.4',
          'ninja',
          'meson-python>=0.14',
-         'pybind11[global]']
+         #'pybind11[global]']
+         'nanobind']
+         
 
 [project]
 name = 'pymoose'
 # dynamic = ['version']
-version = '4.1.4'
+version = '4.2.0'
 description = 'Python scripting interface of MOOSE Simulator (https://moose.ncbs.res.in)'
 readme = 'README.md'
 classifiers = [
@@ -56,9 +58,10 @@ maintainers = [
     {name = 'Upinder S. Bhalla', email = 'bhalla@ncbs.res.in'},
     {name = 'Subhasis Ray', email = 'ray.subhasis@gmail.com'},
     {name = 'G.V. Harsharani', email = 'hrani@ncbs.res.in'},
+    {name = 'Jayesh Poojary', email = 'jacksray786@gmail.com'},
     ]
 
-dependencies = ['numpy>=1.23', 'matplotlib', 'vpython', 'python-libsbml', 'pyneuroml']
+dependencies = ['numpy>=1.23', 'matplotlib', 'vpython', 'python-libsbml', 'pyneuroml', 'pint', 'scipy']
 
 [project.urls]
 homepage = 'https://mooseneuro.github.io/'

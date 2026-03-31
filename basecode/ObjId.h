@@ -42,24 +42,11 @@ public:
     /**
      * Creates a ObjId using specified Id and DataIndex
      */
-    ObjId( Id i, unsigned int d, unsigned int f)
+    ObjId( Id i, unsigned int d=0, unsigned int f=0)
         : id( i ), dataIndex( d ), fieldIndex( f )
     {
         ;
     }
-
-    ObjId( Id i, unsigned int d)
-        : id( i ), dataIndex( d ), fieldIndex(0)
-    {
-        ;
-    }
-
-    ObjId( Id i )
-        : id( i ), dataIndex( 0 ), fieldIndex( 0 )
-    {
-        ;
-    }
-
     /**
      * Creates an ObjId by reading the path string
      * Returns bad on failure.

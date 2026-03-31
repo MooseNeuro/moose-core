@@ -44,7 +44,7 @@ MooseParser::MooseParser()
     symbolTable_.add_constants();
     init_symtab(symbolTable_);
     expression_.register_symbol_table(symbolTable_);
-    SetExpr(expr_, false);
+    SetExpr(expr_);
 }
 
 MooseParser::~MooseParser()
@@ -134,8 +134,11 @@ void MooseParser::PrintSymbolTable(void) const
 bool MooseParser::DefineVar( const string varName, double* const val)
 {
     // Use in copy assignment.
-    if (symbolTable_.is_variable(varName))
-        symbolTable_.remove_variable(varName);
+    auto* existing = symbolTable_.get_variable(varName);
+    if (existing){
+        existing->ref() = *val;
+        return true;
+    }
     return symbolTable_.add_variable(varName, *val);
 }
 
@@ -167,7 +170,7 @@ void MooseParser::DefineFun1( const string& funcName, double (&func)(double) )
  *
  * @Param user_expr
  *
- * @Returns   
+ * @Returns
  */
 /* ----------------------------------------------------------------------------*/
 string MooseParser::Reformat( const string user_expr )
@@ -196,11 +199,11 @@ string MooseParser::Reformat( const string user_expr )
  * @Returns
  */
 /* ----------------------------------------------------------------------------*/
-bool MooseParser::SetExpr(const string& user_expr, bool allow_unknown)
+bool MooseParser::SetExpr(const string& user_expr)
 {
     ASSERT_FALSE( user_expr.empty(), "Empty expression" );
     expr_ = Reformat(user_expr);
-    return CompileExpr(allow_unknown);
+    return CompileExpr();
 }
 
 bool MooseParser::ParseVariables(const string& expr, vector<string>& vars)
@@ -256,7 +259,7 @@ bool MooseParser::ParseVariables(const string& expr, vector<string>& vars)
  * Exception includes a detailed diagnostic.
  */
 /* ----------------------------------------------------------------------------*/
-bool MooseParser::CompileExpr(bool allow_unknown)
+bool MooseParser::CompileExpr()
 {
     // User should make sure that symbol table has been setup. Do not raise
     // exception here. User can set expression again.
@@ -267,9 +270,7 @@ bool MooseParser::CompileExpr(bool allow_unknown)
     // expression_.release();
     // symbolTable_.clear_variables();
     Parser::parser_t parser;
-    if (allow_unknown) {
-        parser.enable_unknown_symbol_resolver();
-    }
+    parser.enable_unknown_symbol_resolver();
     valid_ = parser.compile(expr_, expression_);
     // This should never occur, as we are running this as a second pass
     if (!valid_) {
@@ -317,8 +318,7 @@ double MooseParser::Eval(bool check) const
 {
     if(! valid_)
     {
-        cout << "MooseParser::Eval: Warn: Invalid parser state." << endl;
-        return 0.0;
+        throw runtime_error("MooseParser::Eval: Invalid parser state.");
     }
 
     if(expr_.empty())

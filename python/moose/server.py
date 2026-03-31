@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
 
 # This is moose.server.
 # It accepts simulation request on a specified TCP port (default 31417).

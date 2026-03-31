@@ -129,7 +129,7 @@ bool findModelParent( Id cwe, const string& path,
 }
 
 /// Returns the Id of the loaded model.
-Id Shell::doLoadModel( const string& fileName, const string& modelPath, const string& solverClass )
+Id Shell::doLoadModel( const string& fileName, const string& modelPath, const string& solverClass, double RM, double RA, double CM)
 {
     ifstream fin( fileName.c_str() );
     if ( !fin )
@@ -162,7 +162,7 @@ Id Shell::doLoadModel( const string& fileName, const string& modelPath, const st
         {
             model = doCreate( "Neuron", parentId, modelName, 1 );
         }
-        rs.build( model, 0.5e-3, 1.0, 1.0, 0.01 );
+        rs.build( model, 0.5e-3, RM, RA, CM );
         return model;
     }
     case KKIT:

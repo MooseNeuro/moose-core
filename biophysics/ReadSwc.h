@@ -26,9 +26,11 @@ class ReadSwc
 		bool validate() const;
 		void assignKids();
 		void cleanZeroLength();
+        void cleanMultipointSoma();
 		void parseBranches();
-		void traverseBranch( const SwcSegment& s, double &len, double& L,
-					   vector< int >& cable	) const;
+        void traverseBranch(const SwcSegment& s, double& len, double& L,
+                            vector<int>& cable) const;
+            
 		bool build( Id parent,
 					double lambda, double RM, double RA, double CM );
 		void diagnostics() const;

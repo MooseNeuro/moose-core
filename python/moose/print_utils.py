@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # A library with some print functions. Very useful during development.
 
-from __future__ import print_function, division, absolute_import
 
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2013, NCBS Bangalore"
@@ -84,7 +83,7 @@ def dump(label, msg, frame=None, exception=None):
         prefix = ' '.join(['' for x in range(stackLength)])
     '''
 
-    if type(msg) == list:
+    if isinstance(msg, list):
         if len(msg) > 1:
             msg = [msg[0]] + ["`|- {0}`".format(x) for x in msg[1:]]
         msg ="\n\t".join(msg)
@@ -97,7 +96,7 @@ def dump(label, msg, frame=None, exception=None):
         filename = "/".join(filename.split("/")[-2:])
         print((prefix+"@{0}:{1} {2}".format(filename, frame.f_lineno, colored(msg, label))))
     if exception:
-        print((" [Expcetion] {0}".format(exception)))
+        print((" [Exception] {0}".format(exception)))
 
 def info(msg):
     dump("INFO", msg)

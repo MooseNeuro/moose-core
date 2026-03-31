@@ -25,6 +25,7 @@ __updated__          = "Jan 08 2020"
 # 2017
 # Aug 8 : All the moose object which doesn't have compartment are not written. Error message are appended
 
+import ast
 import sys
 import random
 import re
@@ -291,7 +292,7 @@ def writeEnz( modelpath,f,sceneitems,deletedanglingObj):
     error = ""
     enzList = moose.wildcardFind(modelpath+'/##[0][ISA=EnzBase]')
     enzListnew = []
-    if deletedanglingObj == True:
+    if deletedanglingObj:
         for enz in enzList:
             if (enz.numSubstrates != 0 and enz.numProducts != 0):
                 enzListnew.append(enz)
@@ -405,7 +406,7 @@ def writeReac(modelpath,f,sceneitems,deletedanglingObj):
     error = ""
     reacList = moose.wildcardFind(modelpath+'/##[0][ISA=Reac]')
     reacListnew = []
-    if deletedanglingObj == True:
+    if deletedanglingObj:
         for reac in reacList:
             if (reac.numProducts != 0 and reac.numSubstrates != 0):
                 reacListnew.append(reac)
@@ -543,7 +544,7 @@ def storePlotMsgs( tgraphs,f):
                 # else:
                 #     slash1 = graph.path.find('/',slash)
                 #     tabPath = "/graphs/conc1" +graph.path[slash1:len(graph.path)]
-                if foundConc == True:
+                if foundConc:
                     tabPath = "/"+graph.path[slash:len(graph.path)]
                 else:
                     slash1 = graph.path.find('/',slash)
@@ -575,7 +576,7 @@ def writeplot( tgraphs,f ):
                             (graphs.path.find('conc3') > -1 ) or
                             (graphs.path.find('conc4') > -1) ):
                     foundConc = False
-                if foundConc == True:
+                if foundConc:
                     tabPath = "/"+graphs.path[slash:len(graphs.path)]
                 else:
                     slash1 = graphs.path.find('/',slash)
@@ -673,7 +674,7 @@ def getColorCheck(color,GENESIS_COLOR_SEQUENCE):
             index = index//2
             return index
         elif color.startswith("("):
-            color = eval(color)[0:3]
+            color = ast.literal_eval(color)[0:3]
             index = nearestColorIndex(color, GENESIS_COLOR_SEQUENCE)
             #This is because in genesis file index of the color is half
             index = index//2

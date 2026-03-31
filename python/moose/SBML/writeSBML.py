@@ -181,7 +181,7 @@ def mooseWriteSBML(modelpath, filename, sceneitems={}):
     compterrors =""
     compartexist, groupInfo,compterrors = writeCompt(modelpath, cremodel_)
     
-    if compartexist == True:
+    if compartexist:
         species = writeSpecies( modelpath,cremodel_,sbmlDoc,sceneitems,groupInfo)
         if species:
             writeFunc(modelpath, cremodel_)
@@ -822,7 +822,7 @@ def processRateLaw(objectCount, cremodel, noofObj, typesp, mobjEnz):
         nameIndex = value.name + "_" + \
             str(value.idValue) + "_" + str(value.dataIndex) + "_"
         clean_name = (str(idBeginWith(convertSpecialChar(nameIndex))))
-        if mobjEnz == True:
+        if mobjEnz:
             nameList_.append(clean_name)
 
         if typesp == "sub":
@@ -861,7 +861,7 @@ def listofname(reacSub, mobjEnz):
         nameIndex = value.name + "_" + \
             str(value.idValue) + "_" + str(value.dataIndex) + "_"
         clean_name = convertSpecialChar(nameIndex)
-        if mobjEnz == True:
+        if mobjEnz:
             nameList_.append(clean_name)
 
 

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
 
 # Some network analysis utilities.
 
@@ -38,7 +37,7 @@ def morphologyToGraphviz(filename=None, pat='/##[TYPE=Compartment]'):
 
     compList = _moose.wildcardFind(pat)
     if not compList:
-        logger_.warn("No compartment found")
+        logger_.warning("No compartment found")
 
     dot = []
     dot.append("digraph G {")

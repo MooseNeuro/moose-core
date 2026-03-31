@@ -71,7 +71,7 @@ def checkFile_Obj_str(file_Obj_str):
     loaded = False
     found = False
     if isinstance(file_Obj_str, str):
-        if os.path.isfile(file_Obj_str) == True:
+        if os.path.isfile(file_Obj_str):
             model,loaded = loadModels(file_Obj_str)
             found = True
         elif file_Obj_str.find('/') != -1 :
@@ -420,7 +420,7 @@ def poolMerge(comptS,comptD,poolNotcopiedyet):
         for spool in spoollist:
             if spool.name not in [dpool.name for dpool in dpoollist]:
                 copied = copy_deleteUnlyingPoolObj(spool,dpath)
-                if copied == False:
+                if not copied:
                     #hold it for later, this pool may be under enzyme, as cplx
                     poolNotcopiedyet.append(spool)
     

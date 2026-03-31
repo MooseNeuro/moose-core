@@ -77,9 +77,9 @@ public:
 
     void DefineFun1( const string& funcName, double (&func)(double) );
 
-  bool SetExpr(const string& expr, bool allow_unknown=false);
+    bool SetExpr(const string& expr);
 
-    bool CompileExpr(bool allow_uknown);
+    bool CompileExpr();
 
     // Reformat the expression to meet TkExpr.
     static string Reformat( const string user_expr );

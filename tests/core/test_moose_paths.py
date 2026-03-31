@@ -11,7 +11,6 @@ def test_path():
             , '//a'
             , '/a/b'
             , '/a/b/'
-            , '//a//b/////'
             , '/a/./b'
             , '///a/././b'
             ]
@@ -27,6 +26,13 @@ def test_path():
         else:
             p = moose.element(p)
         print(p)
+
+    path = '//a//b/////'
+    try:
+        p = moose.Neutral(path)
+        assert False, 'Expected a value error'
+    except ValueError:
+        pass
 
     foundPath = []
     for p in moose.wildcardFind('/##'):

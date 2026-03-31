@@ -7,9 +7,9 @@
 # Maintainer:
 # Created: Thu Aug 23 17:34:55 2012 (+0530)
 # Version:
-# Last-Updated: Mon Sep  3 17:55:03 2012 (+0530)
-#           By: subha
-#     Update #: 618
+# Last-Updated: Sun Mar 22 13:25:22 2026 (+0530)
+#           By: Subhasis Ray
+#     Update #: 621
 # URL:
 # Keywords:
 # Compatibility:
@@ -84,11 +84,16 @@
 #
 
 # Code:
-from __future__ import print_function, division, absolute_import
-try:
-    from future_builtins import zip
-except ImportError:
-    pass
+
+import ast
+import warnings
+
+warnings.warn(
+    "This submodule is deprecated and will be removed in a future release.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 import moose
 import numpy as np
 import h5py as h5
@@ -318,7 +323,7 @@ def restorestate(filename):
         sorted_paths = sorted(typeinfo['path'], key=lambda x: x.count('/'))
         for path in sorted_paths:
             name = path.rpartition('/')[-1].partition('[')[0]
-            moose.vec(parentdict[path] + '/' + name, eval(dimsdict[path]), classdict[path])
+            moose.vec(parentdict[path] + '/' + name, ast.literal_eval(dimsdict[path]), classdict[path])
         for key in fd['/elements']:
             dset = fd['/elements/'][key][:]
             fieldnames = dset.dtype.names

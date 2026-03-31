@@ -10,20 +10,20 @@ except ImportError as e:
     pass
 
 def library1():
-    import moose.genesis 
-    import moose.SBML 
+    import moose.genesis
+    import moose.SBML
     import moose.chemMerge
-    import moose.utils 
+    import moose.utils
     import moose.network_utils
     print('done')
 
-    p1 = moose.le()
+    p1 = [ch.id.path for ch in moose.pwe().children]
     a = moose.Pool('/a')
     for i in range(10):
         moose.Pool('/a/p%d'%i)
-    p2 = moose.le()
+    p2 = [ch.id.path for ch in moose.pwe().children]
     assert set(p2) - set(p1) == set(['/a']), set(p2) - set(p1)
-    aa = moose.le(a)
+    aa = a.children
     assert len(aa) == 10
 
     try:
