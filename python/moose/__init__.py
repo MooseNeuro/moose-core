@@ -29,6 +29,7 @@ import atexit
 import moose._moose as _moose
 from moose import model_utils
 from moose.moose_constants import *
+from moose.swc_utils import condense_swc
 
 
 __moose_classes__ = {}
@@ -289,28 +290,50 @@ def loadModel(filename, modelpath, solverclass="gsl"):
     return model_utils._loadModel(filename, modelpath, solverclass)
 
 
-def loadSwc(filename, modelpath, RM=1.0, RA=1.0, CM=0.01):
+def loadSwc(
+    filename,
+    modelpath,
+    RM=1.0,
+    RA=1.0,
+    CM=0.01,
+    max_len=0.1,
+    f=0.0,
+    rad_diff=0.1,
+):
     """Load SWC morphology file with explicit biophysical parameters.
 
     Parameters
     ----------
     filename: str
-        model description file.
+      model description file.
     modelpath: str
-        moose path for the top level element of the model to be created.
+      moose path for the top level element of the model to be created.
     RM : float
         Specific membrane resistance (Ohm·m²), default 1.0
     RA : float
         Specific axial resistance (Ohm·m), default 1.0
     CM : float
         Specific membrane capacitance (F/m²), default 0.01
+    max_len : float or None
+        Condense compartments so none exceeds this electrotonic length.
+        Uses RM/RA/CM for the Hendrickson (2011) equations. Default 0.1.
+        Pass None to skip condensation and load coordinates as-is.
+    f : float
+        Frequency [Hz] for AC lambda; 0 = DC lambda (default).
+    rad_diff : float
+        Max fractional radius difference for merging (default 0.1 = 10%).
 
     Returns
     -------
     melement
         moose.element if succcessful else None.
     """
+    if max_len is not None:
+        filename = condense_swc(
+            filename, RM, RA, CM, max_len=max_len, f=f, rad_diff=rad_diff
+        )
     return _moose.loadSwcInternal(filename, modelpath, RM, RA, CM)
+
 
 def loadKkit(filename, modelpath, solverclass="gsl"):
     """Load Kkit model
