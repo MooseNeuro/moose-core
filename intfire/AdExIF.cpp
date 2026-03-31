@@ -24,8 +24,8 @@ const Cinfo* AdExIF::initCinfo()
 		"Name", "AdExIF",
 		"Author", "Aditya Gilra",
 		"Description", "Leaky Integrate-and-Fire neuron with Exponential spike rise"
-        " and adaptation via an adapting current w."
-        "Rm*Cm * dVm/dt = -(Vm-Em) + deltaThresh * exp((Vm-thresh)/deltaThresh) + Rm*I - w "
+        " and adaptation via an adapting current w.\n"
+        "Rm*Cm * dVm/dt = -(Vm-Em) + deltaThresh * exp((Vm-thresh)/deltaThresh) + Rm*I - w\n"
         "tau_w * d w /dt = a0*(Vm-Em) - w "
         "at each spike, w -> w + b0 "
 	};
