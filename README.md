@@ -108,24 +108,17 @@ If your scripts import from `moose.recording`, `moose.constants`, or
 `moose.method_utils`, you will need to update them.
 - `getFieldDict` has been renamed to `getFieldTypeDict`. If your
 scripts use this function, update the name accordingly.
-- `mooseReadKkitGenesis` has been renamed to `_loadModel` (internal). Use `moose.loadModel()` or `moose.loadKkit()` instead.
 
 ## Neuron Morphology (SWC) Improvements
 
-- Improved support for loading neuron morphologies SWC files with
+- Improved support for loading neuron morphologies: SWC files with
 2-point soma (as used by Arbor) and 3-point soma formats are now
 handled correctly
-- Simplified SWC compartmentalization using uniform RA and RM (based on ShapeShifter)
+- Automated SWC compartmentalization using uniform RA and RM based on [ShapeShifter](https://github.com/neurord/ShapeShifter)
 - Added a dedicated `moose.loadSwc()` function for loading SWC files
 with optional electrical parameters (RM, RA, CM)
-- A warning is shown when the soma format is not compatible with the
-neuromorpho.org convention
 
 ## Model Loading Improvements
-
-- SBML and NeuroML2 models can now be loaded directly using
-`moose.loadModel()` without needing separate format-specific function
-calls
 - Added explicit `moose.loadKkit()` function for loading GENESIS Kkit models
 - NeuroML2 model path is now configurable instead of being hardcoded
 
@@ -133,10 +126,7 @@ calls
 
 - Consistent and informative string representation for all MOOSE Python
 objects, making debugging and interactive use easier
-- Clarified dt/tick behavior: dt is read-only for Neutral but read/write for other classes
-- Accessing and inspecting MOOSE object fields from Python is now more
-consistent and predictable
-- `getFieldNames()` is now available directly on MOOSE objects
+- `getFieldNames()` is now available as a method in MOOSE objects
 
 ## Bug Fixes
 
@@ -149,7 +139,7 @@ unpredictably under certain conditions
 ## Build and Packaging
 
 - Python bindings rebuilt on nanobind, replacing pybind11, resulting
-in a cleaner and more maintainable codebase
+in faster and smaller code
 - Building MOOSE from source is now simpler, with fewer manual setup
 steps required
 - Updated CI workflows for the new build system
