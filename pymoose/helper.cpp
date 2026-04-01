@@ -250,13 +250,13 @@ string getDoc(const string &query)
 bool setFieldGeneric(const ObjId &oid, const string &fieldName,
                      const nb::object &val)
 {
-    if(fieldName == "dt") {
-        throw nb::attribute_error(
-            "Read-only property. Use `moose.setcClock(...)`");
-    }
-    else if(fieldName == "tick") {
-        throw nb::attribute_error("Read-only property. Use `moose.useClock(...)`");
-    }
+    // if(fieldName == "dt") {
+    //     throw nb::attribute_error(
+    //         "Read-only property. Use `moose.setcClock(...)`");
+    // }
+    // else if(fieldName == "tick") {
+    //     throw nb::warning("Setting . Use `moose.useClock(...)`");
+    // }
     auto cinfo = oid.element()->cinfo();
     auto finfo = cinfo->findFinfo(fieldName);
     if(!finfo) {

@@ -26,6 +26,8 @@ pip install pymoose
 - Activates the environment to use it
 - Installs MOOSE using pip within this environment
 
+*Warning: The path for your anaconda installation should not have any space in it. For example, if your user id has a space, so that your home directory is "C:\Users\firstname lastname" then installation system for Python modules will break. In that case make a separate directory, like "C:\anaconda" and specify this path in the installation prompt for anaconda/miniconda/micromamba.*
+
 ## Installing from a binary wheel using `pip`
 
 Binary wheels for MOOSE are available on the [GitHub releases page](https://github.com/MooseNeuro/moose-core/releases). You can download a wheel suitable for your platform and install it directly with pip.
