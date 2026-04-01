@@ -52,7 +52,7 @@ You may want to use a system like Anaconda (or [Miniforge with Mamba, or Microma
 
 If you want to keep things slim, **micromamba** may be ideal because it is a single statically linked C++ executable and does not install any base environment.
 
-In this guide, `conda` command can be replaced by `mamba` or `micromamba` if you are using one of those systems.
+In this guide, `micromamba` command can be replaced by `mamba` or `micromamba` if you are using one of those systems.
 
 ### Installing Micromamba (Step-by-Step)
 
@@ -89,7 +89,7 @@ Briefly:
    ```powershell
    md "micromamba"
    ```
-
+   *Warning: The path should not have any space in it. For example, if your user id has a space, so that your home directory is "C:\Users\firstname lastname\" then installation system for Python modules will break. In that case make a separate directory, like "C:\micromamba" and specify this path in the installation prompt for micromamba/anaconda/miniconda.*
 6. Update PowerShell initialization to include micromamba:
    ```powershell
    .\micromamba.exe shell init -s powershell -r "$HOME\micromamba"
@@ -140,7 +140,7 @@ This should show a list of existing Python environments, which usually includes 
 To create an environment, open Anaconda command prompt and enter:
 
 ```powershell
-conda create -n moose meson ninja meson-python gsl hdf5 numpy matplotlib vpython pkg-config clang -c conda-forge
+micromamba create -n moose meson ninja meson-python gsl hdf5 numpy matplotlib vpython pkg-config clang -c conda-forge
 ```
 
 > **Note:** Please make sure you are using the `conda-forge` channel (`-c conda-forge`) for installing GSL and not the Anaconda `defaults`. The latter causes linking errors.
@@ -150,7 +150,7 @@ This will create an environment named `moose`. In some terminals (Windows `cmd`)
 Then activate this environment for your build:
 
 ```powershell
-conda activate moose
+micromamba activate moose
 ```
 
 ---
