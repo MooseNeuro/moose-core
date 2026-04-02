@@ -661,3 +661,16 @@ def cleanup(verbose=False):
 
 
 atexit.register(cleanup)
+
+
+# ── curated channel, morphology and model libraries ───────────────────────────
+# Imported as sub-namespaces so users write:
+#   moose.channels.load(...)
+#   moose.morphologies.load(...)
+#   moose.models.load(...)
+# Imports are deferred inside the subpackages to avoid circular imports and
+# to keep moose startup fast when these features are not used.
+
+from moose import channels      # noqa: E402  (moose.channels.*)
+from moose import morphologies  # noqa: E402  (moose.morphologies.*)
+from moose import models        # noqa: E402  (moose.models.*)

@@ -242,4 +242,4 @@ def _loadModel(filename, modelpath, solverclass="gsl"):
             pass
 
 
-    raise NameError(f"Unknown model type: {filename}'. Supported formats: GENESIS KKIT (.g), GENESIS CSPACE (.cspace), GENESIS PROTO (.p), SWC (.swc), SBML (.xml, .sbml), NeuroML (.xml, .nml)")
+    raise ValueError(f"Unknown model type: {filename}'. Supported formats: GENESIS KKIT (.g), GENESIS CSPACE (.cspace), GENESIS PROTO (.p), SWC (.swc), SBML (.xml, .sbml), NeuroML (.xml, .nml)")
