@@ -378,7 +378,7 @@ const Cinfo* Clock::initCinfo()
         "    AdExIF              2       50e-6\n"
         "    AdThreshIF          2       50e-6\n"
         "    IzhIF               2       50e-6\n"
-        "    IzhikevichNrn       2       50e-6\n"        
+        "    IzhikevichNrn       2       50e-6\n"
         "    MarkovGslSolver     2       50e-6\n"
         "    MarkovRateTable     2       50e-6\n"
         "    MarkovSolver        2       50e-6\n"
@@ -399,7 +399,7 @@ const Cinfo* Clock::initCinfo()
         "    HHChannelF          4       50e-6\n"
 	"    HHChannelF2D        4       50e-6\n"
         "    Leakage             4       50e-6\n"
-        "    MarkovChannel       4       50e-6\n"        
+        "    MarkovChannel       4       50e-6\n"
         "    SpikeGen             5      50e-6\n"
         "    HSolve               6      50e-6\n"
         "    SpikeStats           7      50e-6\n"
@@ -960,6 +960,7 @@ void Clock::buildDefaultTick()
     defaultTick_["Finfo"] = ~0U;
     defaultTick_["Group"] = ~0U;
     defaultTick_["HHGate"] = ~0U;
+    defaultTick_["HHGateF"] = ~0U;
     defaultTick_["HHGate2D"] = ~0U;
     defaultTick_["Interpol2D"] = ~0U;
     defaultTick_["Long"] = ~0U;
