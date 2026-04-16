@@ -215,4 +215,18 @@ def distance_from_soma(comp, soma=None) -> float:
     return _dfs(comp, soma)
 
 
-__all__ = ['MorphologyResult', 'list', 'load', 'surface_area', 'distance_from_soma']
+__all__ = ['MorphologyResult', 'list', 'load', 'surface_area', 'distance_from_soma',
+           'BUNDLED_GENESIS']
+
+
+# ── GENESIS source files ──────────────────────────────────────────────────────
+
+from pathlib import Path as _Path
+
+_GEN_DIR = _Path(__file__).parent / 'data' / 'genesis'
+
+BUNDLED_GENESIS = {
+    'mit_bhalla1991':          str(_GEN_DIR / 'mit_bhalla1991.p'),
+    'mit_davison_reduced':     str(_GEN_DIR / 'mit_davison_reduced.p'),
+    'gran_migliore_olfactory': str(_GEN_DIR / 'gran_migliore_olfactory.p'),
+}

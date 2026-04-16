@@ -12,19 +12,29 @@
 # Code:
 
 """
-Reduce compartment count of an SWC morphology by merging electrotonically
-short, similar-radius segments along each branch before simulation.
+SWC morphology utilities for MOOSE:
 
-Condensation math from ShapeShifter (Blackwell/Reed/Mada, GMU):
-  Hendrickson et al., J Comput Neurosci 2011.
-  DC lambda: λ[μm] = sqrt(RM / (4·RA)) · 1000 · sqrt(d[μm])
-  Merged compartment preserves total surface area and electrotonic length.
+1. Condense an SWC morphology by merging electrotonically short,
+   similar-radius segments along each branch before simulation.
+   Condensation math from ShapeShifter (Blackwell/Reed/Mada, GMU):
+     Hendrickson et al., J Comput Neurosci 2011.
+     DC lambda: λ[μm] = sqrt(RM / (4·RA)) · 1000 · sqrt(d[μm])
+     Merged compartment preserves total surface area and electrotonic length.
+
+2. Convert GENESIS .p cell morphology files to SWC format.
+   Handles cartesian/polar coordinates (relative or absolute), mixed modes,
+   prototype blocks, channel-density columns, and C-style comments.
+
+Usage:
+    from moose.swc_utils import condense_swc, p_to_swc
+    swc_path = p_to_swc('CA1.p', 'CA1.swc')
+    condensed = condense_swc('CA1.swc', RM=1.0, RA=1.0)
 """
 
 
 import os
 import math
-import tempfile
+import re
 
 SOMA_TYPE = 1
 
@@ -306,6 +316,320 @@ def condense_swc(
     _write_swc(out_segs, out_path)
     print(f'Saved condensed SWC file at {out_path}')
     return out_path
+
+
+
+# ---------------------------------------------------------------------------
+# SWC type inference (.p file helper)
+# ---------------------------------------------------------------------------
+
+
+def _infer_swc_type(name):
+    """Return the SWC structure type integer for a compartment name.
+
+    Mapping is based on common GENESIS naming conventions:
+      - soma                          -> 1
+      - axon / ax*                    -> 2
+      - apical* / prim* / glom*       -> 4  (apical / primary-dendrite tree)
+      - s2p / p2g                     -> 4  (pseudo-compts in apical path)
+      - everything else               -> 3  (basal / lateral / general dendrite)
+    """
+    n = re.sub(r'\[.*', '', name).lower()
+    if n == 'soma':
+        return 1
+    if n.startswith('ax'):
+        return 2
+    if (n.startswith('apical') or n.startswith('prim')
+            or n.startswith('glom') or n in ('s2p', 'p2g')):
+        return 4
+    return 3
+
+
+# ---------------------------------------------------------------------------
+# Comment extraction (.p file helper)
+# ---------------------------------------------------------------------------
+
+
+def _collect_p_comments(path):
+    """
+    Extract all comment text from a GENESIS .p file, preserving order.
+
+    Returns a list of strings — one entry per logical comment line — with
+    the comment delimiters (// or /* */) stripped but all other whitespace
+    and content preserved.
+    """
+    comments = []
+    in_block = False
+
+    with open(path) as fh:
+        for raw in fh:
+            line = raw.rstrip('\n')
+
+            if in_block:
+                if '*/' in line:
+                    text = line[:line.index('*/')].rstrip()
+                    if text:
+                        comments.append(text)
+                    in_block = False
+                else:
+                    comments.append(line)
+                continue
+
+            # Find positions of // and /* so we can tell which wins.
+            # A /* preceded by / (i.e. part of //) is a line comment, not a block opener.
+            ll_pos = line.find('//')
+            bc_pos = line.find('/*')
+
+            # /* is a real block opener only if it exists and comes before any //
+            real_block = (bc_pos != -1) and (ll_pos == -1 or bc_pos < ll_pos)
+
+            if real_block:
+                before = line[:bc_pos]
+                after  = line[bc_pos + 2:]
+                if '//' in before:
+                    comments.append(before[before.index('//') + 2:].rstrip())
+                if '*/' in after:
+                    text = after[:after.index('*/')].rstrip()
+                    if text:
+                        comments.append(text)
+                else:
+                    in_block = True
+                    if after.strip():
+                        comments.append(after.rstrip())
+                continue
+
+            if ll_pos != -1:
+                comments.append(line[ll_pos + 2:].rstrip())
+
+    return comments
+
+
+# ---------------------------------------------------------------------------
+# Coordinate helpers (.p file helper)
+# ---------------------------------------------------------------------------
+
+
+def _polar_to_cartesian_delta(r, theta_deg, phi_deg):
+    """
+    GENESIS polar -> Cartesian displacement.
+
+    GENESIS polar convention:
+      theta : azimuthal angle from x-axis (degrees, in xy-plane)
+      phi   : elevation angle from xy-plane (degrees, 0 = horizontal)
+
+    Returns (dx, dy, dz).
+    """
+    t = math.radians(theta_deg)
+    p = math.radians(phi_deg)
+    dx = r * math.cos(p) * math.cos(t)
+    dy = r * math.cos(p) * math.sin(t)
+    dz = r * math.sin(p)
+    return dx, dy, dz
+
+
+# ---------------------------------------------------------------------------
+# GENESIS .p file parser
+# ---------------------------------------------------------------------------
+
+
+def parse_p_file(path):
+    """
+    Parse a GENESIS .p file and return ``(comps, comments)``.
+
+    comps : list of dicts, each with:
+        name        : str    compartment name (e.g. 'soma', 'apical_10')
+        parent      : str|None  parent compartment name (None for root)
+        x, y, z     : float  absolute coordinates (microns)
+        r           : float  radius (microns)
+        swc_type    : int    SWC structure type
+
+    comments : list of str
+        All comment text from the source file (delimiters stripped).
+    """
+    comps = []
+    by_name = {}
+
+    coord_mode = 'cartesian'
+    coord_relative = True
+    in_proto = False
+    in_block_comment = False
+    prev_name = None
+
+    with open(path) as fh:
+        lines = fh.readlines()
+
+    for raw in lines:
+        line = raw
+
+        if in_block_comment:
+            if '*/' in line:
+                in_block_comment = False
+            continue
+
+        # Strip // line comments first (avoids false // + * == /* matches)
+        line = re.sub(r'//.*', '', line)
+
+        if '/*' in line:
+            before = line[:line.index('/*')]
+            after_marker = line[line.index('/*') + 2:]
+            if '*/' in after_marker:
+                line = before + after_marker[after_marker.index('*/') + 2:]
+            else:
+                in_block_comment = True
+                line = before
+            if not line.strip():
+                continue
+
+        line = line.strip()
+        if not line:
+            continue
+
+        if line.startswith('*'):
+            tok = line.split()
+            directive = tok[0].lower()
+
+            if not in_proto:
+                if directive == '*cartesian':
+                    coord_mode = 'cartesian'
+                elif directive == '*polar':
+                    coord_mode = 'polar'
+                elif directive == '*relative':
+                    coord_relative = True
+                elif directive == '*absolute':
+                    coord_relative = False
+
+            if directive == '*start_cell':
+                in_proto = len(tok) > 1   # True only when a library path follows
+            elif directive == '*makeproto':
+                in_proto = False
+
+            continue
+
+        if in_proto:
+            continue
+
+        tok = line.split()
+        if len(tok) < 6:
+            continue
+
+        name = tok[0]
+        parent_raw = tok[1]
+
+        if any('{' in tok[i] for i in (2, 3, 4, 5)):
+            continue
+
+        try:
+            a = float(tok[2])
+            b = float(tok[3])
+            c = float(tok[4])
+            diam = float(tok[5])
+        except ValueError:
+            continue
+
+        if parent_raw == '.':
+            parent_name = prev_name
+        elif parent_raw.lower() in ('none',):
+            parent_name = None
+        else:
+            parent_name = parent_raw
+
+        if coord_mode == 'polar':
+            a, b, c = _polar_to_cartesian_delta(a, b, c)
+
+        comp = {
+            'name': name,
+            'parent': parent_name,
+            '_dx': a, '_dy': b, '_dz': c,
+            'r': diam / 2.0,
+            'swc_type': _infer_swc_type(name),
+            'x': None, 'y': None, 'z': None,
+        }
+
+        if parent_name is None:
+            comp['x'] = a
+            comp['y'] = b
+            comp['z'] = c
+        else:
+            if parent_name not in by_name:
+                raise ValueError(
+                    f"Compartment '{name}' references unknown parent "
+                    f"'{parent_name}' in {path}"
+                )
+            p = by_name[parent_name]
+            if coord_relative:
+                comp['x'] = round(p['x'] + a, 6)
+                comp['y'] = round(p['y'] + b, 6)
+                comp['z'] = round(p['z'] + c, 6)
+            else:
+                comp['x'] = a
+                comp['y'] = b
+                comp['z'] = c
+
+        comps.append(comp)
+        by_name[name] = comp
+        prev_name = name
+
+    comments = _collect_p_comments(path)
+    return comps, comments
+
+
+# ---------------------------------------------------------------------------
+# GENESIS .p -> SWC writer
+# ---------------------------------------------------------------------------
+
+
+def p_to_swc(p_path, swc_path=None, source_url=None):
+    """
+    Convert a GENESIS .p file to SWC format.
+
+    All comment text from the source .p file is written verbatim into the
+    SWC header so that authorship and provenance are retained.
+
+    Parameters
+    ----------
+    p_path : str
+        Path to the input .p file.
+    swc_path : str, optional
+        Output path.  Defaults to p_path with extension replaced by .swc.
+    source_url : str, optional
+        Original URL or repository location of the .p file; written into
+        the SWC header as a provenance note.
+
+    Returns
+    -------
+    str
+        Absolute path of the written SWC file.
+    """
+    comps, orig_comments = parse_p_file(p_path)
+
+    name_to_id = {comp['name']: idx for idx, comp in enumerate(comps, start=1)}
+
+    if swc_path is None:
+        swc_path = os.path.splitext(p_path)[0] + '.swc'
+
+    with open(swc_path, 'w') as fh:
+        fh.write(f'# Converted from {os.path.basename(p_path)}'
+                 f' by moose.swc_utils.p_to_swc\n')
+        if source_url:
+            fh.write(f'# Source: {source_url}\n')
+        fh.write('#\n')
+        fh.write('# ---- Original comments from source .p file ----\n')
+        for line in orig_comments:
+            fh.write(f'#{line}\n')
+        fh.write('# ---- End of original comments ----\n')
+        fh.write('#\n')
+        fh.write('# n type x y z radius parent\n')
+
+        for idx, comp in enumerate(comps, start=1):
+            pname = comp['parent']
+            pid = -1 if pname is None else name_to_id.get(pname, -1)
+            fh.write(
+                f"{idx} {comp['swc_type']} "
+                f"{comp['x']:.4f} {comp['y']:.4f} {comp['z']:.4f} "
+                f"{comp['r']:.4f} {pid}\n"
+            )
+
+    return os.path.abspath(swc_path)
 
 
 #
