@@ -182,7 +182,10 @@ string MooseParser::Reformat( const string user_expr )
     // Replace && with 'and'
     moose::str_replace_all( expr, "&&", " and " );
 
-    // Trickt business: Replace ! with not but do not change !=
+    // Replace ** with '^'
+    moose::str_replace_all( expr, "**", "^" );
+
+    // Tricky business: Replace ! with not but do not change !=
     moose::str_replace_all( expr, "!=", "@@@" ); // placeholder
     moose::str_replace_all( expr, "!", " not " );
     moose::str_replace_all( expr, "@@@", "!=" ); // change back @@@ to !=
