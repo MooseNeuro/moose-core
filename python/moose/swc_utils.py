@@ -131,6 +131,65 @@ def _read_swc(path):
     return segs, by_idx
 
 
+def _reroot_at_soma(segs, by_idx):
+    """
+    Re-root the SWC tree at the soma (type-1) segment.
+
+    Returns a new list of segment dicts with contiguous 1-based indices and
+    parent indices updated so that the soma is index 1 with parent -1.
+    All segment positions are unchanged (absolute coords).
+    If there is no type-1 segment or soma is already the root, returns the
+    original list unchanged.
+    """
+    soma = next((s for s in segs if s['stype'] == 1), None)
+    if soma is None or soma['parent_idx'] == -1:
+        return segs  # Already rooted at soma or no soma
+
+    # Collect path from old root to soma via parent links
+    path = []
+    cur = soma['idx']
+    while cur != -1:
+        path.append(cur)
+        cur = by_idx[cur]['parent_idx']
+    path.reverse()  # [old_root_idx, ..., soma_idx]
+
+    # Reverse parent links along the path so soma becomes root
+    for i in range(len(path) - 1):
+        anc = by_idx[path[i]]
+        desc = by_idx[path[i + 1]]
+        anc['parent_idx'] = path[i + 1]   # ancestor now points UP to desc
+        anc['children'] = [c for c in anc['children'] if c != path[i + 1]]
+        desc['children'].append(path[i])
+    soma['parent_idx'] = -1
+    soma['children'] = [c for c in soma['children'] if c != soma['idx']]
+
+    # BFS from soma → parent-before-child ordering
+    from collections import deque
+    order = []
+    queue = deque([soma['idx']])
+    visited = set()
+    while queue:
+        idx = queue.popleft()
+        if idx in visited:
+            continue
+        visited.add(idx)
+        order.append(by_idx[idx])
+        for child_idx in by_idx[idx]['children']:
+            queue.append(child_idx)
+
+    # Renumber contiguously: old idx → new idx
+    old_to_new = {s['idx']: i + 1 for i, s in enumerate(order)}
+    result = []
+    for s in order:
+        result.append(dict(
+            idx=old_to_new[s['idx']],
+            stype=s['stype'],
+            x=s['x'], y=s['y'], z=s['z'], r=s['r'],
+            parent_idx=-1 if s['parent_idx'] == -1 else old_to_new[s['parent_idx']],
+        ))
+    return result
+
+
 def _write_swc(out_segs, path):
     with open(path, 'w') as fh:
         fh.write('# Condensed by moose.swc_utils\n')
@@ -601,6 +660,38 @@ def p_to_swc(p_path, swc_path=None, source_url=None):
         Absolute path of the written SWC file.
     """
     comps, orig_comments = parse_p_file(p_path)
+
+    # Re-root at soma so SWC convention (soma = root) is satisfied
+    by_name = {c['name']: c for c in comps}
+    soma_comp = next((c for c in comps if c['swc_type'] == 1), None)
+    if soma_comp is not None and soma_comp['parent'] is not None:
+        # Walk parent links from soma to root to get reversal path
+        path = []
+        cur = soma_comp['name']
+        while cur is not None:
+            path.append(cur)
+            cur = by_name[cur]['parent']
+        path.reverse()  # [old_root_name, ..., soma_name]
+        # Reverse edges along path
+        for i in range(len(path) - 1):
+            by_name[path[i]]['parent'] = path[i + 1]
+        soma_comp['parent'] = None
+        # BFS to get parent-before-child ordering
+        from collections import deque
+        children = {c['name']: [] for c in comps}
+        for c in comps:
+            if c['parent'] is not None:
+                children[c['parent']].append(c['name'])
+        order, visited, queue = [], set(), deque([soma_comp['name']])
+        while queue:
+            name = queue.popleft()
+            if name in visited:
+                continue
+            visited.add(name)
+            order.append(by_name[name])
+            for ch in children.get(name, []):
+                queue.append(ch)
+        comps = order
 
     name_to_id = {comp['name']: idx for idx, comp in enumerate(comps, start=1)}
 
