@@ -97,5 +97,5 @@ https://icg-explorer.org/visualizer
 
 ## Further reading
 
-- MOOSE simulator: https://moose.ncbs.res.in
+- MOOSE simulator: https://mooseneuro.org
 - IonChannelGenealogy: https://icg-explorer.org
