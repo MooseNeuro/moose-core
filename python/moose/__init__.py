@@ -29,7 +29,6 @@ import atexit
 import moose._moose as _moose
 from moose import model_utils
 from moose.moose_constants import *
-from moose.swc_utils import condense_swc
 
 
 __moose_classes__ = {}
@@ -329,6 +328,7 @@ def loadSwc(
         moose.element if succcessful else None.
     """
     if max_len is not None:
+        from moose.swc_utils import condense_swc
         filename = condense_swc(
             filename, RM, RA, CM, max_len=max_len, f=f, rad_diff=rad_diff
         )

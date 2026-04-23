@@ -1,0 +1,50 @@
+# Converted from CA1.p by moose.morphologies.p_to_swc
+#
+# ---- Original comments from source .p file ----
+# genesis
+# cell parameter file for the 1991 Traub CA1 hippocampal cell
+# "phi" parameter reduced by e-3
+#ohm*m^2
+#ohm*m
+#F/m^2
+# volts
+# The format for each compartment parameter line is :
+# name  parent  x       y       z       d       ch      dens ...
+# For channels, "dens" =  maximum conductance per unit area of compartment
+# NOTE: The format of the cell descriptor files does not allow for
+#   continuation to another line.  The following long line lists the
+#   soma channels with their "density" parameters.
+#
+#   Ca_conc	-17.402e12
+#	Not really a channel, but a "Ca_concen" object.  Normally, the B 
+#	field is set to "dens"/compt_volume (m^3), but the negative sign
+#	causes the absolute value to be used with no scaling by volume.
+#   Na		300  
+#   Ca		 40
+#   K_DR		150
+#   K_AHP	  8
+#   K_C		100
+#   K_A		 50
+# The compartment numbering corresponds to that in the paper, with soma = 9
+# ---- End of original comments ----
+#
+# n type x y z radius parent
+1 1 -1325.0000 0.0000 0.0000 4.2300 -1
+2 3 -1435.0000 0.0000 0.0000 2.4200 1
+3 4 -1200.0000 0.0000 0.0000 2.8900 1
+4 3 -1545.0000 0.0000 0.0000 2.4200 2
+5 4 -1080.0000 0.0000 0.0000 2.8900 3
+6 3 -1655.0000 0.0000 0.0000 2.4200 4
+7 4 -960.0000 0.0000 0.0000 2.8900 5
+8 3 -1765.0000 0.0000 0.0000 2.4200 6
+9 4 -840.0000 0.0000 0.0000 2.8900 7
+10 3 -1875.0000 0.0000 0.0000 2.4200 8
+11 4 -720.0000 0.0000 0.0000 2.8900 9
+12 3 -1985.0000 0.0000 0.0000 2.4200 10
+13 4 -600.0000 0.0000 0.0000 2.8900 11
+14 3 -2095.0000 0.0000 0.0000 2.4200 12
+15 4 -480.0000 0.0000 0.0000 2.8900 13
+16 3 -2205.0000 0.0000 0.0000 2.4200 14
+17 4 -360.0000 0.0000 0.0000 2.8900 15
+18 4 -240.0000 0.0000 0.0000 2.8900 17
+19 4 -120.0000 0.0000 0.0000 2.8900 18

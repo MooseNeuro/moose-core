@@ -1,0 +1,38 @@
+# Converted from gran_migliore_olfactory.p by moose.morphologies.p_to_swc
+# Source: https://github.com/adityagilra/olfactory-bulb/blob/master/cells/gran_aditya_migliore.p
+#
+# ---- Original comments from source .p file ----
+# Granule cell model of Migliore and Shepherd
+# keep only primary dendrite
+# Translated by Aditya NCBS 2010.
+# fields are ..
+# name
+# parent
+# x,y,z  // coords of endpoint.
+# dia // needed for memb props. All lengths are in microns.
+# ch name density
+# ch name density
+# .....
+# Control lines start with '*'. Valid control options are
+# *relative 			- relative coords.
+# *absolute			- absolute coords.
+# *asymmetric			- use asymmetric compartments
+# *symmetric			- use symmetric compartments
+# #	name	parent		x	y	z	d	ch	dens	ch	dens	.	.	.
+#Neuron has only symmetric compartments - however hsolve symmetrizes the Ra-s internally.
+# With the present implementation, it doesn't matter whether you write symmetric or asymmetric here.
+# reduced two compartmental granule adapted from Migliore and Shepherd
+# Both Migliore and Shepherd 2008 and Egger et al 2003 say taum = 30ms, Rin=1GOhm. So set RM and CM for it.
+# Ohm-m from 80 Ohm-cm
+# F/m^2
+#*set_global	RM	0.75 // RM = 30e-3/CM = 0.75 Ohm-m^2
+# Aditya: I reduced CM to 0.02 from 0.04. Thus time constant is now 15ms not 30ms.
+# RM = 30e-3/CM = 0.75 Ohm-m^2
+# soma is somagc of gc.hoc of Migliore and Shepherd 2008.
+# periphery is priden of gc.hoc of Migliore and Shepherd 2008.
+# Following Migliore and Shepherd 2008, I have only KA and not KDR in dendrites! This is supposed to cause spike latency
+# ---- End of original comments ----
+#
+# n type x y z radius parent
+1 1 8.0000 0.0000 0.0000 4.0000 -1
+2 3 158.0000 0.0000 0.0000 0.2500 1

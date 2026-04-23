@@ -106,17 +106,62 @@ class MorphologyResult:
 
 # ── public API ────────────────────────────────────────────────────────────────
 
+def entries(**filters) -> list:
+    """
+    Return the list of bundled morphology metadata dicts.
+
+    Optional keyword filters narrow the result by matching field values
+    (case-insensitive substring match).
+
+    Examples
+    --------
+    ::
+
+        import moose.morphologies as morph
+
+        all_cells = morph.entries()
+        ca1_cells = morph.entries(cell_type='CA1')
+        rat_cells = morph.entries(species='rat')
+        names     = [e['name'] for e in morph.entries()]
+
+    Each dict contains keys: ``name``, ``filename``, ``species``,
+    ``cell_type``, ``region``, ``source``, ``description``.
+    """
+    from moose.morphologies._registry import all_entries
+    result = all_entries()
+    for key, value in filters.items():
+        value_lo = value.lower()
+        result = [e for e in result if value_lo in str(e.get(key, '')).lower()]
+    return result
+
+
+def get(name: str) -> dict:
+    """
+    Return the metadata dict for a single bundled morphology by name.
+
+    Raises ``KeyError`` if *name* is not in the registry.
+
+    Example
+    -------
+    ::
+
+        info = moose.morphologies.get('traub91_CA1')
+        print(info['description'])
+    """
+    from moose.morphologies._registry import get as _get
+    return _get(name)
+
+
 def list() -> None:
     """Print a table of bundled morphologies available for loading."""
-    from moose.morphologies._registry import all_entries
-    entries = all_entries()
-    if not entries:
+    all_e = entries()
+    if not all_e:
         print('No bundled morphologies yet.  '
               'Load any SWC file with moose.morphologies.load("/path/to/file.swc", ...)')
         return
     print(f'\n{"Name":<22} {"Species":<10} {"Cell type":<22} {"Region":<20} {"Source"}')
     print('─' * 90)
-    for e in entries:
+    for e in all_e:
         print(f'{e["name"]:<22} {e.get("species",""):<10} '
               f'{e.get("cell_type",""):<22} {e.get("region",""):<20} '
               f'{e.get("source","")}')
@@ -215,4 +260,18 @@ def distance_from_soma(comp, soma=None) -> float:
     return _dfs(comp, soma)
 
 
-__all__ = ['MorphologyResult', 'list', 'load', 'surface_area', 'distance_from_soma']
+__all__ = ['MorphologyResult', 'entries', 'get', 'list', 'load',
+           'surface_area', 'distance_from_soma', 'BUNDLED_GENESIS']
+
+
+# ── GENESIS source files ──────────────────────────────────────────────────────
+
+from pathlib import Path as _Path
+
+_GEN_DIR = _Path(__file__).parent / 'data' / 'genesis'
+
+BUNDLED_GENESIS = {
+    'mit_bhalla1991':          str(_GEN_DIR / 'mit_bhalla1991.p'),
+    'mit_davison_reduced':     str(_GEN_DIR / 'mit_davison_reduced.p'),
+    'gran_migliore_olfactory': str(_GEN_DIR / 'gran_migliore_olfactory.p'),
+}
