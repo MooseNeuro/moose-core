@@ -85,7 +85,11 @@ def test_func_change_expr():
         func.expr = "-x0 + 10*x1"
     moose.start( 100.0 ) 
     b = moose.element('/model/compartment/b')
-    assert int(b.n) == int(106384558.57472235), b.n
+    # b.n is a molecule count (proportional to NA), so compare with a
+    # tolerance rather than exact integer equality -- otherwise a change in
+    # the value of a physical constant (e.g. the CODATA update to NA) breaks
+    # this baseline for a ~1e-7 shift that is not a real regression.
+    assert numpy.isclose(b.n, 106384545.50220357, rtol=1e-4), b.n
     xs = func.x
     assert len(xs.value) == 2, (len(xs.value), xs.value)
     assert (xs.value == [0, 0]).all(), xs.value
