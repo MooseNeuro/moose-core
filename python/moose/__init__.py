@@ -62,7 +62,9 @@ class melement(_moose.ObjId):
         #   raise TypeError(f"Expected str or ObjId, got {type(x)}")
         super().__init__(obj.oid)
         for k, v in kwargs.items():
-            super().setField(k, v)
+            # nanobind ObjId has no setField(); field assignment goes through
+            # __setattr__ (-> setFieldGeneric).
+            setattr(self, k, v)
 
 
 def __to_melement(obj):
