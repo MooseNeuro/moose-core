@@ -378,7 +378,7 @@ void testCylDiffn()
     // Next: build by doing reinit
     s->doUseClock( "/model/dsolve", "process", 1 );
     s->doSetClock( 1, dt );
-    Field< string >::set( dsolve, "path", "/model/cyl/pool" );
+    Field< string >::set( dsolve, "stoichPath", "/model/cyl/pool" );
     // Then find a way to test it.
     vector< double > poolVec;
     Field< double >::set( ObjId( pool, 0 ), "nInit", 1.0 );
@@ -462,7 +462,7 @@ void testTaperingCylDiffn()
     s->doUseClock( "/model/dsolve", "process", 1 );
     s->doSetClock( 1, dt );
     // Next: build by setting the path of the dsolve.
-    Field< string >::set( dsolve, "path", "/model/cyl/pool" );
+    Field< string >::set( dsolve, "stoichPath", "/model/cyl/pool" );
     // Then find a way to test it.
     assert( pool.element()->numData() == ndc );
     Field< double >::set( ObjId( pool, 0 ), "nInit", 1.0 );
@@ -550,7 +550,7 @@ void testSmallCellDiffn()
     s->doUseClock( "/model/dsolve", "process", 1 );
     s->doSetClock( 1, dt );
     // Next: build diffusion by setting path
-    Field< string >::set( dsolve, "path", "/model/neuromesh/pool#" );
+    Field< string >::set( dsolve, "stoichPath", "/model/neuromesh/pool#" );
 
     vector< double > nvec =
         LookupField< unsigned int, vector< double > >::get(
@@ -646,7 +646,7 @@ void testCellDiffn()
     s->doUseClock( "/model/dsolve", "process", 1 );
     s->doSetClock( 1, dt );
     // Next: build by setting path
-    Field< string >::set( dsolve, "path", "/model/neuromesh/pool#" );
+    Field< string >::set( dsolve, "stoichPath", "/model/neuromesh/pool#" );
 
     vector< double > nvec =
         LookupField< unsigned int, vector< double > >::get(
@@ -723,7 +723,7 @@ void testCylDiffnWithStoich()
     Field< Id >::set( stoich, "compartment", cyl );
     Field< Id >::set( stoich, "ksolve", ksolve );
     Field< Id >::set( stoich, "dsolve", dsolve );
-    Field< string >::set( stoich, "path", "/model/cyl/#" );
+    Field< string >::set( stoich, "reacSystemPath", "/model/cyl/#" );
     assert( pool1.element()->numData() == ndc );
 
     // Then find a way to test it.
@@ -902,9 +902,9 @@ void testCalcJunction()
     Field< Id >::set( dendsolve, "compartment", nm );
     Field< Id >::set( spinesolve, "compartment", sm );
     Field< Id >::set( psdsolve, "compartment", pm );
-    Field< string >::set( dendsolve, "path", "/model/nm/#" );
-    Field< string >::set( spinesolve, "path", "/model/sm/#" );
-    Field< string >::set( psdsolve, "path", "/model/pm/#" );
+    Field< string >::set( dendsolve, "stoichPath", "/model/nm/#" );
+    Field< string >::set( spinesolve, "stoichPath", "/model/sm/#" );
+    Field< string >::set( psdsolve, "stoichPath", "/model/pm/#" );
     assert( Field< unsigned int >::get( dendsolve, "numAllVoxels" ) == 1 );
     assert( Field< unsigned int >::get( spinesolve, "numAllVoxels" ) == 1 );
     assert( Field< unsigned int >::get( psdsolve, "numAllVoxels" ) == 1 );

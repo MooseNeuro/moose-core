@@ -43,8 +43,8 @@ public:
     // Defined in base class. Id getCompartment() const;
     void setDsolve( Id id ); /// Dummy, inherited but not used.
 
-    void setPath( const Eref& e, string path );
-    string getPath( const Eref& e ) const;
+    void setStoichPath( const Eref& e, string path );
+    string getStoichPath( const Eref& e ) const;
 
     unsigned int getNumVoxels() const;
     /// Inherited virtual.
