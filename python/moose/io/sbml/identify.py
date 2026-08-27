@@ -72,7 +72,7 @@ def _eval(node, values):
         return c[-1] ** (1.0 / c[0]) if n == 2 else math.sqrt(c[0])
     if t in _UNARY:
         return _UNARY[t](c[0])
-    raise ValueError('uneval node type %d' % t)
+    raise ValueError(f'uneval node type {t}')
 
 
 def referenced_names(node, out):
@@ -94,7 +94,8 @@ def identify(reac, const_params, comp_sizes, variable_names):
     Returns a mapping dict (value space) or ``None``:
 
     * ``{'kind':'massaction', 'Kf_val', 'Kb_val', 'catalysts': set()}``
-    * ``{'kind':'mmenz', 'kcat_val', 'Km_val', 'enzyme'}``
+    * ``{'kind':'mmenz', 'kcat_val', 'Km_val', 'enzyme'}`` -- ``enzyme`` may
+      be ``None`` (lumped-Vmax law, no declared modifier); see symbolic.py.
     """
     kl = reac.getKineticLaw()
     if kl is None or kl.getMath() is None:
@@ -158,7 +159,10 @@ def _verify(reac, mapping, subst, n=24, tol=1e-6):
                 bwd *= v[s] ** st
             r_recon = mapping['Kf_val'] * fwd - mapping['Kb_val'] * bwd
         elif mapping['kind'] == 'mmenz':
-            e = v[mapping['enzyme']]
+            # enzyme is None for a lumped-Vmax law with no declared modifier
+            # (see symbolic._michaelis_menten); its value-space reading is
+            # fixed at 1 by construction in that case.
+            e = 1.0 if mapping['enzyme'] is None else v[mapping['enzyme']]
             s = v[subs[0][0]]
             r_recon = mapping['kcat_val'] * e * s / (mapping['Km_val'] + s)
         else:

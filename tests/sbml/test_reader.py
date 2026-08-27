@@ -165,3 +165,171 @@ def test_matches_roadrunner(fname):
         mvals = np.interp(grid, t, v)
         denom = max(np.max(np.abs(rvals)), 1e-12)
         assert np.max(np.abs(rvals - mvals)) / denom < 2e-2, sid
+
+
+# ----------------------------------------------------------------------
+# multi-compartment: cross-compartment transport reactions
+# ----------------------------------------------------------------------
+def _two_compartment_transport(reversible=False, native=True):
+    """Build an in-memory SBML doc: X in compartment A moves to Y in
+    compartment B. With native=True the law is mass-action (k*A*X[, -kb*B*Y]);
+    with native=False it is a saturating (non-mass-action) law that cannot map
+    to a native Reac and so has no cross-compartment Function fallback."""
+    import libsbml
+    doc = libsbml.SBMLDocument(3, 1)
+    m = doc.createModel()
+    m.setId('xport')
+    for cid, size in (('A', 2.0), ('B', 5.0)):
+        c = m.createCompartment()
+        c.setId(cid); c.setConstant(True); c.setSize(size); c.setSpatialDimensions(3)
+    for sid, comp, conc in (('X', 'A', 3.0), ('Y', 'B', 0.0)):
+        s = m.createSpecies()
+        s.setId(sid); s.setCompartment(comp); s.setInitialConcentration(conc)
+        s.setConstant(False); s.setBoundaryCondition(False)
+        s.setHasOnlySubstanceUnits(False)
+    r = m.createReaction()
+    r.setId('xfer'); r.setReversible(reversible); r.setFast(False)
+    ref = r.createReactant(); ref.setSpecies('X'); ref.setStoichiometry(1); ref.setConstant(True)
+    prd = r.createProduct(); prd.setSpecies('Y'); prd.setStoichiometry(1); prd.setConstant(True)
+    kl = r.createKineticLaw()
+    if native:
+        law = 'k * A * X' + (' - kb * B * Y' if reversible else '')
+    else:
+        law = 'k * A * X / (Km + X)'          # saturating -> not mass-action
+        p = kl.createLocalParameter(); p.setId('Km'); p.setValue(1.0)
+    kl.setMath(libsbml.parseL3Formula(law))
+    p = kl.createLocalParameter(); p.setId('k'); p.setValue(0.3)
+    if reversible:
+        p = kl.createLocalParameter(); p.setId('kb'); p.setValue(0.05)
+    return doc
+
+
+def test_crosscompartment_transport_conserves(tmp_path):
+    """Irreversible transport X(A)->Y(B) with law k*A*X must (a) build a native
+    cross-compartment Reac split by fixXreacs into local proxy pools, (b) let X
+    decay exactly as exp(-k t) [d(amount)/dt = -k*amount], and (c) conserve the
+    total molecule count across the two compartments."""
+    import libsbml
+    p = tmp_path / 'xport.xml'
+    libsbml.writeSBMLToFile(_two_compartment_transport(), str(p))
+
+    h = SBMLHandler()
+    h.read(str(p), '/xp')
+    assert h.report.reactions_native == 1
+    assert not h.report.unsupported, h.report.unsupported
+    # fixXreacs made a local proxy for the foreign product.
+    assert moose.wildcardFind('/xp/##/Y_xfer_#')
+
+    eX = [e for e in moose.wildcardFind('/xp/##/X[0]') if 'Pool' in e.className][0]
+    eY = [e for e in moose.wildcardFind('/xp/##/Y[0]')
+          if 'Pool' in e.className and '_xfer_' not in e.name][0]
+    n0 = eX.nInit + eY.nInit
+    # The cross-compartment proxy exchange is operator-split at the solver tick,
+    # so accuracy needs a fine dt (see reader docstring).
+    for tck in range(20):
+        moose.setClock(tck, 0.002)
+    tab = moose.Table2('/xp/_tabX')
+    moose.connect(tab, 'requestOut', eX, 'getConc')
+    moose.setClock(tab.tick, 0.05)
+    moose.reinit()
+    moose.start(5.0)
+    v = np.array(tab.vector)
+    t = np.linspace(0, 5.0, len(v))
+    slope = np.polyfit(t, np.log(v / v[0]), 1)[0]
+    assert abs(slope - (-0.3)) < 1e-2, slope           # exp(-k t) decay
+    assert abs((eX.n + eY.n) - n0) / n0 < 1e-2, (eX.n + eY.n, n0)  # conserved
+
+
+def test_noncnative_crosscompartment_rejected(tmp_path):
+    """A cross-compartment reaction with a non-mass-action law cannot become a
+    native Reac and must not silently become a (compartment-crossing) Function:
+    it is reported unsupported and no solver is built."""
+    import libsbml
+    p = tmp_path / 'xport_nonnative.xml'
+    libsbml.writeSBMLToFile(_two_compartment_transport(native=False), str(p))
+
+    h = SBMLHandler()
+    h.read(str(p), '/xpn')
+    assert any('cross-compartment' in u for u in h.report.unsupported), h.report.unsupported
+    assert not moose.wildcardFind('/xpn/##[ISA=Stoich]')  # solver refused
+
+
+def test_gorlich_multicompartment_native():
+    """A real two-compartment model (Gorlich2003 RanGTP gradient): every
+    reaction -- including the two nucleus<->cytoplasm transport reactions --
+    maps to a native Reac, the model builds a per-compartment solver, and it
+    simulates to a finite, non-negative trajectory."""
+    path = os.path.join(HERE, 'Gorlich2003_RanGTP.xml')
+    if not os.path.isfile(path):
+        pytest.skip('Gorlich2003 fixture not present')
+    h = SBMLHandler()
+    h.read(path, '/ran')
+    assert h.report.reactions_native == 9
+    assert h.report.reactions_function == 0
+    assert not h.report.unsupported, h.report.unsupported
+    assert len(moose.wildcardFind('/ran/##[ISA=ChemCompt]')) == 2
+    assert len(moose.wildcardFind('/ran/##[ISA=Stoich]')) == 2
+    assert moose.wildcardFind('/ran/##/#_xfer_#')      # transport proxies exist
+
+    el = [e for e in moose.wildcardFind('/ran/##/RanGTP_cy[0]')
+          if 'Pool' in e.className and '_xfer_' not in e.name][0]
+    for tck in range(20):
+        moose.setClock(tck, 0.01)
+    t, v = _sim('/ran', el.path, 100.0)
+    assert np.all(np.isfinite(v))
+    assert np.all(v >= -1e-9)
+    assert v[-1] > 0                                    # transport filled it
+
+
+def test_doqcs_multicompartment_sbml():
+    """A DOQCS model exported to SBML (cAMP pathway, membrane+cytosol) -- a
+    multi-compartment model MOOSE itself can also read as GENESIS kkit -- must
+    load with every reaction native across both compartments and simulate to a
+    finite, non-negative trajectory."""
+    path = os.path.join(HERE, 'DOQCS_acc25_cAMP.xml')
+    if not os.path.isfile(path):
+        pytest.skip('DOQCS fixture not present')
+    h = SBMLHandler()
+    h.read(path, '/camp')
+    assert h.report.reactions_function == 0
+    assert h.report.reactions_native >= 20
+    assert not h.report.unsupported, h.report.unsupported
+    assert len(moose.wildcardFind('/camp/##[ISA=Stoich]')) >= 2
+
+    pools = [e for e in moose.wildcardFind('/camp/##[ISA=PoolBase]')
+             if '_xfer_' not in e.name]
+    for tck in range(20):
+        moose.setClock(tck, 0.005)
+    t, v = _sim('/camp', pools[0].path, 20.0)
+    assert np.all(np.isfinite(v))
+    assert np.all(v >= -1e-6)
+
+
+def test_spatial_diffusion_coefficient_read():
+    """A diffusion constant declared with the SBML Level 3 spatial package
+    (a Parameter carrying a DiffusionCoefficient) is copied onto the species'
+    pool.diffConst."""
+    import libsbml
+    ns = libsbml.SBMLNamespaces(3, 1, 'spatial', 1)
+    doc = libsbml.SBMLDocument(ns)
+    doc.setPackageRequired('spatial', True)
+    m = doc.createModel()
+    c = m.createCompartment()
+    c.setId('cyt'); c.setConstant(True); c.setSize(1.0); c.setSpatialDimensions(3)
+    s = m.createSpecies()
+    s.setId('S'); s.setCompartment('cyt'); s.setInitialConcentration(1.0)
+    s.setConstant(False); s.setBoundaryCondition(False)
+    s.setHasOnlySubstanceUnits(False)
+    p = m.createParameter()
+    p.setId('S_diff'); p.setValue(2.5e-12); p.setConstant(True)
+    dc = p.getPlugin('spatial').createDiffusionCoefficient()
+    dc.setVariable('S'); dc.setType(libsbml.SPATIAL_DIFFUSIONKIND_ISOTROPIC)
+
+    import tempfile
+    fn = tempfile.mktemp(suffix='.xml')
+    libsbml.writeSBMLToFile(doc, fn)
+    h = SBMLHandler()
+    h.read(fn, '/spdiff')
+    pool = [e for e in moose.wildcardFind('/spdiff/##/S[0]')
+            if 'Pool' in e.className][0]
+    assert abs(pool.diffConst - 2.5e-12) < 1e-20, pool.diffConst

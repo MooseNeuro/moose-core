@@ -36,5 +36,5 @@ def normalize(doc):
         if status == libsbml.LIBSBML_OPERATION_SUCCESS:
             applied.append(label)
         else:
-            skipped.append('%s (status=%d)' % (label, status))
+            skipped.append(f'{label} (status={status})')
     return applied, skipped

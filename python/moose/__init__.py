@@ -299,6 +299,17 @@ def loadModel(filename, modelpath, solverclass="gsl"):
     melement
         moose.element if succcessful else None.
 
+    Notes
+    -----
+    A ``.xml``/``.sbml`` file is loaded with the ``moose.io.sbml`` reader
+    (symbolic mass-action/Michaelis-Menten recognition, multi-compartment
+    cross-reactions, no MOOSE-specific annotations needed); anything it
+    cannot represent faithfully is logged, not silently dropped. This is
+    the same reader ``moose.readSBML()`` uses directly.
+
+    A ``.xml`` file is disambiguated from NeuroML2 by its root element
+    (``<sbml>`` vs. ``<neuroml>``/``<Lems>``), not by trial and error.
+
     See also
     --------
     moose.readNML2
@@ -510,28 +521,40 @@ def doc(arg, paged=True):
 
 
 # SBML related functions.
-def readSBML(filepath, loadpath, solver="ee", validate=True):
-    """Load SBML model.
+def readSBML(filepath, loadpath=None, solver='gsl', validate=True):
+    """Load an SBML model into a new MOOSE subtree.
+
+    Thin wrapper over ``moose.io.sbml.SBMLHandler.read()`` -- see that
+    class (and ``moose.loadModel()``, which dispatches ``.xml``/``.sbml``
+    files here too) for the full behavior: symbolic recognition of
+    mass-action/Michaelis-Menten kinetics, multi-compartment
+    cross-reactions, no MOOSE-specific annotations needed.
 
     Parameters
     ----------
     filepath : str
         filepath to be loaded.
     loadpath : str
-        Root path for this model e.g. /model/mymodel
+        Root path for this model, e.g. /model/mymodel. Defaults to
+        /library/{model_name} (from the SBML model's id/name, or the
+        filename) when not given.
     solver : str
-        Solver to use (default 'ee').
-        Available options are "ee", "gsl", "stochastic", "gillespie"
-            "rk", "deterministic"
-            For full list see ??
+        Solver to use (default 'gsl').
+        Available options are "ee", "gsl", "stochastic", "gillespie",
+        "rk", "deterministic".
     validate : bool
-        When True, run the schema validation.
+        When True (default), abort on libsbml validation errors.
     """
-    return model_utils.mooseReadSBML(filepath, loadpath, solver, validate)
+    return model_utils.mooseReadSBML2(filepath, loadpath, solver, validate)
 
 
-def writeSBML(modelpath, filepath, sceneitems={}):
-    """Writes loaded model under modelpath to a file in SBML format.
+def writeSBML(modelpath, filepath):
+    """Write the model under modelpath to filepath in SBML format.
+
+    Thin wrapper over ``moose.io.sbml.SBMLHandler.write()``: emits
+    Reac/MMenz/Enz reactions, diffusion, and Function-driven
+    rate/assignment rules; its round trip with ``moose.readSBML()`` is
+    verified to floating-point precision.
 
     Parameters
     ----------
@@ -539,16 +562,8 @@ def writeSBML(modelpath, filepath, sceneitems={}):
         model path in moose e.g /model/mymodel
     filepath : str
         Path of output file.
-    sceneitems : dict
-        UserWarning: user need not worry about this layout position is saved in
-        Annotation field of all the moose Object (pool,Reaction,enzyme).
-        If this function is called from
-        * GUI - the layout position of moose object is passed
-        * command line - NA
-        * if genesis/kkit model is loaded then layout position is taken from the file
-        * otherwise auto-coordinates is used for layout position.
     """
-    return model_utils.mooseWriteSBML(modelpath, filepath, sceneitems)
+    return model_utils.mooseWriteSBML2(modelpath, filepath)
 
 
 def writeKkit(modelpath, filepath, sceneitems={}):

@@ -35,17 +35,61 @@ class LoadReport:
 
     def summary(self):
         lines = [
-            'SBML load report for %s -> %s' % (self.filepath, self.loadpath),
-            '  reactions: %d native, %d via Function'
-            % (self.reactions_native, self.reactions_function),
-            '  rules: %d rate, %d assignment'
-            % (self.rate_rules, self.assignment_rules),
+            f'SBML load report for {self.filepath} -> {self.loadpath}',
+            f'  reactions: {self.reactions_native} native, {self.reactions_function} via Function',
+            f'  rules: {self.rate_rules} rate, {self.assignment_rules} assignment',
         ]
         if self.unsupported:
-            lines.append('  UNSUPPORTED (%d):' % len(self.unsupported))
+            lines.append(f'  UNSUPPORTED ({len(self.unsupported)}):')
             lines += ['    - ' + u for u in self.unsupported]
         if self.warnings:
-            lines.append('  warnings (%d):' % len(self.warnings))
+            lines.append(f'  warnings ({len(self.warnings)}):')
+            lines += ['    - ' + w for w in self.warnings]
+        return '\n'.join(lines)
+
+    def __str__(self):
+        return self.summary()
+
+
+@dataclass
+class WriteReport:
+    """Structured account of what :mod:`writer` did and did not cover, the
+    write-side counterpart to :class:`LoadReport`."""
+
+    modelpath: str = ''
+    filepath: str = ''
+
+    compartments: int = 0
+    species: int = 0
+    diffusing_species: int = 0
+    reactions: int = 0          # Reac
+    enz_reactions: int = 0      # MMenz + Enz (SBML Reaction objects emitted)
+    rate_rules: int = 0
+    assignment_rules: int = 0
+
+    unsupported: list = field(default_factory=list)
+    warnings: list = field(default_factory=list)
+
+    def unsupported_add(self, msg):
+        self.unsupported.append(msg)
+
+    @property
+    def fully_supported(self):
+        return not self.unsupported
+
+    def summary(self):
+        lines = [
+            f'SBML write report for {self.modelpath} -> {self.filepath}',
+            f'  compartments: {self.compartments}, species: {self.species} '
+            f'({self.diffusing_species} diffusing)',
+            f'  reactions: {self.reactions} native Reac, {self.enz_reactions} enzymatic',
+            f'  rules: {self.rate_rules} rate, {self.assignment_rules} assignment',
+        ]
+        if self.unsupported:
+            lines.append(f'  UNSUPPORTED ({len(self.unsupported)}):')
+            lines += ['    - ' + u for u in self.unsupported]
+        if self.warnings:
+            lines.append(f'  warnings ({len(self.warnings)}):')
             lines += ['    - ' + w for w in self.warnings]
         return '\n'.join(lines)
 

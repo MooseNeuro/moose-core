@@ -358,7 +358,7 @@ def loadModels(filepath):
         elif subtype == 'sbml':
             if moose.exists(modelpath):
                 moose.delete(modelpath)
-            moose.mooseReadSBML(filepath,modelpath)
+            moose.readSBML(filepath,modelpath)
             loaded = True
         else:
             print("This file is not supported for mergering")

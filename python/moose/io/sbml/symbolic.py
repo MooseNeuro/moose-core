@@ -85,7 +85,7 @@ def ast_to_sympy(node, syms):
         return c[-1] ** (sp.Integer(1) / c[0]) if n == 2 else sp.sqrt(c[0])
     if t in _FN:
         return _FN[t](c[0])
-    raise ValueError('unhandled AST node type %d' % t)
+    raise ValueError(f'unhandled AST node type {t}')
 
 
 def analyze(reac, subst):
@@ -94,7 +94,10 @@ def analyze(reac, subst):
 
     * ``{'kind':'massaction', 'Kf_val', 'Kb_val', 'catalysts': set()}`` --
       Kf_val/Kb_val are the polynomial monomial coefficients.
-    * ``{'kind':'mmenz', 'kcat_val', 'Km_val', 'enzyme'}``.
+    * ``{'kind':'mmenz', 'kcat_val', 'Km_val', 'enzyme'}`` -- ``enzyme`` is
+      ``None`` for a lumped-Vmax law with no declared modifier (the caller
+      then invents a constant-concentration enzyme pool; see reader.py's
+      ``_synthesize_enzyme``).
     """
     kl = reac.getKineticLaw()
     if kl is None or kl.getMath() is None:
@@ -169,10 +172,20 @@ def _mass_action(expr, gens, sub_st, prd_st, subs, prds):
 
 
 def _michaelis_menten(expr, syms, subs, prds, mods):
-    # MOOSE MMenz requires exactly the enzyme+single-substrate form and at
-    # least one product. Constants are in value space (kcat_val includes any
+    # MOOSE MMenz requires exactly the single-substrate form and at least one
+    # product. The enzyme is either an explicit modifier multiplying the rate
+    # linearly, or -- when a model lumps a constant, untracked enzyme
+    # concentration into Vmax and declares no modifier at all (a common
+    # simplification: e.g. curated BioModels SBML often exports a reaction
+    # whose kkit/GENESIS original used an explicit constant-concentration
+    # phosphatase pool, but folds kcat*[enzyme] into a single Vmax parameter
+    # and drops the enzyme species from the file entirely) -- implicit,
+    # signalled by ``enzyme: None``: the caller (reader.py) then invents a
+    # constant enzyme pool whose value-space reading is fixed at 1 by
+    # construction, so kcat_val alone (== the lumped Vmax) reproduces the
+    # same Vmax. Constants are in value space (kcat_val includes any
     # compartment factor the caller removes via the SI conversion).
-    if len(subs) != 1 or not mods or not prds:
+    if len(subs) != 1 or not prds:
         return None
     S = syms.get(subs[0][0])
     if S is None:
@@ -186,7 +199,16 @@ def _michaelis_menten(expr, syms, subs, prds, mods):
         return None
     a1, a0 = pd.coeff_monomial(S), pd.coeff_monomial(1)
     b1, b0 = pn.coeff_monomial(S), pn.coeff_monomial(1)
-    if b0 != 0 or a1 == 0:
+    # Route through _num() rather than comparing the sympy values to 0
+    # directly: when every parameter (and, for a no-modifier law, the
+    # "enzyme" term too) has already been substituted to a float, the
+    # Poly's domain is pure RR and a genuinely-zero coefficient comes back
+    # as sympy.Float(0.0) -- for which `!= 0`/`== 0` are *unreliable*
+    # (sympy.Float(0.0) != 0 is True; only .is_zero is trustworthy). A
+    # symbolic domain (an unsubstituted modifier still present) never hits
+    # this, which is why it went unnoticed until a no-modifier law did.
+    b0_val, a1_val = _num(b0), _num(a1)
+    if b0_val is None or abs(b0_val) > 1e-12 or a1_val is None or a1_val == 0:
         return None
     Km = _num(a0 / a1)
     if Km is None or Km <= 0:
@@ -198,4 +220,10 @@ def _michaelis_menten(expr, syms, subs, prds, mods):
             kcat = _num(gain / e)
             if kcat is not None and kcat > 0:
                 return {'kind': 'mmenz', 'enzyme': enz, 'kcat_val': kcat, 'Km_val': Km}
+    if not mods:
+        # No modifier at all: gain is already the (fully-substituted) lumped
+        # Vmax -- a plain number, not an expression in some enzyme symbol.
+        kcat = _num(gain)
+        if kcat is not None and kcat > 0:
+            return {'kind': 'mmenz', 'enzyme': None, 'kcat_val': kcat, 'Km_val': Km}
     return None

@@ -102,58 +102,46 @@ def _emit(node, resolve):
     if t == libsbml.AST_MINUS:
         n = node.getNumChildren()
         if n == 1:  # unary minus
-            return '(-%s)' % _emit(node.getChild(0), resolve)
-        return '(%s - %s)' % (
-            _emit(node.getChild(0), resolve),
-            _emit(node.getChild(1), resolve),
-        )
+            return f'(-{_emit(node.getChild(0), resolve)})'
+        return f'({_emit(node.getChild(0), resolve)} - {_emit(node.getChild(1), resolve)})'
     if t == libsbml.AST_DIVIDE:
-        return '(%s / %s)' % (
-            _emit(node.getChild(0), resolve),
-            _emit(node.getChild(1), resolve),
-        )
+        return f'({_emit(node.getChild(0), resolve)} / {_emit(node.getChild(1), resolve)})'
     if t in (libsbml.AST_POWER, libsbml.AST_FUNCTION_POWER):
-        return 'pow(%s, %s)' % (
-            _emit(node.getChild(0), resolve),
-            _emit(node.getChild(1), resolve),
-        )
+        return f'pow({_emit(node.getChild(0), resolve)}, {_emit(node.getChild(1), resolve)})'
 
     # --- built-in functions --------------------------------------------
     if t in _UNARY:
-        return '%s(%s)' % (_UNARY[t], _emit(node.getChild(0), resolve))
+        return f'{_UNARY[t]}({_emit(node.getChild(0), resolve)})'
     if t == libsbml.AST_FUNCTION_ROOT:
         # root(degree, radicand); degree defaults to 2 (sqrt).
         if node.getNumChildren() == 1:
-            return 'sqrt(%s)' % _emit(node.getChild(0), resolve)
+            return f'sqrt({_emit(node.getChild(0), resolve)})'
         deg = _emit(node.getChild(0), resolve)
         rad = _emit(node.getChild(1), resolve)
-        return 'pow(%s, 1.0/(%s))' % (rad, deg)
+        return f'pow({rad}, 1.0/({deg}))'
     if t == libsbml.AST_FUNCTION_LOG:
         # log(base, x) -> logn; single arg is log base 10.
         if node.getNumChildren() == 1:
-            return 'log10(%s)' % _emit(node.getChild(0), resolve)
+            return f'log10({_emit(node.getChild(0), resolve)})'
         base = _emit(node.getChild(0), resolve)
         x = _emit(node.getChild(1), resolve)
-        return '(log(%s) / log(%s))' % (x, base)
+        return f'(log({x}) / log({base}))'
     if t == libsbml.AST_FUNCTION_PIECEWISE:
         return _piecewise(node, resolve)
 
     # --- relational / logical (used inside piecewise / triggers) --------
     if t in _RELATIONAL:
-        return '(%s %s %s)' % (
-            _emit(node.getChild(0), resolve),
-            _RELATIONAL[t],
-            _emit(node.getChild(1), resolve),
-        )
+        return (f'({_emit(node.getChild(0), resolve)} {_RELATIONAL[t]} '
+                f'{_emit(node.getChild(1), resolve)})')
     if t == libsbml.AST_LOGICAL_AND:
         return _nary(node, resolve, 'and', '1')
     if t == libsbml.AST_LOGICAL_OR:
         return _nary(node, resolve, 'or', '0')
     if t == libsbml.AST_LOGICAL_NOT:
-        return '(not(%s))' % _emit(node.getChild(0), resolve)
+        return f'(not({_emit(node.getChild(0), resolve)}))'
 
     name = node.getName() if node.isName() else libsbml.ASTNode.getType(node)
-    raise UnsupportedMath('unhandled MathML node type=%s name=%r' % (t, name))
+    raise UnsupportedMath(f'unhandled MathML node type={t} name={name!r}')
 
 
 def _nary(node, resolve, op, identity):
@@ -161,7 +149,7 @@ def _nary(node, resolve, op, identity):
     if n == 0:
         return identity
     parts = [_emit(node.getChild(i), resolve) for i in range(n)]
-    return '(' + (' %s ' % op).join(parts) + ')'
+    return '(' + f' {op} '.join(parts) + ')'
 
 
 def _piecewise(node, resolve):
@@ -173,5 +161,5 @@ def _piecewise(node, resolve):
     for i in reversed(range(pairs)):
         value = _emit(node.getChild(2 * i), resolve)
         cond = _emit(node.getChild(2 * i + 1), resolve)
-        expr = 'if(%s, %s, %s)' % (cond, value, expr)
+        expr = f'if({cond}, {value}, {expr})'
     return expr

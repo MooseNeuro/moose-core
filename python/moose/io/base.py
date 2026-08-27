@@ -7,6 +7,14 @@
 #
 
 # Code:
+# Postpone evaluation of annotations (PEP 563): this module is reachable
+# from moose/__init__.py's own early `from moose import model_utils` (which
+# now imports moose.io.sbml for loadModel's SBML dispatch), well before
+# `moose.ObjId` exists on the partially-initialized `moose` module -- without
+# this, the `-> moose.ObjId` annotations below would be evaluated immediately
+# at class-definition time and raise AttributeError.
+from __future__ import annotations
+
 from typing import List, Optional, Protocol
 
 import moose
