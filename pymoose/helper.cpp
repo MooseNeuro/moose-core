@@ -327,7 +327,7 @@ bool setFieldGeneric(const ObjId &oid, const string &fieldName,
         return Field<vector<double>>::set(oid.id, fieldName,
                                           nb::cast<vector<double>>(val));
     }
-    if(fieldType == "vector<vector<double>>") {
+    if(fieldType == "vector< vector<double> >") {
         // NB: Note that we cast to ObjId here and not to Id.
         return Field<vector<vector<double>>>::set(
             oid.id, fieldName, nb::cast<vector<vector<double>>>(val));
@@ -412,6 +412,11 @@ nb::object getFieldValue(const ObjId &oid, const Finfo *f)
         r = nb::cast(Field<vector<ObjId>>::get(oid, fname));
     else if(rttType == "vector<string>")
         r = nb::cast(Field<vector<string>>::get(oid, fname));
+    else if(rttType == "vector< vector<double> >") {
+        // NB: Note that we cast to ObjId here and not to Id.
+        r = nb::cast(Field<vector<vector<double>>>::get(
+                oid.id, fname));
+    }
     else {
         cerr << "Warning: getValueFinfo:: Unsupported type '" + rttType + "'"
              << endl;
