@@ -566,9 +566,11 @@ class NML2Reader(object):
 
         """
         try:
+            if self.network is None or self.network.temperature is None:
+                return SI("25 degC")
             return SI(self.network.temperature)
         except AttributeError:
-            return SI("25")
+            return SI("25 degC")
 
     def getCellInPopulation(self, pop_id, index):
         return self.cells_in_populations[pop_id][index]
