@@ -470,7 +470,7 @@ class NML2Reader(object):
     def read(
         self,
         filename,
-        modelpath,
+        modelpath=None,
         symmetric=True,
         vmin=-150e-3,
         vmax=100e-3,
@@ -537,6 +537,8 @@ class NML2Reader(object):
             self.network = self.doc.networks[0]
             moose.celsius = self._getTemperature()
 
+        if modelpath is None:
+            modelpath = "/model"
         self.model = moose.Neutral(modelpath)
 
         self.importConcentrationModels(self.doc)
