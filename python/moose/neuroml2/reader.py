@@ -1628,6 +1628,7 @@ class NML2Reader(object):
                     "alpha": Q_(alpha, "1/s"),
                     "beta": Q_(beta, "1/s"),
                 }
+            param_tabs["rateScale"] = Q_(q10, "dimensionless")
             if getattr(ngate, "time_course", None) is not None:
                 tau = self.calculateRateFn(
                     ngate.time_course, vtab, param_tabs=param_tabs
@@ -1793,7 +1794,7 @@ class NML2Reader(object):
             alpha = self.calculateRateFn(fwd, vtab, ctab=ctab)
             beta = self.calculateRateFn(rev, vtab, ctab=ctab)
             param_tabs = {"alpha": Q_(alpha, "1/s"), "beta": Q_(beta, "1/s")}
-
+        param_tabs["rateScale"] = Q_(q10_scale, "dimensionless")
         # Beware of a peculiar cascade of evaluation below: In some
         # cases rate parameters alpha and beta are computed with
         # standard HH-type formula, then tweaked based on the
@@ -1898,6 +1899,7 @@ class NML2Reader(object):
             alpha = self.calculateRateFn(fwd, vtab, ctab=ctab)
             beta = self.calculateRateFn(rev, vtab, ctab=ctab)
             param_tabs = {"alpha": Q_(alpha, "1/s"), "beta": Q_(beta, "1/s")}
+        param_tabs["rateScale"] = Q_(q10_scale, "dimensionless")
         # Beware of a peculiar cascade of evaluation below: In some
         # cases rate parameters alpha and beta are computed with
         # standard HH-type formula, then tweaked based on the
