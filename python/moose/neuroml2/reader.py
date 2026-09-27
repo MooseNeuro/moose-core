@@ -109,7 +109,7 @@ def to_exprtk(expr, resolve):
 
     """
     try:
-        tree = ast.parse(pythonize_expr(expr).strip(), mode="eval")
+        tree = ast.parse(pythonize_expr(expr), mode="eval")
     except SyntaxError as err:
         raise UnsupportedMath(f'could not parse {expr!r}: {err}')
     return _emit(tree.body, resolve)
@@ -227,7 +227,7 @@ def pythonize_expr(expr):
         .replace(".or.", " or ")
         .replace("^", "**")
     )
-    return py_expr
+    return py_expr.strip()
 
 
 def _make_function(path, expr):
