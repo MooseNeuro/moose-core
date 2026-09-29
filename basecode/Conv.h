@@ -592,14 +592,14 @@ template< class T > class Conv< vector< vector< T > > >
         }
 
         static void str2val( vector< vector< T > >& val, const string& s ) {
-            cout << "Specialized Conv< vector< vector< T > > >::str2val not done\n";
+            cout << "Specialized Conv<vector<vector<T>>>::str2val not done\n";
         }
 
         static void val2str( string& s, const vector< vector< T > >& val ) {
-            cout << "Specialized Conv< vector< vector< T > > >::val2str not done\n";
+            cout << "Specialized Conv<vector<vector<T>>>::val2str not done\n";
         }
         static string rttiType() {
-            string ret = "vector< vector<" + Conv< T >::rttiType() + "> >";
+            string ret = "vector<vector<" + Conv< T >::rttiType() + ">>";
             return ret;
         }
     private:

@@ -526,7 +526,7 @@ void HHGate::fillFromExpr(const Eref& e)
             prevB = B_[ii] - a_;
         }
         else {  // form = 2, tau/inf
-            if (a_ <= 0.0) {
+            if (fabs(a_) <= SINGULARITY) {
                 a_ = prevA;
                 b_ = prevB;
             }
