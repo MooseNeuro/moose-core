@@ -220,7 +220,7 @@ def readcell_scrambled(filename, target, method="ee"):
 
 
 # NML2 reader and writer function.
-def mooseReadNML2(filepath, modelpath, verbose=False):
+def mooseReadNML2(filepath, modelpath=None, verbose=False):
     """Read NeuroML model (version 2) and return reader object.
     """
     global nml2Import_, nml2ImportError_

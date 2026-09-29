@@ -55,6 +55,136 @@ PREDEFINED_RATEFN_MAP = {
     "HHExpLinearRate": linoid2,
 }
 
+class UnsupportedMath(Exception):
+    """The expression contains a construct MOOSE's exprtk cannot express."""
+
+
+# LEMS -> exprtk translation for a ComponentType Dynamics expression.
+# LEMS `ln` and `log` are both the natural log (as in jLEMS), which exprtk
+# names `log`.
+_FUNCTIONS = {
+    "abs": "abs",
+    "ceil": "ceil",
+    "cos": "cos",
+    "cosh": "cosh",
+    "exp": "exp",
+    "floor": "floor",
+    "ln": "log",
+    "log": "log",
+    "max": "max",
+    "min": "min",
+    "sin": "sin",
+    "sinh": "sinh",
+    "sqrt": "sqrt",
+    "tan": "tan",
+    "tanh": "tanh",
+}
+
+_OPERATORS = {
+    ast.Add: "+",
+    ast.Sub: "-",
+    ast.Mult: "*",
+    ast.Div: "/",
+    ast.Eq: "==",
+    ast.NotEq: "!=",
+    ast.Lt: "<",
+    ast.LtE: "<=",
+    ast.Gt: ">",
+    ast.GtE: ">=",
+    ast.And: "and",
+    ast.Or: "or",
+}
+
+
+def to_exprtk(expr, resolve):
+    """Convert LEMS expression `expr` into an exprtk expression string.
+
+    Parameters
+    ----------
+    expr : str
+        LEMS expression, e.g. the value of a DerivedVariable.
+    resolve : callable
+        Maps a LEMS name to its exprtk text: the value of a Constant, or the
+        Function variable `x<k>` of an input or a DerivedVariable.
+
+    """
+    try:
+        tree = ast.parse(pythonize_expr(expr), mode="eval")
+    except SyntaxError as err:
+        raise UnsupportedMath(f'could not parse {expr!r}: {err}')
+    return _emit(tree.body, resolve)
+
+
+def _conditional_to_exprtk(cases, resolve):
+    """Convert the `Case` list of a ConditionalDerivedVariable into a nested
+    exprtk `if()`.
+
+    The first `Case` whose condition holds gives the value, and a `Case`
+    without a condition is the default (0 if there is none). `Case`s after
+    the default are never reached.
+
+    Parameters
+    ----------
+    cases : list
+        `Case` elements of the ConditionalDerivedVariable.
+    resolve : callable
+        Maps a LEMS name to its exprtk text, as in `to_exprtk`.
+
+    """
+    cond_str = []
+    value = "0"
+    for case_ in cases:
+        if case_.condition is None:
+            value = to_exprtk(case_.value, resolve)
+            break
+        cond = to_exprtk(case_.condition, resolve)
+        cond_str.append(f"if({cond}, {to_exprtk(case_.value, resolve)}, ")
+    return "".join(cond_str) + value + ")" * len(cond_str)
+
+
+def _emit(node, resolve):
+    if isinstance(node, ast.Constant):
+        if isinstance(node.value, bool):
+            return "1" if node.value else "0"
+        if isinstance(node.value, (int, float)):
+            return repr(node.value)
+    if isinstance(node, ast.Name):
+        return resolve(node.id)
+    if isinstance(node, ast.UnaryOp):
+        operand = _emit(node.operand, resolve)
+        if isinstance(node.op, ast.UAdd):
+            return operand
+        if isinstance(node.op, ast.USub):
+            return f"(-{operand})"
+        if isinstance(node.op, ast.Not):
+            return f"not({operand})"
+    if isinstance(node, ast.BinOp):
+        left = _emit(node.left, resolve)
+        right = _emit(node.right, resolve)
+        if isinstance(node.op, ast.Pow):
+            # `^` is exponentiation in exprtk too, but `pow` cannot be
+            # misread as the bitwise xor Python parsed it into.
+            return f"pow({left}, {right})"
+        if type(node.op) in _OPERATORS:
+            return f"({left} {_OPERATORS[type(node.op)]} {right})"
+    if isinstance(node, ast.Compare) and len(node.ops) == 1:
+        if type(node.ops[0]) in _OPERATORS:
+            left = _emit(node.left, resolve)
+            right = _emit(node.comparators[0], resolve)
+            return f"({left} {_OPERATORS[type(node.ops[0])]} {right})"
+    if isinstance(node, ast.BoolOp) and type(node.op) in _OPERATORS:
+        op = f" {_OPERATORS[type(node.op)]} "
+        return "({})".format(
+            op.join(_emit(value, resolve) for value in node.values)
+        )
+    if isinstance(node, ast.Call):
+        if isinstance(node.func, ast.Name) and not node.keywords:
+            if node.func.id in _FUNCTIONS:
+                args = ", ".join(_emit(arg, resolve) for arg in node.args)
+                return f"{_FUNCTIONS[node.func.id]}({args})"
+            raise UnsupportedMath(f'unknown function {node.func.id!r}')
+    raise UnsupportedMath(f'unhandled expression node {ast.dump(node)}')
+
 
 PREDEFINED_GATE_DYN_PARAMS = [
     "forward_rate",
@@ -91,13 +221,84 @@ def pythonize_expr(expr):
         .replace(".eq.", "==")
         .replace(".gt.", ">")
         .replace(".lt.", "<")
+        .replace(".geq.", ">=")
+        .replace(".leq.", "<=")
+        .replace(".and.", " and ")
+        .replace(".or.", " or ")
         .replace("^", "**")
     )
-    return py_expr
+    return py_expr.strip()
+
+
+def _make_function(path, expr):
+    fn = moose.Function(path)
+    fn.expr = expr
+    if fn.expr == "":
+        moose.delete(fn)
+        raise UnsupportedMath(f'could not compile expression {expr!r}')
+    return fn
+
+
+def _eval_function(path, expr, local_vars, outputs):
+    """Evaluate exprtk program `expr` for every entry of the input arrays.
+
+    exprtk has no vectorized form, so the program is evaluated one entry
+    at a time. It assigns each result to its own variable (`x<k> := ...`),
+    which is read back after every evaluation.
+
+    Parameters
+    ----------
+    path : str
+        Path of the moose.Function evaluating `expr`. It is deleted before
+        returning.
+    expr : str
+        exprtk program.
+    local_vars : dict
+        Input names of `expr` (`x<k>`) mapped to their values. The arrays
+        must be broadcast compatible.
+    outputs : dict
+        Result names mapped to the variable (`x<k>`) `expr` assigns them to.
+
+    Returns
+    -------
+    dict
+        Each result name in `outputs` mapped to its value for each entry, in
+        the broadcast shape of the inputs.
+
+    """
+    local_vars = {
+        name: np.asarray(values, dtype=float)
+        for name, values in local_vars.items()
+    }
+    shape = np.broadcast_shapes(*(v.shape for v in local_vars.values()))
+    fn = _make_function(path, expr)
+    try:
+        varying = []
+        for name, values in local_vars.items():
+            index = fn.xindex[name]
+            if index >= fn.numVars:
+                continue  # not used by `expr`
+            if values.size == 1:
+                fn.x[index].value = float(values.reshape(-1)[0])
+            else:
+                varying.append(
+                    (fn.x[index], np.broadcast_to(values, shape).reshape(-1))
+                )
+        out_vars = [(name, fn.x[fn.xindex[x]]) for name, x in outputs.items()]
+        results = {name: np.empty(shape).reshape(-1) for name in outputs}
+        for kk in range(int(np.prod(shape))):
+            for var, values in varying:
+                var.value = values[kk]
+            fn.evalResult  # runs the program, which assigns the outputs
+            for name, var in out_vars:
+                results[name][kk] = var.value
+        return {name: rate.reshape(shape) for name, rate in results.items()}
+    finally:
+        moose.delete(fn)
 
 
 def array_eval_component(comp_type, req_vars, params={}):
-    """Use numpy vectorization for faster evaluation of component formula.
+    """Evaluate component formula with exprtk.
 
     Parameters
     ----------
@@ -123,36 +324,44 @@ def array_eval_component(comp_type, req_vars, params={}):
         for name, quantity in params.items():
             local_vars[name] = quantity.to_base_units().magnitude
     exec_str = []
+    # LEMS name -> exprtk text
+    symbols = {}
+    inputs = {}
+
+    def resolve(name):
+        if name in symbols:
+            return symbols[name]
+        if name not in local_vars:
+            raise UnsupportedMath(f'unresolved symbol {name!r}')
+        symbols[name] = f"x{len(symbols)}"
+        inputs[symbols[name]] = local_vars[name]
+        return symbols[name]
+
     for const in comp_type.Constant:
-        exec_str.append(f"{const.name} = {pynml.get_value_in_si(const.value)}")
+        if const.name in local_vars:
+            continue
+        value = pynml.get_value_in_si(const.value)
+        if value is None:
+            raise UnsupportedMath(f'unknown unit in constant {const.name!r}')
+        symbols[const.name] = f"({value!r})"
     for dyn in comp_type.Dynamics:
         for dv in dyn.DerivedVariable:
-            exec_str.append(f"{dv.name} = {dv.value.replace('^', '**')}")
-            exec_str.append(f"return_vals['{dv.name}'] = {dv.name}")
+            expr = to_exprtk(dv.value, resolve)
+            if dv.name in symbols:
+                raise UnsupportedMath(f'{dv.name!r} is already defined')
+            symbols[dv.name] = f"x{len(symbols)}"
+            local_vars["return_vals"][dv.name] = symbols[dv.name]
+            exec_str.append(f"{symbols[dv.name]} := {expr}")
         for cdv in dyn.ConditionalDerivedVariable:
-            cond_str = [f"return_vals['{cdv.name}'] = "]
-            closing_parens = 0
-            for case_ in cdv.Case:
-                if case_.condition is not None:
-                    cond = (
-                        case_.condition.replace(".neq.", "!=")
-                        .replace(".eq.", "==")
-                        .replace(".gt.", ">")
-                        .replace(".lt.", "<")
-                    )
-                    cond_str.append(
-                        f"where({cond}, {case_.value.replace('^', '**')}, "
-                    )
-                    closing_parens += 1
-                else:
-                    cond_str += [case_.value, ")" * closing_parens]
-            # print("^" * 100, cond_str)
-            exec_str.append(" ".join(cond_str))
-    # print("#" * 80, "\n", exec_str, "\n", "#" * 80, "\n")
-    exec_str = "\n".join(exec_str)
-    # print("*" * 80, "\n", exec_str, "\n", "*" * 80)
-    logger_.debug(f'Excuting string "{exec_str}"\nlocals: {local_vars}')
-    exec(exec_str, np.__dict__, local_vars)
+            cond_str = _conditional_to_exprtk(cdv.Case, resolve)
+            if cdv.name in symbols:
+                raise UnsupportedMath(f'{cdv.name!r} is already defined')
+            symbols[cdv.name] = f"x{len(symbols)}"
+            local_vars["return_vals"][cdv.name] = symbols[cdv.name]
+            exec_str.append(f"{symbols[cdv.name]} := {cond_str}")
+    exec_str = ";\n".join(exec_str)
+    logger_.debug(f'Executing string "{exec_str}"\nvariables: {symbols}')
+    local_vars["return_vals"].update(_eval_function("f", exec_str, inputs, local_vars["return_vals"]))
     return local_vars["return_vals"]
 
 
@@ -251,7 +460,7 @@ def _outputDependsOn(ct, var):
                 if case.condition:
                     parts.append(pythonize_expr(case.condition))
                 parts.append(pythonize_expr(case.value))
-            var_expr[cdv.name] = " ".join(parts)
+            var_expr[cdv.name] = "({})".format(", ".join(parts))
 
     # Identify output variable names (those with an exposure)
     output_names = []
@@ -470,7 +679,7 @@ class NML2Reader(object):
     def read(
         self,
         filename,
-        modelpath,
+        modelpath=None,
         symmetric=True,
         vmin=-150e-3,
         vmax=100e-3,
@@ -537,6 +746,8 @@ class NML2Reader(object):
             self.network = self.doc.networks[0]
             moose.celsius = self._getTemperature()
 
+        if modelpath is None:
+            modelpath = "/model"
         self.model = moose.Neutral(modelpath)
 
         self.importConcentrationModels(self.doc)
@@ -566,9 +777,11 @@ class NML2Reader(object):
 
         """
         try:
+            if self.network is None or self.network.temperature is None:
+                return SI("25 degC")
             return SI(self.network.temperature)
         except AttributeError:
-            return SI("25")
+            return SI("25 degC")
 
     def getCellInPopulation(self, pop_id, index):
         return self.cells_in_populations[pop_id][index]
@@ -1401,7 +1614,10 @@ class NML2Reader(object):
             if ngate is None:
                 continue
             if _isInstantaneous(ngate):
-                inf = self.calculateRateFn(ngate.steady_state, vtab)
+                inf = self.calculateRateFn(
+                    ngate.steady_state, vtab,
+                    param_tabs={"rateScale": Q_(self._computeQ10Scale(ngate), "dimensionless")},
+                )
                 mgate.tableA = inf
                 mgate.tableB = np.ones_like(inf)
                 continue
@@ -1417,6 +1633,7 @@ class NML2Reader(object):
                     "alpha": Q_(alpha, "1/s"),
                     "beta": Q_(beta, "1/s"),
                 }
+            param_tabs["rateScale"] = Q_(q10, "dimensionless")
             if getattr(ngate, "time_course", None) is not None:
                 tau = self.calculateRateFn(
                     ngate.time_course, vtab, param_tabs=param_tabs
@@ -1455,7 +1672,7 @@ class NML2Reader(object):
 
         """
         q10_scale = 1.0
-        if ngate.q10_settings:
+        if getattr(ngate, "q10_settings", None):
             if ngate.q10_settings.type == "q10Fixed":
                 q10_scale = float(ngate.q10_settings.fixed_q10)
             elif ngate.q10_settings.type == "q10ExpTemp":
@@ -1535,7 +1752,8 @@ class NML2Reader(object):
             mgate.divs = vdivs
             vtab = np.linspace(vmin, vmax, vdivs)
             inf = self.calculateRateFn(
-                ngate.steady_state, vtab, ctab=None, param_tabs={}
+                ngate.steady_state, vtab, ctab=None,
+                param_tabs={"rateScale": Q_(q10_scale, "dimensionless")},
             )
             mgate.tableA = inf
             mgate.tableB = np.ones_like(inf)
@@ -1582,7 +1800,7 @@ class NML2Reader(object):
             alpha = self.calculateRateFn(fwd, vtab, ctab=ctab)
             beta = self.calculateRateFn(rev, vtab, ctab=ctab)
             param_tabs = {"alpha": Q_(alpha, "1/s"), "beta": Q_(beta, "1/s")}
-
+        param_tabs["rateScale"] = Q_(q10_scale, "dimensionless")
         # Beware of a peculiar cascade of evaluation below: In some
         # cases rate parameters alpha and beta are computed with
         # standard HH-type formula, then tweaked based on the
@@ -1687,6 +1905,7 @@ class NML2Reader(object):
             alpha = self.calculateRateFn(fwd, vtab, ctab=ctab)
             beta = self.calculateRateFn(rev, vtab, ctab=ctab)
             param_tabs = {"alpha": Q_(alpha, "1/s"), "beta": Q_(beta, "1/s")}
+        param_tabs["rateScale"] = Q_(q10_scale, "dimensionless")
         # Beware of a peculiar cascade of evaluation below: In some
         # cases rate parameters alpha and beta are computed with
         # standard HH-type formula, then tweaked based on the

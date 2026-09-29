@@ -579,13 +579,16 @@ def writeKkit(modelpath, filepath, sceneitems={}):
     return model_utils.mooseWriteKkit(modelpath, filepath, sceneitems)
 
 
-def readNML2(modelpath, verbose=False):
+def readNML2(filepath, modelpath=None, verbose=False):
     """Load neuroml2 model.
 
     Parameters
     ----------
-    modelpath: str
+    filepath: str
         Path of nml2 file.
+    modelpath: str
+        Path of the moose model (network instances). Defaults to
+        /model. Prototypes are always created under /library.
 
     verbose: True
         (defalt False)
@@ -593,9 +596,9 @@ def readNML2(modelpath, verbose=False):
 
     Raises
     ------
-    FileNotFoundError: If modelpath is not found or not readable.
+    FileNotFoundError: If filepath is not found or not readable.
     """
-    return model_utils.mooseReadNML2(modelpath, verbose)
+    return model_utils.mooseReadNML2(filepath, modelpath, verbose=verbose)
 
 
 def writeNML2(outfile):
