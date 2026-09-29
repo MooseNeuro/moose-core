@@ -338,6 +338,8 @@ def array_eval_component(comp_type, req_vars, params={}):
         return symbols[name]
 
     for const in comp_type.Constant:
+        if const.name in local_vars:
+            continue
         value = pynml.get_value_in_si(const.value)
         if value is None:
             raise UnsupportedMath(f'unknown unit in constant {const.name!r}')
