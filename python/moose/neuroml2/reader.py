@@ -1614,7 +1614,10 @@ class NML2Reader(object):
             if ngate is None:
                 continue
             if _isInstantaneous(ngate):
-                inf = self.calculateRateFn(ngate.steady_state, vtab)
+                inf = self.calculateRateFn(
+                    ngate.steady_state, vtab,
+                    param_tabs={"rateScale": Q_(self._computeQ10Scale(ngate), "dimensionless")},
+                )
                 mgate.tableA = inf
                 mgate.tableB = np.ones_like(inf)
                 continue
@@ -1669,7 +1672,7 @@ class NML2Reader(object):
 
         """
         q10_scale = 1.0
-        if ngate.q10_settings:
+        if getattr(ngate, "q10_settings", None):
             if ngate.q10_settings.type == "q10Fixed":
                 q10_scale = float(ngate.q10_settings.fixed_q10)
             elif ngate.q10_settings.type == "q10ExpTemp":
@@ -1749,7 +1752,8 @@ class NML2Reader(object):
             mgate.divs = vdivs
             vtab = np.linspace(vmin, vmax, vdivs)
             inf = self.calculateRateFn(
-                ngate.steady_state, vtab, ctab=None, param_tabs={}
+                ngate.steady_state, vtab, ctab=None,
+                param_tabs={"rateScale": Q_(q10_scale, "dimensionless")},
             )
             mgate.tableA = inf
             mgate.tableB = np.ones_like(inf)
