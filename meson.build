@@ -305,6 +305,7 @@ pymoose = py.extension_module('_moose',
                               dependencies: [gsl_dep, mpi_dep, hdf5_dep], #, libsoda_dep],
                               include_directories: include_dirs,
                               install: true,
+                              install_rpath: gsl_dep.get_variable(pkgconfig: 'libdir'),
                               subdir: 'moose')
 
 install_subdir(
