@@ -72,7 +72,7 @@ def test_complex_expr():
     container = make_container()
     current = moose.getCwe()
     moose.ce(container)
-    ch = moose.HHChannelF('ch')
+    channel = moose.HHChannelF('ch')
     channel.Xpower = 3
     channel.Ypower = 1
     channel.Ek = 55e-3
@@ -253,5 +253,6 @@ if __name__ == '__main__':
     test_hh_k_vclamp()
     test_hh_na_vclamp()
     test_hhchanf_eval()
+    test_complex_expr()
 #
 # test_hhchanf.py ends here
