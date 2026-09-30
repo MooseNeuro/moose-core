@@ -101,6 +101,26 @@ Now you can import moose in a Python script or interpreter with the statement:
 ```
 >>> import moose
 ```
+
+## What's New in 5.0.0
+
+### Expanded NeuroML2 Support
+
+MOOSE's NeuroML2 reader now correctly handles V and Ca2+-dependent 2D
+channels (`HHChannel2D`) in NeuroML models. Custom ComponentType rate
+formulas are now evaluated with exprtk instead of `exec()` with numpy,
+along with a few minor fixes.
+
+### Docker-based Installation
+
+MOOSE, JupyterLab, and [JARDesigner](https://github.com/MooseNeuro/jardesigner)
+(the web-based model-building GUI) are now available as a single,
+self-contained Docker image — no Python setup required, and it runs
+identically on Windows, macOS, and Linux. See
+[moose-jardesigner-docker](https://github.com/MooseNeuro/moose-jardesigner-docker)
+to get started.
+
+
 ## Updates in 5.0.0
 
 ### Breaking Changes
@@ -172,23 +192,6 @@ Now you can import moose in a Python script or interpreter with the statement:
 - Fixed a singularity check in HHGate's tau/inf expression evaluation
   that could miss near-zero values
 
-## What's New in 5.0.0
-
-### Expanded NeuroML2 Support
-
-MOOSE's NeuroML2 reader now correctly handles V and Ca2+-dependent 2D
-channels (`HHChannel2D`) in NeuroML models. Custom ComponentType rate
-formulas are now evaluated with exprtk instead of `exec()` with numpy,
-along with a few minor fixes.
-
-### Docker-based Installation
-
-MOOSE, JupyterLab, and [JARDesigner](https://github.com/MooseNeuro/jardesigner)
-(the web-based model-building GUI) are now available as a single,
-self-contained Docker image — no Python setup required, and it runs
-identically on Windows, macOS, and Linux. See
-[moose-jardesigner-docker](https://github.com/MooseNeuro/moose-jardesigner-docker)
-to get started.
 
 ## Featured Libraries
 
