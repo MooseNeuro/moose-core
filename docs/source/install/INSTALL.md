@@ -117,6 +117,15 @@ pip install git+https://github.com/subhacom/moose-core@fix495merge --user
 
 This installs the `fix495merge` branch from subhacom's fork of moose-core.
 
+## Installing with Docker
+
+For a zero-setup install that bundles MOOSE, JupyterLab, and
+[JARDesigner](https://github.com/MooseNeuro/jardesigner) (the web-based
+model-building GUI) into one self-contained image, see
+[moose-jardesigner-docker](https://github.com/MooseNeuro/moose-jardesigner-docker).
+This is the fastest way to get MOOSE running with no Python setup on your
+own machine, and runs identically on Windows, macOS, and Linux.
+
 ## Post-installation verification
 
 Check that MOOSE is installed and working correctly:
