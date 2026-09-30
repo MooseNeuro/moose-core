@@ -51,8 +51,8 @@ https://github.com/MooseNeuro/moose-notebooks.
 [`Mysore Pak`](https://en.wikipedia.org/wiki/Mysore_pak) is a rich,
 ghee-based sweet that originated in the kitchens of the Mysore Palace in
 Karnataka, India. Made from gram flour (besan), ghee, and sugar syrup, it
-is traditionally made in two textures — a dense, fudge-like version and a
-lighter, porous, melt-in-the-mouth version — depending on how the mixture
+is traditionally made in two textures a dense, fudge-like version and a
+lighter, porous, melt-in-the-mouth version - depending on how the mixture
 is aerated during cooking.
 
 ## Quick Install
@@ -109,6 +109,34 @@ Now you can import moose in a Python script or interpreter with the statement:
   instead of the previous tuple return. moose.SBML.readSBML.mooseReadSBML
   is now deprecated
 
+### Improvements
+- Replaced the SBML reader with a new, general-purpose one supporting
+  a much wider range of standard model files
+- Added support for loading and simulating SBML models with multiple
+  compartments
+- Added an SBML writer to the new reader/writer module, with broader
+  support than the old legacy writer, and a round-trip with the reader
+  verified to floating-point precision
+- loadpath is now optional when loading an SBML model, defaulting to
+  /library/{model_name}
+- Added moose.NA, moose.FaradayConst, and other physical constants as
+  directly accessible Python attributes
+- Added a set of ready-to-use Allen Brain Database neuron morphologies
+  to MOOSE's built-in library
+- loadKkit() now shows a deprecation notice recommending loadModel()
+- NeuroML2 ComponentType Dynamics rates are now evaluated with exprtk
+  through a scratch moose.Function instead of exec() with numpy;
+  expressions that cannot be translated raise UnsupportedMath
+- modelpath is now optional in NML2Reader.read, defaulting to /model
+- HHGate2D (2D-dependent gates) now supports specifying gate tables as
+  alpha/beta or tau/inf expressions (alphaExpr/betaExpr/tauExpr/infExpr),
+  the same way HHGate already does for 1D gates
+
+### Documentation
+- Converged all MOOSE-authored source files to a uniform GNU GPLv3
+  license header
+- Updated LICENSE file links to current gnu.org URLs
+
 ### Bug Fixes
 - Fixed Dsolve objects returning the wrong path they now correctly
   report their actual location in the model tree
@@ -143,34 +171,6 @@ Now you can import moose in a Python script or interpreter with the statement:
   dependency mode (VOLT_INDEX/C1_INDEX/C2_INDEX) crashing
 - Fixed a singularity check in HHGate's tau/inf expression evaluation
   that could miss near-zero values
-
-### Improvements
-- Replaced the SBML reader with a new, general-purpose one supporting
-  a much wider range of standard model files
-- Added support for loading and simulating SBML models with multiple
-  compartments
-- Added an SBML writer to the new reader/writer module, with broader
-  support than the old legacy writer, and a round-trip with the reader
-  verified to floating-point precision
-- loadpath is now optional when loading an SBML model, defaulting to
-  /library/{model_name}
-- Added moose.NA, moose.FaradayConst, and other physical constants as
-  directly accessible Python attributes
-- Added a set of ready-to-use Allen Brain Database neuron morphologies
-  to MOOSE's built-in library
-- loadKkit() now shows a deprecation notice recommending loadModel()
-- NeuroML2 ComponentType Dynamics rates are now evaluated with exprtk
-  through a scratch moose.Function instead of exec() with numpy;
-  expressions that cannot be translated raise UnsupportedMath
-- modelpath is now optional in NML2Reader.read, defaulting to /model
-- HHGate2D (2D-dependent gates) now supports specifying gate tables as
-  alpha/beta or tau/inf expressions (alphaExpr/betaExpr/tauExpr/infExpr),
-  the same way HHGate already does for 1D gates
-
-### Documentation
-- Converged all MOOSE-authored source files to a uniform GNU GPLv3
-  license header
-- Updated LICENSE file links to current gnu.org URLs
 
 ## What's New in 5.0.0
 
