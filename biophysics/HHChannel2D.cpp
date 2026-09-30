@@ -31,13 +31,37 @@ const Cinfo *HHChannel2D::initCinfo()
     // Field definitions
     ///////////////////////////////////////////////////////
     static ValueFinfo<HHChannel2D, string> Xindex(
-        "Xindex", "String for setting X index.", &HHChannel2D::setXindex,
+        "Xindex",
+        "String specifying input variable assignment for X gate. This tells the"
+        " channel which input (dest field) to use for which parameter in the"
+        " gate equations. "
+        " It can take the following string values:\n"
+        " \"VOLT_C1_INDEX\": assign voltage input 'Vm' to `v` and concentration"
+        " input 'concen' to `c`\n"
+        " \"VOLT_C2_INDEX\": assign voltage input 'Vm' to `v` and concentration"
+        " input 'concen2' to `c`\n"
+        " \"C1_C2_INDEX\": assign concentration input 'concen' to `v` and "
+        "concentration"
+        " input 'concen2' to `c`.\n"
+        " \"VOLT_INDEX\": use only voltage input received via dest field 'Vm'"
+        " (assigned to the `v` variable in the equations).\n"
+        " \"C1_INDEX\": use only concentration input received via  dest field"
+        " 'concen' (assigned to `c` variable in the equations).\n"
+        " \"C2_INDEX\": use only concentration input received via dest field"
+        " 'concen2'  (assigned to `c` variable in the equations)\n"
+        " Unless one of the gate equations is actually unseparable, "
+        "consider using HHChannel instead of HHCHannel2D for 1D gates."
+        ,
+        &HHChannel2D::setXindex,
         &HHChannel2D::getXindex);
-    static ValueFinfo<HHChannel2D, string> Yindex(
-        "Yindex", "String for setting Y index.", &HHChannel2D::setYindex,
+    static ValueFinfo<HHChannel2D, string> Yindex("Yindex",
+        "String specifying input variable assignment for Y gate. See `Xindex`.",
+ &HHChannel2D::setYindex,
         &HHChannel2D::getYindex);
     static ValueFinfo<HHChannel2D, string> Zindex(
-        "Zindex", "String for setting Z index.", &HHChannel2D::setZindex,
+        "Zindex",
+        "String specifying input variable assignment for Z gate. See `Xindex`.",
+        &HHChannel2D::setZindex,
         &HHChannel2D::getZindex);
     static ElementValueFinfo<HHChannel2D, double> Xpower(
         "Xpower", "Power for X gate", &HHChannel2D::setXpower,
@@ -238,7 +262,12 @@ double HHChannel2D::depValue(int dep)
         case 2:
             return conc2_;
         default:
-            assert(0);
+            // dep=-1 falls through this
+            //single-input dependency mode (VOLT_INDEX/C1_INDEX/C2_INDEX):
+            // there is no second signal. The gate's second axis should be
+            // set to length 1 (ydivs=0), in which case Interpol2D's lookup
+            // degenerates to plain 1D interpolation and this value is never
+            // actually read, so any constant is safe here.
             return 0.0;
     }
 }
