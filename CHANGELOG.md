@@ -4,6 +4,69 @@
 ## Unreleased
 *Unreleased changes go here*
 
+## [5.0.0] - 2026-09-30
+
+Mysore Pak
+
+### Breaking Changes
+
+* moose.readSBML() and moose.writeSBML() now use the new reader/writer directly. They return a single model object and raise on failure, instead of the previous tuple return. moose.SBML.readSBML.mooseReadSBML is now deprecated
+
+### Expanded NeuroML2 Support
+
+MOOSE's NeuroML2 reader now correctly handles V and Ca2+-dependent 2D
+channels (`HHChannel2D`) in NeuroML models. Custom ComponentType rate
+formulas are now evaluated with exprtk instead of `exec()` with numpy,
+along with a few minor fixes.
+
+### Docker-based Installation
+
+MOOSE, JupyterLab, and [JARDesigner](https://github.com/MooseNeuro/jardesigner)
+(the web-based model-building GUI) are now available as a single,
+self-contained Docker image — no Python setup required, and it runs
+identically on Windows, macOS, and Linux. See
+[moose-jardesigner-docker](https://github.com/MooseNeuro/moose-jardesigner-docker)
+to get started.
+
+### Improvements
+
+* Replaced the SBML reader with a new, general-purpose one supporting a much wider range of standard model files
+* Added support for loading and simulating SBML models with multiple compartments
+* Added an SBML writer to the new reader/writer module, with broader support than the old legacy writer, and a round-trip with the reader verified to floating-point precision
+* loadpath is now optional when loading an SBML model, defaulting to /library/{model_name}
+* Added moose.NA, moose.FaradayConst, and other physical constants as directly accessible Python attributes
+* Added a set of ready-to-use Allen Brain Database neuron morphologies to MOOSE's built-in library
+* loadKkit() now shows a deprecation notice recommending loadModel()
+* NeuroML2 ComponentType Dynamics rates are now evaluated with exprtk through a scratch moose.Function instead of exec() with numpy; expressions that cannot be translated raise UnsupportedMath
+* modelpath is now optional in NML2Reader.read, defaulting to /model
+* HHGate2D (2D-dependent gates) now supports specifying gate tables as alpha/beta or tau/inf expressions (alphaExpr/betaExpr/tauExpr/infExpr), the same way HHGate already does for 1D gates
+
+### Bug Fixes
+
+* Fixed Dsolve objects returning the wrong path they now correctly report their actual location in the model tree
+* Fixed creating MOOSE objects with attributes passed as keyword arguments (e.g. moose.Pool('/x', concInit=9.99))
+* Fixed creating an object at a path already holding a different type silently returning the wrong object instead of raising an error
+* Fixed Function expressions with more than 10 input variables silently ignoring variables past the 10th
+* Fixed SWC morphology files that number nodes starting from 0 (including real Allen Brain Database files) failing to load
+* Fixed an inconsistent value used for the Nernst equation's R/F constant
+* Fixed wildcardFind to correctly resolve . and .. in search paths
+* Fixed import moose crashing when the optional pyneuroml package is not installed
+* Fixed chemMerge failing on SBML files due to a call to a non-existent function
+* Fixed the NeuroML2 temperature fallback returning 25 K instead of 298.15 K when a model specifies no temperature
+* Fixed no vector<vector<double>> field could be written from Python (e.g. assigning HHGate2D.tableA)
+* Fixed a 2D gate lookup from Python crashing (e.g. HHGate2D.A([v, ca]))
+* Rate ComponentTypes derived from NEURON .mod files now receive rateScale, the gate's Q10 factor
+* Fixed a Case condition with a leading space causing NeuroML2 channels (e.g. Gran_NaF_98) to fail loading with IndentationError
+* moose.readNML2 now takes filepath and an optional modelpath, instead of passing the single argument on as the file path
+* Fixed Ubuntu installs failing to import moose due to the extension not carrying a runtime search path to its GSL dependency
+* Fixed HHChannel2D/HHChannelF2D channels using a single-axis dependency mode (VOLT_INDEX/C1_INDEX/C2_INDEX) crashing
+* Fixed a singularity check in HHGate's tau/inf expression evaluation that could miss near-zero values
+
+### Documentation
+
+* Converged all MOOSE-authored source files to a uniform GNU GPLv3 license header
+* Updated LICENSE file links to current gnu.org URLs
+
 ## [4.3.1] - 2026-07-02
 
 Lavang Latika

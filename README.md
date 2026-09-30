@@ -35,6 +35,41 @@ details about MOOSE simulator, visit https://moose.ncbs.res.in .
 
 ---
 
+# What's New
+
+- **Expanded NeuroML2 Support**: MOOSE's NeuroML2 reader now correctly
+  handles V and Ca2+-dependent 2D channels (`HHChannel2D`) in NeuroML
+  models. Custom ComponentType rate formulas are now evaluated with
+  exprtk instead of `exec()` with numpy, along with a few minor fixes.
+
+- **Docker-based installation**: MOOSE, JupyterLab, and JARDesigner (the
+  web-based model-building GUI) are now available as a single, self-contained
+  Docker image — no Python setup required, and it runs identically on
+  Windows, macOS, and Linux. See
+  [moose-jardesigner-docker](https://github.com/MooseNeuro/moose-jardesigner-docker)
+  to get started.
+
+# Featured Libraries
+
+- **Ion Channel Library**: Access over 3,517 ion channel models from the
+  [ICGenealogy database](https://icg.neurotheory.ox.ac.uk/) through the
+  `moose.channels` module. Supported ion classes include Na, K, Ca, KCa, and
+  IH. Insert channels into compartments using wildcards, lists, or
+  dictionaries, with support for distance-dependent conductance. Channel
+  metadata includes both `modeldb_id` (ModelDB reference) and `icg_id`
+  (unique ICGenealogy identifier) for precise channel identification.
+
+- **Morphology Library**: The `moose.morphologies` module simplifies loading
+  and working with neuron morphologies. Load SWC files and access
+  compartments via `.root`, `.soma`, `.compartments`, and `.select(pattern)`.
+  Includes automatic re-rooting of SWC files not rooted at soma. Bundled
+  morphologies from the
+  [Allen Cell Types Database](https://celltypes.brain-map.org/), the
+  Traub et al. 2005 thalamocortical network model, and classic published
+  literature.
+
+---
+
 # Installation
 
 See [docs/source/install/INSTALL.md](docs/source/install/INSTALL.md) for instructions on installation.
