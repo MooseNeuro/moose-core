@@ -63,6 +63,7 @@ Aug 3 : Added recalculatecoordinates,cleanup in groupName
 import sys
 import re
 import os
+import warnings
 import moose
 from moose.SBML.validation import validateModel
 from moose.chemUtil.chemConnectUtil import xyPosition,mooseIsInstance,findCompartment,getColor,setupItem,setupMeshObj
@@ -93,6 +94,22 @@ def checkPath( dirName):
         return dirName
 
 def mooseWriteSBML(modelpath, filename, sceneitems={}):
+    """Write the model under ``modelpath`` to ``filename`` as SBML.
+
+    .. deprecated::
+        This writer only handles mass-action kinetics and relies on
+        MOOSE-specific annotations for layout/coordinates. Use
+        ``moose.io.sbml.SBMLHandler.write()`` instead: it also emits
+        Michaelis-Menten/Enz reactions, diffusion, and Function-driven
+        rate/assignment rules, and its round trip with the newer
+        ``moose.io.sbml`` reader is verified to floating-point precision.
+    """
+    warnings.warn(
+        "moose.SBML.writeSBML.mooseWriteSBML is deprecated (moose.writeSBML() "
+        "no longer calls it); use moose.io.sbml.SBMLHandler.write() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     global foundLibSBML_
     msg = " "
     if not foundLibSBML_:

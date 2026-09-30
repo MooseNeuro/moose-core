@@ -3,8 +3,8 @@
 ## Messaging Object Oriented Simulation Environment.
 ##           Copyright (C) 2014 Upinder S. Bhalla. and NCBS
 ## It is made available under the terms of the
-## GNU Lesser General Public License version 2.1
-## See the file COPYING.LIB for the full notice.
+## GNU General Public License version 3
+## See the file LICENSE in the MOOSE source root for the full notice.
 ## Here test ConcChan. We set up a channel and a pump and run two tests.
 ## First we have zero flux through the pump and check that the conc
 ## equalizes on both sides of the membrane. Then we change the Kf of

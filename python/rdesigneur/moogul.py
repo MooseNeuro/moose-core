@@ -1,6 +1,6 @@
 # Moogul.py: MOOSE Graphics 3D. 
 # Copyright (C) Upinder S. Bhalla NCBS 2022
-# This program is licensed under the GNU Public License version 3.
+# This program is licensed under the GNU General Public License version 3.
 #
 
 import moose

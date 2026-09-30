@@ -11,7 +11,7 @@
  *         Author:  Dilawar Singh <dilawars@ncbs.res.in>
  *   Organization:  NCBS Bangalore
  *
- *        License:  GNU GPL2
+ *        License:  GNU GPL3
  */
 
 #ifndef DISTRIBUTIONS_H

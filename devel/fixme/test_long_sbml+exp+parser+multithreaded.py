@@ -6,8 +6,8 @@ from __future__ import print_function, division
 # Messaging Object Oriented Simulation Environment.
 #           Copyright (C) 2015 Upinder S. Bhalla. and NCBS
 # It is made available under the terms of the
-# GNU Lesser General Public License version 2.1
-# See the file COPYING.LIB for the full notice.
+# GNU General Public License version 3
+# See the file LICENSE in the MOOSE source root for the full notice.
 #
 # rxdSpineSize.py: Builds a cell with spines and a propagating reaction
 # wave. Products diffuse into the spine and cause it to get bigger.

@@ -423,10 +423,15 @@ Designed to simulate neural systems at multiple scales: From subcellular compone
     // ----------------------------------------------------------------------
     // Global Constant Attributes.
     // ----------------------------------------------------------------------
+    // Physical/math constants, sourced from basecode/Constants.h (moose::consts)
+    // so Python and C++ share one definition.
     m.attr("NA") = NA;
     m.attr("PI") = PI;
     m.attr("FaradayConst") = FaradayConst;
     m.attr("GasConst") = GasConst;
+    m.attr("ZeroCelsius") = moose::consts::ZeroCelsius;
+    m.attr("ElementaryCharge") = moose::consts::ElementaryCharge;
+    m.attr("Boltzmann") = moose::consts::Boltzmann;
     m.attr("OUTMSG") = 0;
     m.attr("INMSG") = 1;
     m.attr("ALLMSG") = 2;

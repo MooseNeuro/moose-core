@@ -3,8 +3,8 @@
 ** Messaging Object Oriented Simulation Environment.
 **           Copyright (C) 2003-2007 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
-** GNU Lesser General Public License version 2.1
-** See the file COPYING.LIB for the full notice.
+** GNU General Public License version 3
+** See the file LICENSE in the MOOSE source root for the full notice.
 **********************************************************************/
 
 #include "../basecode/header.h"
@@ -336,8 +336,8 @@ bool ReadCell::readData( const string& line )
 		z0 = atof( argv[ 4 ].c_str() );
 		if ( polarFlag_ ) {
 			double r = x0;
-			double theta = y0 * M_PI / 180.0;
-			double phi = z0 * M_PI / 180.0;
+			double theta = y0 * PI / 180.0;
+			double phi = z0 * PI / 180.0;
 			x0 = r * sin( phi ) * cos ( theta );
 			y0 = r * sin( phi ) * sin ( theta );
 			z0 = r * cos( phi );
@@ -352,8 +352,8 @@ bool ReadCell::readData( const string& line )
 	z = atof( argv[ argOffset + 4 ].c_str() );
 	if ( polarFlag_ ) {
 		double r = x;
-		double theta = y * M_PI / 180.0;
-		double phi = z * M_PI / 180.0;
+		double theta = y * PI / 180.0;
+		double phi = z * PI / 180.0;
 		x = r * sin( phi ) * cos ( theta );
 		y = r * sin( phi ) * sin ( theta );
 		z = r * cos( phi );
@@ -527,9 +527,9 @@ Id ReadCell::buildCompartment(
 	Rm = RM_ / calcSurf( length, d );
 
 	if ( length > 0 ) {
-		Ra = RA_ * length * 4.0 / ( d * d * M_PI );
+		Ra = RA_ * length * 4.0 / ( d * d * PI );
 	} else {
-		Ra = RA_ * 8.0 / ( d * M_PI );
+		Ra = RA_ * 8.0 / ( d * PI );
 	}
 
 	// Set each of these to the other only if the only one set was other
@@ -618,9 +618,9 @@ double calcSurf( double len, double dia )
 {
 	double area = 0.0;
 	if ( len == 0.0 ) // Spherical. Safe to compare with 0.0.
-		area = dia * dia * M_PI;
+		area = dia * dia * PI;
 	else
-		area = len * dia * M_PI;
+		area = len * dia * PI;
 
 	return area;
 }
@@ -658,9 +658,9 @@ bool ReadCell::buildChannels(
 		if ( chan == "RA" ) {
 			double temp;
 			if ( length == 0.0 ) // Spherical flag. Assume length = dia.
-				temp = 8.0 * value / ( diameter * M_PI );
+				temp = 8.0 * value / ( diameter * PI );
 			else
-				temp = 4.0 * value * length / ( diameter * diameter * M_PI );
+				temp = 4.0 * value * length / ( diameter * diameter * PI );
 			Field< double >::set( compt, "Ra", temp );
 		} else if ( chan == "RM" ) {
 			Field< double >::set( compt, "Rm", value * calcSurf( length, diameter ) );
@@ -859,19 +859,19 @@ bool ReadCell::addCaConc(
 			double vol;
 			if ( length > 0.0 ){
 				if ( thickness > 0.0 ) {
-					vol = M_PI * length * ( dia - thickness ) * thickness;
+					vol = PI * length * ( dia - thickness ) * thickness;
 				} else {
-					vol = dia * dia * M_PI * length / 4.0;
+					vol = dia * dia * PI * length / 4.0;
 				}
 			} else { // spherical
 				if ( thickness > 0.0 ) {
 					double inner_dia = dia - 2 * thickness;
-					vol = M_PI * (
+					vol = PI * (
 						dia * dia * dia -
 						inner_dia * inner_dia * inner_dia
 					) / 6.0;
 				} else {
-					vol = M_PI * dia * dia * dia / 6.0;
+					vol = PI * dia * dia * dia / 6.0;
 				}
 			}
 			if ( vol > 0.0 ) // Scale by volume.

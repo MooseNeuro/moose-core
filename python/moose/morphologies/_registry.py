@@ -144,7 +144,7 @@ _registry.add(
     # https://alleninstitute.org/legal/terms-use/
     {
         'name':        'allen_mouse_VISp_L5_485909730',
-        'filename':    'swc/allen_mouse_VISp_L5_485909730.swc',
+        'filename':    'swc/allen_mouse_VISp_L5_485909730.condensed.swc',
         'species':     'mouse',
         'cell_type':   'L5 pyramidal',
         'region':      'primary visual cortex (VISp) layer 5',
@@ -155,7 +155,7 @@ _registry.add(
     },
     {
         'name':        'allen_mouse_VISp_L5_515249852',
-        'filename':    'swc/allen_mouse_VISp_L5_515249852.swc',
+        'filename':    'swc/allen_mouse_VISp_L5_515249852.condensed.swc',
         'species':     'mouse',
         'cell_type':   'L5 pyramidal',
         'region':      'primary visual cortex (VISp) layer 5',
@@ -166,7 +166,7 @@ _registry.add(
     },
     {
         'name':        'allen_mouse_VISp_L6a_580007431',
-        'filename':    'swc/allen_mouse_VISp_L6a_580007431.swc',
+        'filename':    'swc/allen_mouse_VISp_L6a_580007431.condensed.swc',
         'species':     'mouse',
         'cell_type':   'L6a pyramidal',
         'region':      'primary visual cortex (VISp) layer 6a',
@@ -177,7 +177,7 @@ _registry.add(
     },
     {
         'name':        'allen_mouse_VISp_L6b_589128331',
-        'filename':    'swc/allen_mouse_VISp_L6b_589128331.swc',
+        'filename':    'swc/allen_mouse_VISp_L6b_589128331.condensed.swc',
         'species':     'mouse',
         'cell_type':   'L6b pyramidal',
         'region':      'primary visual cortex (VISp) layer 6b',
@@ -188,7 +188,7 @@ _registry.add(
     },
     {
         'name':        'allen_human_MTG_L2_616647103',
-        'filename':    'swc/allen_human_MTG_L2_616647103.swc',
+        'filename':    'swc/allen_human_MTG_L2_616647103.condensed.swc',
         'species':     'human',
         'cell_type':   'L2 pyramidal',
         'region':      'middle temporal gyrus (MTG) layer 2',
@@ -199,7 +199,7 @@ _registry.add(
     },
     {
         'name':        'allen_human_MTG_L6_614635228',
-        'filename':    'swc/allen_human_MTG_L6_614635228.swc',
+        'filename':    'swc/allen_human_MTG_L6_614635228.condensed.swc',
         'species':     'human',
         'cell_type':   'L6 pyramidal',
         'region':      'middle temporal gyrus (MTG) layer 6',

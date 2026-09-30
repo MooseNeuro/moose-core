@@ -3,8 +3,8 @@
 ** Messaging Object Oriented Simulation Environment.
 **           Copyright (C) 2003-2013 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
-** GNU Lesser General Public License version 2.1
-** See the file COPYING.LIB for the full notice.
+** GNU General Public License version 3
+** See the file LICENSE in the MOOSE source root for the full notice.
 **********************************************************************/
 
 #ifndef _DSOLVE_H
@@ -43,8 +43,8 @@ public:
     // Defined in base class. Id getCompartment() const;
     void setDsolve( Id id ); /// Dummy, inherited but not used.
 
-    void setPath( const Eref& e, string path );
-    string getPath( const Eref& e ) const;
+    void setStoichPath( const Eref& e, string path );
+    string getStoichPath( const Eref& e ) const;
 
     unsigned int getNumVoxels() const;
     /// Inherited virtual.

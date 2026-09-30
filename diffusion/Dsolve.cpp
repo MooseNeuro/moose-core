@@ -3,8 +3,8 @@
 ** Messaging Object Oriented Simulation Environment.
 **           Copyright (C) 2003-2014 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
-** GNU Lesser General Public License version 2.1
-** See the file COPYING.LIB for the full notice.
+** GNU General Public License version 3
+** See the file LICENSE in the MOOSE source root for the full notice.
 **********************************************************************/
 
 #include "../basecode/header.h"
@@ -44,13 +44,13 @@ const Cinfo* Dsolve::initCinfo()
             &Dsolve::getStoich
             );
 
-    static ElementValueFinfo< Dsolve, string > path (
-            "path",
+    static ElementValueFinfo< Dsolve, string > stoichPath (
+            "stoichPath",
             "Path of reaction system. Must include all the pools that "
             "are to be handled by the Dsolve, can also include other "
             "random objects, which will be ignored.",
-            &Dsolve::setPath,
-            &Dsolve::getPath
+            &Dsolve::setStoichPath,
+            &Dsolve::getStoichPath
             );
 
     static ReadOnlyValueFinfo< Dsolve, unsigned int > numVoxels(
@@ -153,7 +153,7 @@ const Cinfo* Dsolve::initCinfo()
     static Finfo* dsolveFinfos[] =
     {
         &stoich,                    // ElementValue
-        &path,                      // ElementValue
+        &stoichPath,                // ElementValue
         &compartment,               // Value
         &numVoxels,                 // ReadOnlyValue
         &numAllVoxels,              // ReadOnlyValue
@@ -596,7 +596,7 @@ void Dsolve::setStoich( Id id )
     poolMapStart_ = poolMap_.back();
     poolMap_.pop_back();
 
-    path_ = Field< string >::get( stoich_, "path" );
+    path_ = Field< string >::get( stoich_, "reacSystemPath" );
     // cout << "Pool Info for stoich " << id.path() << endl;
 
     for ( unsigned int i = 0; i < poolMap_.size(); ++i )
@@ -761,13 +761,13 @@ void Dsolve::makePoolMapFromElist( const vector< ObjId >& elist,
     }
 }
 
-void Dsolve::setPath( const Eref& e, string path )
+void Dsolve::setStoichPath( const Eref& e, string path )
 {
     vector< ObjId > elist;
     simpleWildcardFind( path, elist );
     if ( elist.size() == 0 )
     {
-        cout << "Dsolve::setPath::( " << path << " ): Error: path is empty\n";
+        cout << "Dsolve::setStoichPath::( " << path << " ): Error: path is empty\n";
         return;
     }
     vector< Id > temp;
@@ -790,7 +790,7 @@ void Dsolve::setPath( const Eref& e, string path )
     }
 }
 
-string Dsolve::getPath( const Eref& e ) const
+string Dsolve::getStoichPath( const Eref& e ) const
 {
     return path_;
 }

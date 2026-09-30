@@ -3,15 +3,16 @@
 ** Messaging Object Oriented Simulation Environment.
 **           Copyright (C) 2003-2007 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
-** GNU Lesser General Public License version 2.1
-** See the file COPYING.LIB for the full notice.
+** GNU General Public License version 3
+** See the file LICENSE in the MOOSE source root for the full notice.
 **********************************************************************/
 
 #include "../basecode/header.h"
 #include "Nernst.h"
 
-const double Nernst::R_OVER_F = 8.6171458e-5;
-const double Nernst::ZERO_CELSIUS = 273.15;
+// R/F = k_B/e, taken from the shared constants so it stays consistent with
+// the R and F values used elsewhere.
+const double Nernst::R_OVER_F = moose::consts::R_OVER_F;
 
 	///////////////////////////////////////////////////////
 	// MsgSrc definitions

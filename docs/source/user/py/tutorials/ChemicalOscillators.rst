@@ -92,8 +92,8 @@ Things to do with the model:
     ## Messaging Object Oriented Simulation Environment.
     ##           Copyright (C) 2014 Upinder S. Bhalla. and NCBS
     ## It is made available under the terms of the
-    ## GNU Lesser General Public License version 2.1
-    ## See the file COPYING.LIB for the full notice.
+    ## GNU General Public License version 3
+    ## See the file LICENSE in the MOOSE source root for the full notice.
     #########################################################################
     
     import moose
@@ -182,8 +182,8 @@ script.
     ## Messaging Object Oriented Simulation Environment.
     ##           Copyright (C) 2014 Upinder S. Bhalla. and NCBS
     ## It is made available under the terms of the
-    ## GNU Lesser General Public License version 2.1
-    ## See the file COPYING.LIB for the full notice.
+    ## GNU General Public License version 3
+    ## See the file LICENSE in the MOOSE source root for the full notice.
     #########################################################################
     
     import math
@@ -396,8 +396,8 @@ Things to do with the model:
     ## Messaging Object Oriented Simulation Environment.
     ##           Copyright (C) 2014 Upinder S. Bhalla. and NCBS
     ## It is made available under the terms of the
-    ## GNU Lesser General Public License version 2.1
-    ## See the file COPYING.LIB for the full notice.
+    ## GNU General Public License version 3
+    ## See the file LICENSE in the MOOSE source root for the full notice.
     #########################################################################
     
     import moose
@@ -507,8 +507,8 @@ Good things to do with this model include:
     ## Messaging Object Oriented Simulation Environment.
     ##           Copyright (C) 2014 Upinder S. Bhalla. and NCBS
     ## It is made available under the terms of the
-    ## GNU Lesser General Public License version 2.1
-    ## See the file COPYING.LIB for the full notice.
+    ## GNU General Public License version 3
+    ## See the file LICENSE in the MOOSE source root for the full notice.
     #########################################################################
     
     import moose

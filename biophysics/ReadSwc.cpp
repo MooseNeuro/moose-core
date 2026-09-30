@@ -3,8 +3,8 @@
 ** Messaging Object Oriented Simulation Environment.
 **           Copyright (C) 2003-2015 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
-** GNU Lesser General Public License version 2.1
-** See the file COPYING.LIB for the full notice.
+** GNU General Public License version 3
+** See the file LICENSE in the MOOSE source root for the full notice.
 **********************************************************************/
 
 #include "../basecode/header.h"
@@ -45,6 +45,13 @@ ReadSwc::ReadSwc(const string& fname)
 
     string temp;
     int badSegs = 0;
+    // Raw parent field per accepted segment. Needed only for 0-based
+    // normalization below: the SwcSegment string constructor collapses both
+    // parent == -1 (a genuine root) and parent == 0 (a 0-based child of node 0)
+    // to the ~0U "no parent" sentinel, so the raw value is the only way to tell
+    // them apart.
+    vector<int> rawParents;
+    long minIndex = -1;
     while (getline(fin, temp)) {
         if (isWhitespaceOnly(temp))
             continue;
@@ -55,11 +62,39 @@ ReadSwc::ReadSwc(const string& fname)
             continue;
 
         SwcSegment t(temp);
-        if (t.OK())
-            segs_.push_back(SwcSegment(temp));
+        if (t.OK()) {
+            segs_.push_back(t);
+            // t.OK() implies the line had 7 whitespace-separated fields.
+            stringstream ss(temp);
+            vector<string> args;
+            string tok;
+            while (ss >> tok)
+                args.push_back(tok);
+            rawParents.push_back(atoi(args[6].c_str()));
+            if (minIndex < 0 || static_cast<long>(t.myIndex()) < minIndex)
+                minIndex = t.myIndex();
+        }
         else
             badSegs++;
     }
+
+    // The SWC standard numbers nodes from 1, and the rest of this reader
+    // assumes it (validate() checks myIndex == i+1; parent lookups use
+    // segs_[parent-1]). Some sources (e.g. Allen Cell Types Database) number
+    // from 0 instead. Detect that here and shift every index and parent by +1
+    // so the file is treated as 1-based from this point on. Genuine 1-based
+    // files (minIndex == 1) are left untouched.
+    if (minIndex == 0) {
+        for (unsigned int i = 0; i < segs_.size(); ++i) {
+            segs_[i].setIndex(segs_[i].myIndex() + 1);
+            int rawPa = rawParents[i];
+            segs_[i].setParent(rawPa < 0 ? ~0U
+                                         : static_cast<unsigned int>(rawPa + 1));
+        }
+        cout << "ReadSwc: detected 0-based node indexing; "
+                "normalized to 1-based." << endl;
+    }
+
     bool valid = validate();
     if (valid) {
         assignKids();

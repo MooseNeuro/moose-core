@@ -29,7 +29,9 @@ __email__            = "dilawars@ncbs.res.in"
 # FARADAY = 96154.0
 # Coulombs
 # from cadecay.mod : 1/(2*96154.0) = 5.2e-6 which is the Book of Genesis / readcell value
-FARADAY = 96485.3415 # Coulombs/mol # from Wikipedia
+# Faraday constant, sourced from the C++ single source of truth (Constants.h,
+# exposed as moose.FaradayConst) so it cannot drift from the solvers' value.
+from moose._moose import FaradayConst as FARADAY  # Coulombs/mol
 
 # Constants for message direction
 OUTMSG = 0  #: Outgoing messages

@@ -23,18 +23,19 @@ namespace pymoose{
 
 MooseVec::MooseVec(const string& path, unsigned int n, const string& dtype)
 {
-    // If path is given and it does not exists, then create one. The old api
-    // support it.
+    // With a dtype, defer to createElementFromPath: it returns the existing
+    // element when the path already holds one of the same type, throws when a
+    // different type occupies the path, and creates a new one otherwise.
+    if(!dtype.empty()) {
+        oid_ = createElementFromPath(dtype, path, n);
+        return;
+    }
+    // Without a dtype we can only wrap an element that already exists.
     oid_ = ObjId(path);
     if(oid_.bad()) {
-        if(!dtype.empty()) {
-            oid_ = createElementFromPath(dtype, path, n);
-        }
-        else {
-            throw nb::value_error(
-                (path +
-                    ": path does not exist. Pass `dtype=classname` to create.").c_str());
-        }
+        throw nb::value_error(
+            (path +
+                ": path does not exist. Pass `dtype=classname` to create.").c_str());
     }
 }
 

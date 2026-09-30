@@ -1,7 +1,7 @@
 # nmoogli.py: nsdf Moogli interface
 # This program displays NSDF files.
 # Copyright (C) Upinder S. Bhalla NCBS 2022
-# This program is licensed under the GNU Public License version 3.
+# This program is licensed under the GNU General Public License version 3.
 
 import argparse
 import numpy as np

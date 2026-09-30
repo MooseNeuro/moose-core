@@ -4,8 +4,8 @@
 ** also known as GENESIS 3 base code.
 **           copyright (C) 2003-2005 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
-** GNU Lesser General Public License version 2.1
-** See the file COPYING.LIB for the full notice.
+** GNU General Public License version 3
+** See the file LICENSE in the MOOSE source root for the full notice.
 **********************************************************************/
 #ifndef _HHGate2D_h
 #define _HHGate2D_h
@@ -28,13 +28,6 @@ class HHGate2D: public HHGateBase
 		 * lookup
 		 */
 		void lookupBoth( double v, double c, double* A, double* B) const;
-
-		/**
-		 * Checks if the provided Id is the one that the HHGate was created
-		 * on. If true, fine, otherwise complains about trying to set the
-		 * field.
-		 */
-		bool checkOriginal( Id id, const string& field ) const;
 
 		/**
 		 * isOriginalChannel returns true if the provided Id is the Id of
@@ -64,7 +57,24 @@ class HHGate2D: public HHGateBase
 		 * Returns the B interpol
 		 */
                 vector< vector< double > > getTableB( const Eref& e ) const;
-                void setTableB( const Eref& e, vector< vector< double > > value);
+                void setTableB(const Eref& e, vector<vector<double>> value);
+
+    /// Set/get expression for alpha
+    void setAlphaExpr(const Eref& e, string expr);
+    string getAlphaExpr(const Eref& e) const;
+    /// Set/get expression for beta
+    void setBetaExpr(const Eref& e, string expr);
+    string getBetaExpr(const Eref& e) const;
+    /// Set/get expression for tau
+    void setTauExpr(const Eref& e, string expr);
+    string getTauExpr(const Eref& e) const;
+    /// Set/get expression for inf
+    void setInfExpr(const Eref& e, string expr);
+    string getInfExpr(const Eref& e) const;
+    int getForm() const;
+    /// Fill the tables by evaluating expressions
+    void fillFromExpr(const Eref& e);
+
 
                 ///
                 // Setting table parameters
@@ -88,7 +98,15 @@ class HHGate2D: public HHGateBase
 		Interpol2D B_;
 
 		Id originalChanId_;
-		Id originalGateId_;
+        Id originalGateId_;
+
+    /// Strings for expressions
+    string alphaExpr_;
+    string betaExpr_;
+    /// Flag if the expressions are in tau-inf form or explicitly set
+    /// 0 - not using expression, 1 - alpha/beta, 2 - tau/inf
+    int form_;
+
 };
 
 // Used by solver, readcell, etc.

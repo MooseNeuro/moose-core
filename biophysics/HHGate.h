@@ -3,8 +3,8 @@
 ** Messaging Object Oriented Simulation Environment.
 **           copyright (C) 2003-2011 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
-** GNU Lesser General Public License version 2.1
-** See the file COPYING.LIB for the full notice.
+** GNU General Public License version 3
+** See the file LICENSE in the MOOSE source root for the full notice.
 **********************************************************************/
 #ifndef _HHGate_h
 #define _HHGate_h
@@ -95,10 +95,10 @@ public:
     string getInfExpr(const Eref& e) const;
     int getForm() const;
     /// Fill the tables by evaluating expressions
-    void fillFromExpr(const Eref& e); 
-    
-    vector<double> computeTable(string expr, double xmin, double xmax, unsigned int xdivs);
-    
+    void fillFromExpr(const Eref& e);
+
+    // vector<double> computeTable(string expr, double xmin, double xmax, unsigned int xdivs);
+
     void setMin(const Eref& e, double val);
     double getMin(const Eref& e) const;
     void setMax(const Eref& e, double val);
@@ -190,7 +190,7 @@ private:
     string betaExpr_;
     /// Flag if the expressions are in tau-inf form or explicitly set
     /// 0 - not using expression, 1 - alpha/beta, 2 - tau/inf
-    int form_;  
+    int form_;
     /// The actual lookup table for calculations. Holds alpha(V).
     vector<double> A_;
 

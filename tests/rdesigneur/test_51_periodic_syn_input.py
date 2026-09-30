@@ -1,6 +1,6 @@
 # This example demonstrates periodic synaptic input to a cell.
 # Copyright (C) Upinder S. Bhalla NCBS 2018
-# Released under the terms of the GNU Public License V3. No warranty.
+# Released under the terms of the GNU General Public License V3. No warranty.
 # Doctest by Dilawar Singh
 
 import moose

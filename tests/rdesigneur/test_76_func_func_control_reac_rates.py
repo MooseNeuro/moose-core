@@ -14,7 +14,7 @@
 # others could be buffered.
 #  
 #  Copyright (C) Upinder S. Bhalla NCBS 2018
-#  Released under the terms of the GNU Public License V3.
+#  Released under the terms of the GNU General Public License V3.
 ########################################################################
 
 import matplotlib

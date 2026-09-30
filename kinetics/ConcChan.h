@@ -3,8 +3,8 @@
 ** Messaging Object Oriented Simulation Environment.
 **           Copyright (C) 2018 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
-** GNU Public License version 3 or later.
-** See the file COPYING.LIB for the full notice.
+** GNU General Public License version 3 or later.
+** See the file LICENSE in the MOOSE source root for the full notice.
 **********************************************************************/
 
 #ifndef _CONC_CHAN_H

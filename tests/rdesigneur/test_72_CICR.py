@@ -5,7 +5,7 @@
 # Note that units of permeability in the ConcChan are 1/(millimolar.sec)
 #
 # Copyright (C) Upinder S. Bhalla NCBS 2018
-# Released under the terms of the GNU Public License V3.
+# Released under the terms of the GNU General Public License V3.
 # Converted to a test by Dilawar Singh, 2020
 
 import matplotlib as mpl

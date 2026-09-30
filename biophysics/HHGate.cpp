@@ -3,8 +3,8 @@
  ** Messaging Object Oriented Simulation Environment.
  **           Copyright (C) 2003-2007 Upinder S. Bhalla. and NCBS
  ** It is made available under the terms of the
- ** GNU Lesser General Public License version 2.1
- ** See the file COPYING.LIB for the full notice.
+ ** GNU General Public License version 3
+ ** See the file LICENSE in the MOOSE source root for the full notice.
  **********************************************************************/
 
 #include <cmath>
@@ -526,7 +526,7 @@ void HHGate::fillFromExpr(const Eref& e)
             prevB = B_[ii] - a_;
         }
         else {  // form = 2, tau/inf
-            if (a_ <= 0.0) {
+            if (fabs(a_) <= SINGULARITY) {
                 a_ = prevA;
                 b_ = prevB;
             }

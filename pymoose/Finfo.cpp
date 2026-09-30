@@ -9,6 +9,8 @@
 //
 // =====================================================================================
 
+#include <functional>
+
 #include "../basecode/header.h"
 #include "../builtins/Variable.h"
 #include "../utility/print_function.hpp"
@@ -223,6 +225,15 @@ static const std::map<std::string, LookupGetter<unsigned int>> uintKeyGetters =
 
 };
 
+static const std::map<std::string, LookupGetter<vector<double>>>
+    vectorDoubleKeyGetters = {
+        {"double",
+         [](auto& oid, auto& fname, auto& key) {
+             return nb::cast(
+                 ::LookupField<vector<double>, double>::get(oid, fname, key));
+         }},
+};
+
 LookupField::LookupField(const ObjId& oid, const Finfo* f)
     : oid_(oid), finfo_(f)
 {
@@ -262,6 +273,13 @@ nb::object LookupField::get(const nb::object& key)
         auto it = longKeyGetters.find(valueType_);
         if(it != longKeyGetters.end()) {
             return it->second(oid_, finfo_->name(), nb::cast<long>(key));
+        }
+    }
+    else if(keyType_ == "vector<double>") {
+        auto it = vectorDoubleKeyGetters.find(valueType_);
+        if(it != vectorDoubleKeyGetters.end()) {
+            return it->second(oid_, finfo_->name(),
+                              nb::cast<vector<double>>(key));
         }
     }
 

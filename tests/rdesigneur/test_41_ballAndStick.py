@@ -2,7 +2,7 @@
 # with 10 compartments in the dendrite, that support propagating
 # action potentials.
 # Copyright (C) Upinder S. Bhalla NCBS 2018
-# Released under the terms of the GNU Public License V3.
+# Released under the terms of the GNU General Public License V3.
 #
 # Turned to a test by Dilawar Singh
 

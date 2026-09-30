@@ -8,7 +8,7 @@
 #   chan ------Ca_CaM_CaMKII-----> chan_p; chan_p ------> chan  (all in PSD)
 # 
 # Copyright (C) Upinder S. Bhalla NCBS 2018
-# Released under the terms of the GNU Public License V3.
+# Released under the terms of the GNU General Public License V3.
 # Convered to doctest by Dilawar Singh
 
 import os

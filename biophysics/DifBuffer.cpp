@@ -380,13 +380,13 @@ double rOut = diameter_/2.;
        */
     case 0:
       if ( length_ == 0.0 ) { // Spherical shell
-	volume_ = 4./3.* M_PI * ( rOut * rOut * rOut - rIn * rIn * rIn );
-	outerArea_ = 4*M_PI * rOut * rOut;
-	innerArea_ = 4*M_PI * rIn * rIn;
+	volume_ = 4./3.* PI * ( rOut * rOut * rOut - rIn * rIn * rIn );
+	outerArea_ = 4*PI * rOut * rOut;
+	innerArea_ = 4*PI * rIn * rIn;
       } else { // Cylindrical shell
-	volume_ = ( M_PI * length_  ) * ( rOut * rOut - rIn * rIn );
-	outerArea_ = 2*M_PI * rOut * length_;
-	innerArea_ = 2*M_PI * rIn * length_;
+	volume_ = ( PI * length_  ) * ( rOut * rOut - rIn * rIn );
+	outerArea_ = 2*PI * rOut * length_;
+	innerArea_ = 2*PI * rIn * length_;
       }
 
       break;
@@ -395,8 +395,8 @@ double rOut = diameter_/2.;
        * Cylindrical Slice
        */
     case 1:
-      volume_ = M_PI * diameter_ * diameter_ * thickness_ / 4.0;
-      outerArea_ = M_PI * diameter_ * diameter_ / 4.0;
+      volume_ = PI * diameter_ * diameter_ * thickness_ / 4.0;
+      outerArea_ = PI * diameter_ * diameter_ / 4.0;
       innerArea_ = outerArea_;
       break;
 
@@ -462,13 +462,13 @@ void DifBuffer::vReinit( const Eref& e, ProcPtr p )
        */
     case 0:
       if ( length_ == 0.0 ) { // Spherical shell
-	volume_ = 4./3.* M_PI * ( rOut * rOut * rOut - rIn * rIn * rIn );
-	outerArea_ = 4*M_PI * rOut * rOut;
-	innerArea_ = 4*M_PI * rIn * rIn;
+	volume_ = 4./3.* PI * ( rOut * rOut * rOut - rIn * rIn * rIn );
+	outerArea_ = 4*PI * rOut * rOut;
+	innerArea_ = 4*PI * rIn * rIn;
       } else { // Cylindrical shell
-	volume_ = ( M_PI * length_  ) * ( rOut * rOut - rIn * rIn );
-	outerArea_ = 2*M_PI * rOut * length_;
-	innerArea_ = 2*M_PI * rIn * length_;
+	volume_ = ( PI * length_  ) * ( rOut * rOut - rIn * rIn );
+	outerArea_ = 2*PI * rOut * length_;
+	innerArea_ = 2*PI * rIn * length_;
       }
 
       break;
@@ -477,8 +477,8 @@ void DifBuffer::vReinit( const Eref& e, ProcPtr p )
        * Cylindrical Slice
        */
     case 1:
-      volume_ = M_PI * diameter_ * diameter_ * thickness_ / 4.0;
-      outerArea_ = M_PI * diameter_ * diameter_ / 4.0;
+      volume_ = PI * diameter_ * diameter_ * thickness_ / 4.0;
+      outerArea_ = PI * diameter_ * diameter_ / 4.0;
       innerArea_ = outerArea_;
       break;
 

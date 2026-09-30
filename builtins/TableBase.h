@@ -5,7 +5,7 @@
 **  Copyright (C) 2003-2016 Upinder S. Bhalla. and NCBS
 **
 ** It is made available under the terms of the
-** GNU Lesser General Public License version 3
+** GNU General Public License version 3
 **********************************************************************/
 
 #ifndef _TABLE_BASE_H

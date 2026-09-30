@@ -559,8 +559,14 @@ bool Function::innerSetExpr(const Eref& eref, const string expr)
             others.push_back(name);
         }
     }
-    std::sort(xs.begin(), xs.end());
-    std::sort(ys.begin(), ys.end());
+    // Sort x/y variable names by their numeric index, not lexicographically:
+    // string order would rank "x9" above "x10", so an expression using
+    // x0..x10 would report only 10 variables and drop the highest ones.
+    auto byIndex = [](const string& a, const string& b) {
+        return std::stoul(a.substr(1)) < std::stoul(b.substr(1));
+    };
+    std::sort(xs.begin(), xs.end(), byIndex);
+    std::sort(ys.begin(), ys.end(), byIndex);
     std::sort(others.begin(), others.end());
 
     // keep the existing variables aside for relocation

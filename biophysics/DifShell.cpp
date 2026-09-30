@@ -4,8 +4,8 @@
  **           copyright (C) 2003-2008
  **           Upinder S. Bhalla, Niraj Dudani and NCBS
  ** It is made available under the terms of the
- ** GNU Lesser General Public License version 2.1
- ** See the file COPYING.LIB for the full notice.
+ ** GNU General Public License version 3
+ ** See the file LICENSE in the MOOSE source root for the full notice.
  **********************************************************************/
 
 #include "../basecode/header.h"
@@ -14,7 +14,8 @@
 
 
 const double DifShell::EPSILON = 1.0e-10;
-const double DifShell::F = 96485.3415; /* C / mol like in genesis */
+// Faraday constant is now the shared moose::consts::FaradayConst (same value,
+// C/mol), available unqualified as FaradayConst via basecode/header.h.
 
 const Cinfo* DifShell::initCinfo()
 {
@@ -49,9 +50,6 @@ static const Cinfo* difShellCinfo = DifShell::initCinfo();
 ////////////////////////////////////////////////////////////////////////////////
 // Class functions
 ////////////////////////////////////////////////////////////////////////////////
-
-/// Faraday's constant (Coulomb / Mole)
-
 
 DifShell::DifShell() :
   dCbyDt_( 0.0 ),
@@ -298,13 +296,13 @@ double rOut = diameter_/2.;
        */
     case 0:
       if ( length_ == 0.0 ) { // Spherical shell
-	volume_ = 4./3.* M_PI * ( rOut * rOut * rOut - rIn * rIn * rIn );
-	outerArea_ = 4*M_PI * rOut * rOut;
-	innerArea_ = 4*M_PI * rIn * rIn;
+	volume_ = 4./3.* PI * ( rOut * rOut * rOut - rIn * rIn * rIn );
+	outerArea_ = 4*PI * rOut * rOut;
+	innerArea_ = 4*PI * rIn * rIn;
       } else { // Cylindrical shell
-	volume_ = ( M_PI * length_  ) * ( rOut * rOut - rIn * rIn );
-	outerArea_ = 2*M_PI * rOut * length_;
-	innerArea_ = 2*M_PI * rIn * length_;
+	volume_ = ( PI * length_  ) * ( rOut * rOut - rIn * rIn );
+	outerArea_ = 2*PI * rOut * length_;
+	innerArea_ = 2*PI * rIn * length_;
       }
 
       break;
@@ -313,8 +311,8 @@ double rOut = diameter_/2.;
        * Cylindrical Slice
        */
     case 1:
-      volume_ = M_PI * diameter_ * diameter_ * thickness_ / 4.0;
-      outerArea_ = M_PI * diameter_ * diameter_ / 4.0;
+      volume_ = PI * diameter_ * diameter_ * thickness_ / 4.0;
+      outerArea_ = PI * diameter_ * diameter_ / 4.0;
       innerArea_ = outerArea_;
       break;
 
@@ -414,7 +412,7 @@ void DifShell::vInflux(const Eref& e,	double I )
    * F_: Faraday's constant: Coulomb / mole
    * valence_: charge on ion: dimensionless
    */
-  dCbyDt_ += I / ( F * valence_ * volume_ );
+  dCbyDt_ += I / ( FaradayConst * valence_ * volume_ );
 
 }
 
@@ -423,17 +421,17 @@ void DifShell::vInflux(const Eref& e,	double I )
  */
 void DifShell::vOutflux(const Eref& e, double I )
 {
-  dCbyDt_ -= I / ( F * valence_ * volume_ );
+  dCbyDt_ -= I / ( FaradayConst * valence_ * volume_ );
 }
 
 void DifShell::vFInflux(const Eref& e, double I, double fraction )
 {
-  dCbyDt_ += fraction * I / ( F * valence_ * volume_ );
+  dCbyDt_ += fraction * I / ( FaradayConst * valence_ * volume_ );
 }
 
 void DifShell::vFOutflux(const Eref& e, double I, double fraction )
 {
-  dCbyDt_ -= fraction * I / ( F * valence_ * volume_ );
+  dCbyDt_ -= fraction * I / ( FaradayConst * valence_ * volume_ );
 }
 
 void DifShell::vStoreInflux(const Eref& e, double flux )

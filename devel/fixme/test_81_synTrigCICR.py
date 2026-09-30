@@ -3,7 +3,7 @@
 # a subset of a dendrite where there is elevated IP3 present.
 # 
 # Copyright (C) Upinder S. Bhalla NCBS 2018
-# Released under the terms of the GNU Public License V3.
+# Released under the terms of the GNU General Public License V3.
 # Converted to doctest by Dilawar Singh
 
 import os

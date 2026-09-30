@@ -412,6 +412,11 @@ nb::object getFieldValue(const ObjId &oid, const Finfo *f)
         r = nb::cast(Field<vector<ObjId>>::get(oid, fname));
     else if(rttType == "vector<string>")
         r = nb::cast(Field<vector<string>>::get(oid, fname));
+    else if(rttType == "vector<vector<double>>") {
+        // NB: Note that we cast to ObjId here and not to Id.
+        r = nb::cast(Field<vector<vector<double>>>::get(
+                oid.id, fname));
+    }
     else {
         cerr << "Warning: getValueFinfo:: Unsupported type '" + rttType + "'"
              << endl;

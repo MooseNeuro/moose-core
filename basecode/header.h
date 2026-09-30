@@ -4,8 +4,8 @@
 ** also known as GENESIS 3 base code.
 **           copyright (C) 2003-2004 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
-** GNU Lesser Public License version 2.1
-** See the file COPYING.LIB for the full notice.
+** GNU General Public License version 3
+** See the file LICENSE in the MOOSE source root for the full notice.
 **********************************************************************/
 
 #ifndef _HEADER_H
@@ -25,10 +25,14 @@
 
 using namespace std;
 
-constexpr double PI = 3.141592653589793;
-constexpr double NA = 6.0221415e23;
-constexpr double FaradayConst =  96485.3415; // s A / mol
-constexpr double GasConst = 8.3144621; // R, units are J/(K.mol)
+// Physical/math constants live in moose::consts (basecode/Constants.h) so they
+// have a single source of truth shared with pymoose. These aliases keep the
+// long-standing unqualified names (PI, NA, ...) working across the codebase.
+#include "Constants.h"
+using moose::consts::PI;
+using moose::consts::NA;
+using moose::consts::FaradayConst;
+using moose::consts::GasConst;
 
 typedef unsigned short BindIndex;
 

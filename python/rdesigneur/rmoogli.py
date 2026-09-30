@@ -5,7 +5,7 @@ from __future__ import absolute_import, print_function, division
 # Put in because the GL versions like moogli need all sorts of difficult 
 # libraries and dependencies.
 # Copyright (C) Upinder S. Bhalla NCBS 2018
-# This program is licensed under the GNU Public License version 3.
+# This program is licensed under the GNU General Public License version 3.
 
 import numpy as np
 try:

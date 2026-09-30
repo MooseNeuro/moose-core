@@ -79,8 +79,8 @@ thresholds different for the different states?
     ## Messaging Object Oriented Simulation Environment.
     ##           Copyright (C) 2013 Upinder S. Bhalla. and NCBS
     ## It is made available under the terms of the
-    ## GNU Lesser General Public License version 2.1
-    ## See the file COPYING.LIB for the full notice.
+    ## GNU General Public License version 3
+    ## See the file LICENSE in the MOOSE source root for the full notice.
     #########################################################################
     
     # This example illustrates how to set up a kinetic solver and kinetic model
@@ -245,8 +245,8 @@ small volumes there are spontaneous state transitions.
     ## Messaging Object Oriented Simulation Environment.
     ##           Copyright (C) 2013 Upinder S. Bhalla. and NCBS
     ## It is made available under the terms of the
-    ## GNU Lesser General Public License version 2.1
-    ## See the file COPYING.LIB for the full notice.
+    ## GNU General Public License version 3
+    ## See the file LICENSE in the MOOSE source root for the full notice.
     #########################################################################
     
     import math
@@ -503,8 +503,8 @@ it back to the **c** dominant state.
     ## Messaging Object Oriented Simulation Environment.
     ##           Copyright (C) 2014 Upinder S. Bhalla. and NCBS
     ## It is made available under the terms of the
-    ## GNU Lesser General Public License version 2.1
-    ## See the file COPYING.LIB for the full notice.
+    ## GNU General Public License version 3
+    ## See the file LICENSE in the MOOSE source root for the full notice.
     #########################################################################
     
     import moose
@@ -618,8 +618,8 @@ originally.
     ## Messaging Object Oriented Simulation Environment.
     ##           Copyright (C) 2014 Upinder S. Bhalla. and NCBS
     ## It is made available under the terms of the
-    ## GNU Lesser General Public License version 2.1
-    ## See the file COPYING.LIB for the full notice.
+    ## GNU General Public License version 3
+    ## See the file LICENSE in the MOOSE source root for the full notice.
     #########################################################################
     
     import moose
@@ -745,8 +745,8 @@ yields to the slightly larger amounts of molecule **c**.
     ## Messaging Object Oriented Simulation Environment.
     ##           Copyright (C) 2014 Upinder S. Bhalla. and NCBS
     ## It is made available under the terms of the
-    ## GNU Lesser General Public License version 2.1
-    ## See the file COPYING.LIB for the full notice.
+    ## GNU General Public License version 3
+    ## See the file LICENSE in the MOOSE source root for the full notice.
     #########################################################################
     
     """
@@ -958,8 +958,8 @@ the main method of the code below.
     ## Messaging Object Oriented Simulation Environment.
     ##           Copyright (C) 2013 Upinder S. Bhalla. and NCBS
     ## It is made available under the terms of the
-    ## GNU Lesser General Public License version 2.1
-    ## See the file COPYING.LIB for the full notice.
+    ## GNU General Public License version 3
+    ## See the file LICENSE in the MOOSE source root for the full notice.
     #########################################################################
     
     from __future__ import print_function

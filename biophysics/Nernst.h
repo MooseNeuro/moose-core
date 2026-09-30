@@ -3,8 +3,8 @@
 ** Messaging Object Oriented Simulation Environment.
 **           Copyright (C) 2003-2007 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
-** GNU Lesser General Public License version 2.1
-** See the file COPYING.LIB for the full notice.
+** GNU General Public License version 3
+** See the file LICENSE in the MOOSE source root for the full notice.
 **********************************************************************/
 
 #ifndef _Nernst_h
@@ -56,7 +56,6 @@ class Nernst
 		double scale_;
 		double factor_;
 		static const double R_OVER_F;
-		static const double ZERO_CELSIUS;
 };
 
 // Used by solver, readcell, etc.

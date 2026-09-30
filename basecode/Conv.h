@@ -3,8 +3,8 @@
  ** Messaging Object Oriented Simulation Environment.
  **           Copyright (C) 2003-2009 Upinder S. Bhalla. and NCBS
  ** It is made available under the terms of the
- ** GNU Lesser General Public License version 2.1
- ** See the file COPYING.LIB for the full notice.
+ ** GNU General Public License version 3
+ ** See the file LICENSE in the MOOSE source root for the full notice.
  **********************************************************************/
 #ifndef _CONV_H
 #define _CONV_H
@@ -592,14 +592,14 @@ template< class T > class Conv< vector< vector< T > > >
         }
 
         static void str2val( vector< vector< T > >& val, const string& s ) {
-            cout << "Specialized Conv< vector< vector< T > > >::str2val not done\n";
+            cout << "Specialized Conv<vector<vector<T>>>::str2val not done\n";
         }
 
         static void val2str( string& s, const vector< vector< T > >& val ) {
-            cout << "Specialized Conv< vector< vector< T > > >::val2str not done\n";
+            cout << "Specialized Conv<vector<vector<T>>>::val2str not done\n";
         }
         static string rttiType() {
-            string ret = "vector< vector<" + Conv< T >::rttiType() + "> >";
+            string ret = "vector<vector<" + Conv< T >::rttiType() + ">>";
             return ret;
         }
     private:

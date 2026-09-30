@@ -3,7 +3,7 @@ from __future__ import print_function, division
 
 # This example demonstrates random (Poisson) synaptic input to a cell.
 # Copyright (C) Upinder S. Bhalla NCBS 2018
-# Released under the terms of the GNU Public License V3. No warranty.
+# Released under the terms of the GNU General Public License V3. No warranty.
 # Changelog:
 # Thursday 20 September 2018 09:53:27 AM IST
 # - Turned into a test script. Dilawar Singh <dilawars@ncbs.res.in>

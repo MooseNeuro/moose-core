@@ -99,6 +99,7 @@ Aug 8 : - removed "findCompartment" function to chemConnectUtil and imported the
 
 import sys
 import collections
+import warnings
 import moose
 from moose.chemUtil.chemConnectUtil import *
 from moose.SBML.validation import validateModel
@@ -113,8 +114,25 @@ except ImportError:
     pass
 
 def mooseReadSBML(filepath, loadpath, solver="ee",validate="on"):
-    """Load SBML model 
+    """Load SBML model
+
+    .. deprecated::
+        This reader maps every reaction to mass-action Kf/Kb by reading the
+        first two kinetic-law parameters positionally, and relies on
+        MOOSE-specific annotations for anything beyond that. Use
+        ``moose.loadModel()`` (which dispatches SBML to
+        ``moose.io.sbml.SBMLHandler``) or ``moose.io.sbml.SBMLHandler``
+        directly instead: it recognizes mass-action/Michaelis-Menten
+        kinetics symbolically, supports multi-compartment cross-reactions,
+        and needs no annotations.
     """
+    warnings.warn(
+        "moose.SBML.readSBML.mooseReadSBML is deprecated (moose.readSBML() "
+        "no longer calls it); use moose.loadModel() or "
+        "moose.io.sbml.SBMLHandler instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     global foundLibSBML_
     if not foundLibSBML_:
         print('[WARN] No python-libsbml found.'
