@@ -22,7 +22,8 @@ Use this method if you want to use your system's Python installation.
 
 ```bash
 # Build dependencies
-sudo apt-get install ninja meson pkg-config python-pip python-numpy libgsl-dev g++ libhdf5-dev libz-dev
+sudo apt-get update
+sudo apt-get install ninja-build meson pkg-config python3-pip python3-numpy libgsl-dev g++ libhdf5-dev zlib1g-dev
 
 # Python build tools
 pip install meson-python
@@ -31,16 +32,18 @@ pip install meson-python
 pip install pyneuroml python-libsbml pint scipy vpython
 ```
 
+**Note:** On Ubuntu 23.04 and later, `pip` refuses to install into the system Python (error: "externally-managed-environment"). Run the `pip` commands inside a virtual environment (and `pip install numpy` there), or use Option B below, which avoids the problem.
+
 **Explanation of dependencies:**
 
 | Package | Purpose |
 |---------|---------|
-| `ninja` | Fast build system used by meson |
+| `ninja-build` | Fast build system used by meson (the package is called `ninja` on conda) |
 | `meson` | Build configuration system |
 | `pkg-config` | Helps find installed libraries |
 | `libgsl-dev` | GNU Scientific Library (numerical computations) |
 | `libhdf5-dev` | HDF5 library (data storage) |
-| `libz-dev` | Compression library |
+| `zlib1g-dev` | Compression library |
 | `pyneuroml` | NeuroML2 model support |
 | `python-libsbml` | SBML model support |
 | `pint` | Unit handling for NeuroML2 |
@@ -170,7 +173,7 @@ python -c "import moose; print('Version:', moose.__version__); print('File:', mo
 
 Expected output:
 ```
-Version: 4.2.0
+Version: 5.0.0
 File: /path/to/site-packages/moose/__init__.py
 ```
 
@@ -273,13 +276,13 @@ pip wheel -w dist .
 This will create the `pymoose-{version}-{python}-{abi}-{os}_{arch}.whl` wheel file in the `moose-core/dist` directory. For example:
 
 ```
-dist/pymoose-4.2.0-cp313-cp313-linux_x86_64.whl
+dist/pymoose-5.0.0-cp313-cp313-linux_x86_64.whl
 ```
 
 This can be installed with:
 
 ```bash
-pip install dist/pymoose-4.2.0-cp313-cp313-linux_x86_64.whl
+pip install dist/pymoose-5.0.0-cp313-cp313-linux_x86_64.whl
 ```
 
 ### Clean Rebuild
@@ -397,7 +400,7 @@ conda install hdf5 -c conda-forge
 **Solution:**
 ```bash
 # Ubuntu/Debian
-sudo apt-get install ninja
+sudo apt-get install ninja-build
 
 # Conda
 conda install ninja -c conda-forge
