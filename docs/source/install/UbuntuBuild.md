@@ -173,7 +173,7 @@ python -c "import moose; print('Version:', moose.__version__); print('File:', mo
 
 Expected output:
 ```
-Version: 4.2.0
+Version: 5.0.0
 File: /path/to/site-packages/moose/__init__.py
 ```
 
@@ -276,13 +276,13 @@ pip wheel -w dist .
 This will create the `pymoose-{version}-{python}-{abi}-{os}_{arch}.whl` wheel file in the `moose-core/dist` directory. For example:
 
 ```
-dist/pymoose-4.2.0-cp313-cp313-linux_x86_64.whl
+dist/pymoose-5.0.0-cp313-cp313-linux_x86_64.whl
 ```
 
 This can be installed with:
 
 ```bash
-pip install dist/pymoose-4.2.0-cp313-cp313-linux_x86_64.whl
+pip install dist/pymoose-5.0.0-cp313-cp313-linux_x86_64.whl
 ```
 
 ### Clean Rebuild
