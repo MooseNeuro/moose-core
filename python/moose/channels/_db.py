@@ -124,6 +124,36 @@ def build_tau_expr(A, vh, b1, c1=None, d1=None, e1=None,
     return f'{A_s} / (exp(-({p1})) + exp({p2}))'
 
 
+# ── author matching ───────────────────────────────────────────────────────────
+
+_INITIALS_RE = re.compile(r'\s+[A-Z]{1,3}$')
+
+
+def _author_surnames(authors: str) -> list:
+    """
+    Split an ICG author string into lower-case surnames.
+
+    ``'Hemond P, Ascoli GA, De Schutter E'`` → ``['hemond', 'ascoli', 'de schutter']``
+    """
+    return [_INITIALS_RE.sub('', a.strip()).lower()
+            for a in authors.split(',') if a.strip()]
+
+
+def _author_matches(query: str, authors: str) -> bool:
+    """
+    True if `query` matches a surname in `authors` (case-insensitive).
+
+    The whole surname must match, unless `query` ends with ``*``, in
+    which case it is treated as a prefix (``'Trau*'`` matches Traub).
+    """
+    q = query.strip().lower()
+    surnames = _author_surnames(authors)
+    if q.endswith('*'):
+        q = q[:-1].rstrip()
+        return bool(q) and any(s.startswith(q) for s in surnames)
+    return q in surnames
+
+
 # ── CSV loading ───────────────────────────────────────────────────────────────
 
 def load_channel_db(path) -> list:
@@ -242,7 +272,8 @@ class ICGChannelDB:
 
         Parameters
         ----------
-        author : str     Partial, case-insensitive author name.
+        author : str     Case-insensitive author surname; whole surname
+                         must match, or append '*' for a prefix ('Trau*').
         year   : int     Publication year.
         modeldb_id : int Exact ModelDB ID.
         ion_class : str  'Na', 'K', 'Ca', 'KCa', or 'IH'.
@@ -269,9 +300,8 @@ class ICGChannelDB:
             matched = set()
             for mid in candidates:
                 meta = self._get_meta(mid)
-                text = (meta.get('authors', '') + ' ' +
-                        meta.get('title', '')).lower()
-                if author and author.lower() not in text:
+                if author and not _author_matches(author,
+                                                  meta.get('authors', '')):
                     continue
                 if year_s and meta.get('year', '').strip() != year_s:
                     continue

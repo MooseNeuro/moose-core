@@ -95,7 +95,9 @@ def search(author=None, year=None, modeldb_id=None,
     Parameters
     ----------
     author : str, optional
-        Partial, case-insensitive author name (e.g. ``'Traub'``).
+        Case-insensitive author surname (e.g. ``'Traub'``,
+        ``'De Schutter'``). The whole surname must match; append ``*``
+        for a prefix match (e.g. ``'Trau*'``). Titles are not searched.
     year : int, optional
         Publication year.
     modeldb_id : int, optional

@@ -95,6 +95,49 @@ def test_search_no_match():
     assert results == []
 
 
+def test_author_surnames():
+    from moose.channels._db import _author_surnames
+    assert _author_surnames('Hemond P, Ascoli GA, De Schutter E') == [
+        'hemond', 'ascoli', 'de schutter']
+    assert _author_surnames('Allen Institute') == ['allen institute']
+    assert _author_surnames('') == []
+
+
+def test_author_matches():
+    from moose.channels._db import _author_matches
+    authors = 'Hemond P, Migliore M, De Schutter E'
+    assert _author_matches('migliore', authors)
+    assert _author_matches('De Schutter', authors)
+    assert not _author_matches('li', authors)        # substring of Migliore
+    assert not _author_matches('Schutter', authors)  # part of a surname
+    assert _author_matches('Migl*', authors)
+    assert not _author_matches('*', authors)
+
+
+def test_search_by_author_ignores_title():
+    # ModelDB 35358 has 'Traub' only in its title, not in its authors
+    results = chan.search(author='Traub', show=False)
+    mids = {r['modeldb_id'] for r in results}
+    assert len(mids) > 0
+    assert 35358 not in mids
+    for r in results:
+        assert 'traub' in r['meta']['authors'].lower()
+
+
+def test_search_by_author_whole_surname():
+    results = chan.search(author='Li', show=False)
+    assert len(results) > 0
+    for r in results:
+        assert 'li' in [a.strip().split()[0].lower()
+                        for a in r['meta']['authors'].split(',')]
+
+
+def test_search_by_author_prefix():
+    exact = chan.search(author='Traub', show=False)
+    prefix = chan.search(author='Trau*', show=False)
+    assert {r['modeldb_id'] for r in exact} <= {r['modeldb_id'] for r in prefix}
+
+
 def test_list_ion_classes():
     classes = chan.list_ion_classes()
     assert set(classes) >= {'Na', 'K', 'Ca', 'KCa', 'IH'}
