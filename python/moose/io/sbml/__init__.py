@@ -40,9 +40,16 @@ that exchange is operator-split at the solver tick, multi-compartment models
 need a fine simulation ``dt`` for accuracy (and use the default explicit
 integrator -- LSODA cannot cross the junction).
 
-A cross-compartment coupling that is *not* native mass-action is reported
-unsupported and no solver is built: the Function fallback reads pools by index
-within one solver's scope and cannot reach across compartments.
+Functions read foreign species or rule-driven parameters through local BufPool
+mirrors, updated by Adaptors from the original pools' molecule counts. These
+inputs need no mesh junction and retain the source compartment's unit scaling.
+Private Annotator markers identify these mirrors for export; the writer omits
+them and restores direct references to the original SBML species.
+Adaptors run on tick 17, after the solvers on tick 16, including during reinit.
+Keep both ticks at the same fine dt: foreign inputs are held between updates,
+so check convergence as dt decreases. Reactions that change species across
+compartments still require native mass-action kinetics; other transport laws
+are reported unsupported and no solver is built.
 
 Diffusion constants declared with the SBML Level 3 *spatial* package are read
 onto ``pool.diffConst``. They only take physical effect once the spatial
@@ -51,7 +58,7 @@ mesh, which is not built yet -- so a spatial model is reported as simulated
 well-mixed for now.
 
 Hard limits (reported, not faked): SBML discrete events and algebraic rules
-have no MOOSE equivalent; non-mass-action cross-compartment coupling; and
+have no MOOSE equivalent; non-mass-action cross-compartment transport; and
 SBML-spatial geometry is not yet mapped to a mesh (only its diffusion
 constants are captured).
 

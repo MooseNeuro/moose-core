@@ -1,8 +1,12 @@
-"""Small shared helpers for pulling reaction structure out of libsbml objects.
+"""Shared SBML reaction helpers and internal reader/writer metadata.
 
 These are used by the reader, the symbolic analyzer and the verifier, all of
 which otherwise re-wrote the same ``range(reac.getNumReactants())`` loops.
 """
+
+# Private Annotator child on reader-generated inputs; not biological notes.
+INPUT_MIRROR_INFO = '_sbml_input_info'
+INPUT_MIRROR_TAG = 'moose.sbml.input_mirror:1'
 
 
 def stoich(ref):

@@ -22,6 +22,10 @@ class LoadReport:
 
     normalized: list = field(default_factory=list)
 
+    # foreign pools a Function reads through an Adaptor-fed buffered mirror
+    # ('<original path> -> <proxy path>')
+    xcompt_proxies: list = field(default_factory=list)
+
     # things we could not represent (each entry is a human-readable reason)
     unsupported: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
@@ -39,6 +43,9 @@ class LoadReport:
             f'  reactions: {self.reactions_native} native, {self.reactions_function} via Function',
             f'  rules: {self.rate_rules} rate, {self.assignment_rules} assignment',
         ]
+        if self.xcompt_proxies:
+            lines.append(f'  cross-compartment Function inputs via Adaptor ({len(self.xcompt_proxies)}):')
+            lines += ['    - ' + x for x in self.xcompt_proxies]
         if self.unsupported:
             lines.append(f'  UNSUPPORTED ({len(self.unsupported)}):')
             lines += ['    - ' + u for u in self.unsupported]

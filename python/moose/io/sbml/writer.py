@@ -5,6 +5,10 @@ Writes a MOOSE reaction-diffusion model (compartments, Pool/BufPool,
 Reac, MMenz, Enz, Function-driven rules, diffusion constants) out as
 standard SBML.
 
+Reader-created input mirrors carry a private Annotator marker. Verified unity
+Adaptor bridges are omitted and their inputs refer directly to the original
+species, restoring continuous SBML dependencies rather than sampled updates.
+
 Unit convention (mirrors units.py exactly, in the inverse direction)
 ----------------------------------------------------------------------
 * substance = mole (SBML default -- no UnitDefinition needed: an absent
@@ -71,6 +75,7 @@ from moose.chemUtil.chemConnectUtil import findCompartment
 from moose.fixXreacs import restoreXreacs
 
 from .report import WriteReport
+from .common import INPUT_MIRROR_INFO, INPUT_MIRROR_TAG
 from .units import AVOGADRO
 
 _ID_RE = re.compile(r'[^A-Za-z0-9_]')
@@ -109,6 +114,7 @@ class _Model:
         self.ids = _Ids()
         self.compartment_id = {}   # moose ChemCompt path -> SBML compartment id
         self.species_id = {}       # moose Pool/BufPool path -> SBML species id
+        self.mirror_sources = {}   # annotated mirror path -> original pool path (or None)
 
 
 # ----------------------------------------------------------------------
@@ -131,10 +137,45 @@ def _create_compartments(root, mdl):
         mdl.report.compartments += 1
 
 
-def _create_species(root, mdl):
-    pools = _moose.wildcardFind(root.path + '/##[0][ISA=PoolBase]')
+def _find_input_mirrors(pools, mdl):
+    """Recognize annotated, unity getN/setN bridges from their live wiring."""
     for p in pools:
         p = moose.element(p)
+        info = f'{p.path}/{INPUT_MIRROR_INFO}'
+        drivers = [moose.element(n) for field in ('setN', 'setConc')
+                   for n in p.neighbors[field] if moose.element(n).isA['Adaptor']]
+        if not _moose.exists(info):
+            if drivers:
+                mdl.report.unsupported_add(f'pool {p.path!r}: unrecognized Adaptor input')
+            continue
+        # Even an invalid marked mirror must not become a fixed SBML species.
+        mdl.mirror_sources[p.path] = None
+        annotation = moose.element(info)
+        if (annotation.isA['Annotator'] and annotation.notes == INPUT_MIRROR_TAG
+                and p.isA['BufPool'] and p.diffConst == 0 and len(drivers) == 1
+                and len(p.neighbors['setN']) == 1 and not p.neighbors['setConc']):
+            adaptor = drivers[0]
+            links = {(tuple(m.srcFieldsOnE1), tuple(m.destFieldsOnE2)): m.e2[0]
+                     for m in adaptor.msgOut}
+            source = links.get((('requestOut',), ('getN',)))
+            target = links.get((('output',), ('setN',)))
+            if (len(adaptor.msgOut) == 2 and source is not None
+                    and source.isA['PoolBase'] and target is not None
+                    and target.path == p.path and adaptor.parent.path == p.path
+                    and adaptor.scale == 1 and adaptor.inputOffset == 0
+                    and adaptor.outputOffset == 0):
+                mdl.mirror_sources[p.path] = source.path
+                continue
+        mdl.report.unsupported_add(f'pool {p.path!r}: invalid SBML input mirror')
+
+
+def _create_species(root, mdl):
+    pools = _moose.wildcardFind(root.path + '/##[0][ISA=PoolBase]')
+    _find_input_mirrors(pools, mdl)
+    for p in pools:
+        p = moose.element(p)
+        if p.path in mdl.mirror_sources:
+            continue
         comp = findCompartment(p)
         if comp.path not in mdl.compartment_id:
             mdl.report.unsupported_add(
@@ -152,6 +193,15 @@ def _create_species(root, mdl):
         sp.setConstant(buffered)
         mdl.species_id[p.path] = sid
         mdl.report.species += 1
+    # Aliasing here makes all formula substitution use the original species
+    # without duplicating mirror handling or changing molecule-count units.
+    for mirror, source in mdl.mirror_sources.items():
+        if source is None:
+            continue
+        if source not in mdl.species_id or source in mdl.mirror_sources:
+            mdl.report.unsupported_add(f'mirror {mirror!r}: source {source!r} is not a written species')
+        else:
+            mdl.species_id[mirror] = mdl.species_id[source]
 
 
 # ----------------------------------------------------------------------
@@ -442,7 +492,8 @@ def _function_formula(fn, mdl):
     (matching the 'nOut' push convention -- see module docstring), returning
     a formula string, or None if some input is unwritten or unresolved."""
     inputs = _function_inputs(fn)
-    expr = fn.expr
+    # Translate time before inserting species IDs (a species may be named t).
+    expr = re.sub(r'\bt\b', 'time', fn.expr)
 
     def sub(m):
         i = int(m.group(1))
@@ -464,7 +515,7 @@ def _function_formula(fn, mdl):
 def _create_rules(root, mdl):
     for p in _moose.wildcardFind(root.path + '/##[0][ISA=PoolBase]'):
         p = moose.element(p)
-        if p.path not in mdl.species_id:
+        if p.path not in mdl.species_id or p.path in mdl.mirror_sources:
             continue
         rate_fns = [moose.element(f) for f in p.neighbors['increment']
                     if moose.element(f).isA['Function']]

@@ -254,6 +254,280 @@ def test_noncnative_crosscompartment_rejected(tmp_path):
     assert not moose.wildcardFind('/xpn/##[ISA=Stoich]')  # solver refused
 
 
+# ----------------------------------------------------------------------
+# multi-compartment: Function reading a pool in another compartment
+# ----------------------------------------------------------------------
+def _foreign_modifier_model(sizes=(('A', 2.0), ('B', 5.0)), reader='B',
+                            source='A', with_rule=False):
+    """X in compartment ``source`` decays (k*X, native). In compartment
+    ``reader`` Y is produced by the saturating law V*X/(Km+X): X is only a
+    modifier there, so the reaction is single-compartment but non-mass-action,
+    and its Function on Y must read X across compartments. Optionally Z in
+    ``reader`` is held by the assignment rule Z = 2*X. Different compartment
+    sizes exercise the amount/concentration scaling across the proxy."""
+    import libsbml
+    doc = libsbml.SBMLDocument(3, 1)
+    m = doc.createModel()
+    m.setId('foreign_mod')
+    for cid, size in sizes:
+        c = m.createCompartment()
+        c.setId(cid); c.setConstant(True); c.setSize(size); c.setSpatialDimensions(3)
+    species = [('X', source, 3.0), ('Y', reader, 0.0)]
+    if with_rule:
+        species.append(('Z', reader, 0.0))
+    for sid, comp, conc in species:
+        s = m.createSpecies()
+        s.setId(sid); s.setCompartment(comp); s.setInitialConcentration(conc)
+        s.setConstant(False); s.setBoundaryCondition(False)
+        s.setHasOnlySubstanceUnits(False)
+
+    r = m.createReaction()
+    r.setId('decay'); r.setReversible(False); r.setFast(False)
+    ref = r.createReactant(); ref.setSpecies('X'); ref.setStoichiometry(1); ref.setConstant(True)
+    kl = r.createKineticLaw()
+    kl.setMath(libsbml.parseL3Formula(f'k * {source} * X'))
+    p = kl.createLocalParameter(); p.setId('k'); p.setValue(0.4)
+
+    r = m.createReaction()
+    r.setId('prod'); r.setReversible(False); r.setFast(False)
+    prd = r.createProduct(); prd.setSpecies('Y'); prd.setStoichiometry(1); prd.setConstant(True)
+    mod = r.createModifier(); mod.setSpecies('X')
+    kl = r.createKineticLaw()
+    kl.setMath(libsbml.parseL3Formula(f'{reader} * V * X / (Km + X)'))
+    p = kl.createLocalParameter(); p.setId('V'); p.setValue(0.5)
+    p = kl.createLocalParameter(); p.setId('Km'); p.setValue(1.0)
+
+    if with_rule:
+        rule = m.createAssignmentRule()
+        rule.setVariable('Z')
+        rule.setMath(libsbml.parseL3Formula('2 * X'))
+    return doc
+
+
+def _pool(root, name):
+    return [e for e in moose.wildcardFind(f'{root}/##/{name}[0]')
+            if e.isA['PoolBase'] and '_xfer_' not in e.name][0]
+
+
+@pytest.mark.parametrize('source_mode', ['reaction', 'assignment', 'fixed'])
+def test_function_reads_foreign_pool_via_adaptor(tmp_path, source_mode):
+    """Adaptor-fed mirrors track integrated, assigned and fixed sources.
+    Checked against the analytic solution
+    X = X0 exp(-k t), Y = (V/k) ln((Km + X0) / (Km + X)), and Z = 2X."""
+    import libsbml
+    p = tmp_path / 'foreign_mod.xml'
+    doc = _foreign_modifier_model(with_rule=True)
+    model = doc.getModel()
+    if source_mode != 'reaction':
+        model.removeReaction('decay')
+        model.getSpecies('X').setBoundaryCondition(True)
+    if source_mode == 'assignment':
+        rule = model.createAssignmentRule()
+        rule.setVariable('X')
+        rule.setMath(libsbml.parseL3Formula('3 * exp(-0.4 * time)'))
+    libsbml.writeSBMLToFile(doc, str(p))
+
+    root = f'/fm_{source_mode}'
+    h = SBMLHandler()
+    h.read(str(p), root)
+    assert not h.report.unsupported, h.report.unsupported
+    assert len(moose.wildcardFind(root + '/##[ISA=Stoich]')) == 2
+    adaptors = moose.wildcardFind(root + '/##[ISA=Adaptor]')
+    assert len(adaptors) == 1
+    mirror = moose.element(adaptors[0].parent)
+    assert mirror.isA['BufPool']
+    assert len(h.report.xcompt_proxies) == 1   # Y's Function and Z's rule share it
+
+    eX, eY, eZ = (_pool(root, name) for name in ('X', 'Y', 'Z'))
+    X0 = 3.0 if source_mode == 'assignment' else 6.0
+    # Mirrors must pick up edits made after import, on every reinit.
+    eX.concInit = X0 * 1e3
+    runtime = 10.0
+    for tck in range(20):
+        moose.setClock(tck, 0.005)
+    tabs = []
+    for e in (eX, eY, eZ):
+        t = moose.Table2(f'{root}/_tab_{e.name}')
+        moose.connect(t, 'requestOut', e, 'getConc')
+        moose.setClock(t.tick, 0.1)
+        tabs.append(t)
+    moose.reinit()
+    assert mirror.n == pytest.approx(eX.n)
+    moose.start(runtime)
+    assert mirror.n == pytest.approx(eX.n)
+    # SBML mol/L -> MOOSE mM: a factor of 1e3 in every compartment.
+    x, y, z = (np.array(t.vector) / 1e3 for t in tabs)
+    tt = np.linspace(0, runtime, len(x))
+    k, V, Km = 0.4, 0.5, 1.0
+    xa = X0 * np.exp(-k * tt)
+    ya = (V / k) * np.log((Km + X0) / (Km + xa))
+    if source_mode == 'fixed':
+        xa = np.full_like(tt, X0)
+        ya = V * X0 / (Km + X0) * tt
+    assert np.max(np.abs(x - xa)) / X0 < 1e-2
+    assert np.max(np.abs(y - ya)) / np.max(ya) < 1e-2
+    assert np.max(np.abs(z[1:] - 2 * x[1:])) / (2 * X0) < 1e-2
+    if source_mode == 'fixed':
+        eX.concInit = 9e3
+        moose.reinit()
+        assert mirror.n == pytest.approx(eX.n)
+        moose.start(1.0)
+        assert eY.conc / 1e3 == pytest.approx(0.45, rel=1e-6)
+
+
+def test_function_foreign_pool_nonadjacent(tmp_path):
+    """Adaptor inputs do not require a junction or adjacent compartments."""
+    import libsbml
+    p = tmp_path / 'foreign_far.xml'
+    doc = _foreign_modifier_model(sizes=(('A', 1.0), ('M', 2.0), ('B', 3.0)),
+                                  reader='A', source='B')
+    libsbml.writeSBMLToFile(doc, str(p))
+
+    h = SBMLHandler()
+    h.read(str(p), '/ff')
+    assert h.report.fully_supported, h.report.unsupported
+    assert len(moose.wildcardFind('/ff/##[ISA=Stoich]')) == 3
+    for tick in range(20):
+        moose.setClock(tick, 0.001)
+    moose.reinit()
+    moose.start(1.0)
+    expected = (0.5 / 0.4) * np.log(4 / (1 + 3 * np.exp(-0.4)))
+    assert _pool('/ff', 'Y').conc / 1e3 == pytest.approx(expected, rel=1e-3)
+
+
+def test_adaptor_mirror_does_not_reuse_model_species(tmp_path):
+    """Generated mirrors must not overwrite similarly named SBML species."""
+    import libsbml
+    doc = _foreign_modifier_model()
+    for sid in ('_sbml_input_0', 'X_xfer_A'):
+        species = doc.getModel().createSpecies()
+        species.setId(sid); species.setCompartment('B')
+        species.setInitialConcentration(100); species.setBoundaryCondition(True)
+        species.setConstant(False); species.setHasOnlySubstanceUnits(False)
+    p = tmp_path / 'collision.xml'
+    libsbml.writeSBMLToFile(doc, str(p))
+    h = SBMLHandler()
+    h.read(str(p), '/collision')
+    assert h.report.fully_supported, h.report.unsupported
+    adaptor = moose.wildcardFind('/collision/##[ISA=Adaptor]')[0]
+    assert moose.element(adaptor.parent).name not in ('_sbml_input_0', 'X_xfer_A')
+    for tick in range(20):
+        moose.setClock(tick, 0.001)
+    moose.reinit()
+    moose.start(1.0)
+    expected = (0.5 / 0.4) * np.log(4 / (1 + 3 * np.exp(-0.4)))
+    assert _pool('/collision', 'Y').conc / 1e3 == pytest.approx(expected, rel=1e-3)
+    for sid in ('_sbml_input_0', 'X_xfer_A'):
+        assert moose.element(f'/collision/B/{sid}').conc == pytest.approx(1e5)
+
+
+@pytest.mark.parametrize('assigned', [False, True])
+def test_adaptor_mirror_sbml_roundtrip(tmp_path, assigned):
+    """Export original species references, including a changing BufPool input."""
+    import libsbml
+    from moose.io.sbml.common import INPUT_MIRROR_INFO, INPUT_MIRROR_TAG
+
+    doc = _foreign_modifier_model(with_rule=True)
+    if assigned:
+        model = doc.getModel()
+        model.removeReaction('decay')
+        model.getSpecies('X').setBoundaryCondition(True)
+        rule = model.createAssignmentRule()
+        rule.setVariable('X')
+        rule.setMath(libsbml.parseL3Formula('3 * exp(-0.4 * time)'))
+    source, exported = tmp_path / 'source.xml', tmp_path / 'exported.xml'
+    libsbml.writeSBMLToFile(doc, str(source))
+    root = f'/roundtrip_{assigned}'
+    h = SBMLHandler()
+    h.read(str(source), root)
+    adaptor = moose.wildcardFind(root + '/##[ISA=Adaptor]')[0]
+    mirror = moose.element(adaptor.parent)
+    assert moose.element(f'{mirror.path}/{INPUT_MIRROR_INFO}').notes == INPUT_MIRROR_TAG
+    before = [e.path for e in moose.wildcardFind(root + '/##')]
+    h.write(root, str(exported))
+    assert h.report.fully_supported, h.report.unsupported
+    assert h.report.species == 3
+    assert before == [e.path for e in moose.wildcardFind(root + '/##')]
+
+    written = libsbml.readSBML(str(exported))
+    model = written.getModel()
+    assert {sp.getId() for sp in model.getListOfSpecies()} == {'X', 'Y', 'Z'}
+    for target in ('Y', 'Z'):
+        formula = libsbml.formulaToL3String(model.getRuleByVariable(target).getMath())
+        assert 'X' in formula and '_sbml_input_' not in formula
+    written.checkConsistency()
+    errors = [written.getError(i).getMessage() for i in range(written.getNumErrors())
+              if written.getError(i).getSeverity() >= libsbml.LIBSBML_SEV_ERROR]
+    assert not errors, errors
+
+    reload_root = root + '_reload'
+    h.read(str(exported), reload_root)
+    assert h.report.fully_supported, h.report.unsupported
+    for tick in range(20):
+        moose.setClock(tick, 0.001)
+    moose.reinit()
+    moose.start(2.0)
+    expected_x = 3 * np.exp(-0.4 * 2)
+    expected_y = (0.5 / 0.4) * np.log(4 / (1 + expected_x))
+    for path in (root, reload_root):
+        assert _pool(path, 'X').conc / 1e3 == pytest.approx(expected_x, rel=1e-4)
+        assert _pool(path, 'Y').conc / 1e3 == pytest.approx(expected_y, rel=1e-3)
+        assert _pool(path, 'Z').conc / 1e3 == pytest.approx(2 * expected_x, rel=1e-3)
+
+
+@pytest.mark.parametrize('change', ['scale', 'offset', 'getter', 'unmarked', 'version', 'extra_driver'])
+def test_writer_reports_unrecognized_adaptor_mirrors(tmp_path, change):
+    """Do not silently flatten a modified bridge or freeze an unknown input."""
+    import libsbml
+    from moose.io.sbml.common import INPUT_MIRROR_INFO
+
+    source = tmp_path / 'source.xml'
+    libsbml.writeSBMLToFile(_foreign_modifier_model(), str(source))
+    root = '/bad_mirror_' + change
+    h = SBMLHandler()
+    h.read(str(source), root)
+    adaptor = moose.wildcardFind(root + '/##[ISA=Adaptor]')[0]
+    info = f'{adaptor.parent.path}/{INPUT_MIRROR_INFO}'
+    if change == 'scale':
+        adaptor.scale = 2
+    elif change == 'offset':
+        adaptor.outputOffset = 1
+    elif change == 'getter':
+        msg = next(m for m in adaptor.msgOut if list(m.srcFieldsOnE1) == ['requestOut'])
+        moose.delete(msg)
+        moose.connect(adaptor, 'requestOut', _pool(root, 'X'), 'getConc')
+    elif change == 'unmarked':
+        moose.delete(info)
+    elif change == 'extra_driver':
+        fn = moose.Function(adaptor.parent.path + '/override')
+        fn.expr = '1'
+        moose.connect(fn, 'valueOut', moose.element(adaptor.parent), 'setN')
+    else:
+        moose.element(info).notes = 'moose.sbml.input_mirror:99'
+    h.write(root, str(tmp_path / 'bad.xml'))
+    assert not h.report.fully_supported
+    assert any('mirror' in msg or 'Adaptor' in msg for msg in h.report.unsupported)
+
+
+def test_writer_keeps_pool_with_unrelated_adaptor_child(tmp_path):
+    """An Adaptor child alone does not identify an internal mirror."""
+    import libsbml
+    source = tmp_path / 'source.xml'
+    libsbml.writeSBMLToFile(_foreign_modifier_model(with_rule=True), str(source))
+    h = SBMLHandler()
+    h.read(str(source), '/unrelated_adaptor')
+    pool = moose.BufPool('/unrelated_adaptor/B/real_species')
+    pool.nInit = 42
+    adaptor = moose.Adaptor(pool.path + '/monitor')
+    moose.connect(adaptor, 'requestOut', pool, 'getN')
+    exported = tmp_path / 'exported.xml'
+    h.write('/unrelated_adaptor', str(exported))
+    assert h.report.fully_supported, h.report.unsupported
+    model = libsbml.readSBML(str(exported)).getModel()
+    assert model.getNumSpecies() == 4
+    assert model.getSpecies('real_species').getInitialAmount() == pytest.approx(42 / moose.NA)
+
+
 def test_gorlich_multicompartment_native():
     """A real two-compartment model (Gorlich2003 RanGTP gradient): every
     reaction -- including the two nucleus<->cytoplasm transport reactions --

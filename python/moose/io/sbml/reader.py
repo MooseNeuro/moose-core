@@ -15,7 +15,7 @@ from moose import _moose
 
 from ..base import ModelLoadError
 from . import units
-from .common import participants
+from .common import participants, INPUT_MIRROR_INFO, INPUT_MIRROR_TAG
 from .identify import identify
 from .mathconv import to_exprtk, UnsupportedMath
 from .normalize import normalize
@@ -41,6 +41,7 @@ class _Context:
         self.rate_targets = set()   # ids on the LHS of a rate rule
         self.subst_factor = units.AVOGADRO
         self.unsupported_xcompt = False  # non-native cross-compartment coupling seen
+        self.input_mirrors = {}     # (source path, destination compartment) -> BufPool
 
 
 # ----------------------------------------------------------------------
@@ -254,22 +255,42 @@ def _elem_compartment(elem, ctx):
     return None
 
 
-def _spans_compartments(kind, name, target_comp, inputs, ctx):
-    """True (and reported unsupported) if a Function reading ``inputs`` and
-    writing ``target_comp`` would have to reach across compartments -- a MOOSE
-    Function reads pools by index within one solver's scope, so a foreign read
-    is out of bounds and would crash the multi-compartment solver."""
-    comps = set(_elem_compartment(e, ctx) for e in inputs.order)
-    comps.discard(None)
-    if target_comp is not None:
-        comps.add(target_comp)
-    if len(comps) > 1:
-        ctx.report.unsupported_add(
-            f'{kind} for {name!r} spans compartments {sorted(comps)}; a MOOSE '
-            'Function cannot read pools outside its own solver')
-        ctx.unsupported_xcompt = True
-        return True
-    return False
+def _input_mirror(elem, home_cid, ctx):
+    """Mirror a foreign input's molecule count through an Adaptor, not Dsolve.
+
+    The expression retains the source's volume conversion. Each source/home
+    pair shares one buffered mirror, including assignment-driven sources.
+    """
+    src_cid = _elem_compartment(elem, ctx)
+    if src_cid is None or src_cid == home_cid:
+        return elem
+    key = (elem.path, home_cid)
+    if key in ctx.input_mirrors:
+        return ctx.input_mirrors[key]
+    path = f'{ctx.compartment[home_cid].path}/_sbml_input_{len(ctx.input_mirrors)}'
+    while _moose.exists(path):
+        path += '_'
+    mirror = _moose.BufPool(path)
+    mirror.nInit = elem.nInit
+    _moose.Annotator(f'{path}/{INPUT_MIRROR_INFO}').notes = INPUT_MIRROR_TAG
+    adaptor = _moose.Adaptor(f'{path}/adaptor')
+    _moose.connect(adaptor, 'requestOut', elem, 'getN')
+    _moose.connect(adaptor, 'output', mirror, 'setN')
+    adaptor.scale = 1.0
+    # After Ksolve (tick 16), including reinit. Keep ticks 16/17 at the same dt.
+    adaptor.tick = 17
+    ctx.input_mirrors[key] = mirror
+    ctx.report.xcompt_proxies.append(f'{elem.path} -> {mirror.path}')
+    return mirror
+
+
+def _localize_inputs(target_comp, inputs, ctx):
+    """Swap every foreign input of a Function writing into ``target_comp`` for
+    a local mirror. The exprtk expression refers to inputs
+    only by x-index, so replacing the element in ``inputs.order`` is enough."""
+    if target_comp is None:
+        return
+    inputs.order = [_input_mirror(e, target_comp, ctx) for e in inputs.order]
 
 
 def _inv(sid, ctx, substance_scale):
@@ -484,9 +505,7 @@ def _build_fallback_functions(reactions, ctx):
             ctx.report.unsupported_add(
                 f'species {sid!r} derivative not built: {e}')
             continue
-        if _spans_compartments('derivative', sid, ctx.species_info[sid]['comp'],
-                               inputs, ctx):
-            continue
+        _localize_inputs(ctx.species_info[sid]['comp'], inputs, ctx)
         expr = f'{ctx.subst_factor!r}*({" + ".join(pieces)})'
         pool = ctx.species[sid]
         fn = _make_function(f'{pool.path}/dot', expr, inputs)
@@ -515,9 +534,7 @@ def _create_rules(model, ctx):
         if target is None:
             ctx.report.unsupported_add(f'rule target {var!r} not found')
             continue
-        if _spans_compartments('rule', var, _elem_compartment(target, ctx),
-                               inputs, ctx):
-            continue
+        _localize_inputs(_elem_compartment(target, ctx), inputs, ctx)
 
         if rule.isAssignment():
             expr = body if scale == 1.0 else f'{scale!r}*({body})'
